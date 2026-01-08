@@ -162,8 +162,7 @@ const DatasetLaboratory: React.FC = () => {
             message: row[3]
         }));
         
-        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-        const response = await fetch(`${API_BASE_URL}/api/ai/execute-python`, {
+        const response = await fetch('/api/ai/execute-python', {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -182,9 +181,9 @@ const DatasetLaboratory: React.FC = () => {
         const data = await response.json();
         setAiResult(data.result);
         showToast('AI Analysis complete!', 'success');
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
-        showToast('Failed to run AI analysis', 'error');
+        showToast(`AI Analysis failed: ${err.message}`, 'error');
     } finally {
         setIsAnalyzing(false);
     }
@@ -205,10 +204,10 @@ const DatasetLaboratory: React.FC = () => {
         const result = await trainInternalModel(logsToTrain);
         setTrainingStatus('success');
         showToast(`Model trained on ${result.samples} samples!`, 'success');
-    } catch (err) {
+    } catch (err: any) {
         console.error(err);
         setTrainingStatus('error');
-        showToast('Training failed', 'error');
+        showToast(`Training failed: ${err.message}`, 'error');
     } finally {
         setIsTraining(false);
     }

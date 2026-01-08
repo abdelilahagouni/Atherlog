@@ -2,9 +2,7 @@
 import { SubscriptionPlan } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL 
-    ? `${import.meta.env.VITE_API_URL}/api/payment` 
-    : 'http://localhost:4000/api/payment';
+const API_BASE_URL = '/api/payment';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('jwt_token');

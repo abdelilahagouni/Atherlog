@@ -1,9 +1,7 @@
 import { LogEntry, GeneratedFilters, ChatMessage, RootCauseAnalysisResponse, FlowchartResponse, DetectedObjectInfo, LogPattern, AiPlaybook, AiDiscovery } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL 
-    ? `${import.meta.env.VITE_API_URL}/api/ai` 
-    : 'http://localhost:4000/api/ai';
+const API_BASE_URL = '/api/ai';
 
 type ApiStatusValue = 'ok' | 'invalid_key' | 'not_configured' | 'quota_exceeded';
 

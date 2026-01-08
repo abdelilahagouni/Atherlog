@@ -1,9 +1,7 @@
 import { SavedSearch } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL 
-    ? `${import.meta.env.VITE_API_URL}/api/searches` 
-    : 'http://localhost:4000/api/searches';
+const API_BASE_URL = '/api/searches';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('jwt_token');

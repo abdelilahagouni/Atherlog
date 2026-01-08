@@ -1,9 +1,7 @@
 import { Incident, IncidentStatus, User } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL 
-    ? `${import.meta.env.VITE_API_URL}/api/incidents` 
-    : 'http://localhost:4000/api/incidents';
+const API_BASE_URL = '/api/incidents';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('jwt_token');

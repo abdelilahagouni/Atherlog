@@ -2,9 +2,7 @@ import { LogEntry, NotificationContact } from '../types';
 import { handleResponse } from './authService';
 import { getNotificationContacts } from './logService';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL 
-    ? `${import.meta.env.VITE_API_URL}/api` 
-    : 'http://localhost:4000/api';
+const API_BASE_URL = '/api';
 
 /**
  * Sends a request to the backend to trigger a simulated test notification.
