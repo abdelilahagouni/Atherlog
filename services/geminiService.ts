@@ -215,3 +215,21 @@ export const getSystemHealth = async (logs: LogEntry[]): Promise<{ score: number
     });
     return handleResponse(response);
 };
+
+export const getDependencyMap = async (logs: LogEntry[]): Promise<{ nodes: { id: string, group: number }[], links: { source: string, target: string, value: number }[] }> => {
+    const response = await fetch(`${API_BASE_URL}/dependency-map`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ logs }),
+    });
+    return handleResponse(response);
+};
+
+export const getTimeline = async (logs: LogEntry[]): Promise<{ time: string, count: number, isAnomaly: boolean }[]> => {
+    const response = await fetch(`${API_BASE_URL}/timeline`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ logs }),
+    });
+    return handleResponse(response);
+};

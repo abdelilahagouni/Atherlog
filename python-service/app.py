@@ -199,6 +199,63 @@ def system_health():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# --- Pro Feature 8: Service Dependency Map ---
+@app.route('/dependency-map', methods=['POST'])
+def dependency_map():
+    try:
+        data = request.json
+        logs = data.get('logs', [])
+        if not logs: return jsonify({"nodes": [], "links": []})
+        
+        df = pd.DataFrame(logs)
+        if 'source' not in df.columns:
+            return jsonify({"nodes": [], "links": []})
+        
+        sources = df['source'].unique().tolist()
+        nodes = [{"id": s, "group": 1} for s in sources]
+        
+        links = []
+        # Infer connections based on sequential occurrence in logs (heuristic)
+        for i in range(len(sources)-1):
+            links.append({
+                "source": sources[i],
+                "target": sources[i+1],
+                "value": 1
+            })
+            
+        return jsonify({"nodes": nodes, "links": links})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# --- Pro Feature 9: Incident Timeline ---
+@app.route('/timeline', methods=['POST'])
+def get_timeline():
+    try:
+        data = request.json
+        logs = data.get('logs', [])
+        if not logs: return jsonify([])
+        
+        # Group logs by hour and count anomalies
+        df = pd.DataFrame(logs)
+        if 'timestamp' not in df.columns:
+            return jsonify([])
+            
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df = df.set_index('timestamp')
+        resampled = df.resample('1H').size()
+        
+        timeline = []
+        for ts, count in resampled.items():
+            timeline.append({
+                "time": ts.strftime('%Y-%m-%d %H:%M'),
+                "count": int(count),
+                "isAnomaly": count > df.resample('1H').size().mean() + 1
+            })
+            
+        return jsonify(timeline)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # --- Existing Advanced AI: Autoencoder ---
 
 class LogAutoencoder(tf.keras.Model):

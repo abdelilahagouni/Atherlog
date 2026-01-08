@@ -570,4 +570,36 @@ router.post('/health-score', async (req: express.Request, res: express.Response)
     }
 });
 
+router.post('/dependency-map', async (req: express.Request, res: express.Response) => {
+    const { logs } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/dependency-map`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logs })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
+router.post('/timeline', async (req: express.Request, res: express.Response) => {
+    const { logs } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/timeline`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logs })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
 export default router;

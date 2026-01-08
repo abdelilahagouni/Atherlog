@@ -7,7 +7,8 @@ import { bulkIngestLogs } from '../services/logService';
 import { DatasetMapping, LogLevel } from '../types';
 import { DEMO_DATASET, generateLargeDataset } from '../assets/demo_dataset';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { trainInternalModel, semanticSearch, clusterLogs, forecastVolume, getSystemHealth } from '../services/geminiService';
+import { trainInternalModel, semanticSearch, clusterLogs, forecastVolume, getSystemHealth, getDependencyMap, getTimeline } from '../services/geminiService';
+import AiDashboard from './AiDashboard';
 
 const DatasetLaboratory: React.FC = () => {
   const [file, setFile] = React.useState<File | null>(null);
@@ -444,95 +445,8 @@ const DatasetLaboratory: React.FC = () => {
                 </div>
               )
             ) : (
-              <div className="flex-1 space-y-6 animate-fade-in">
-                {/* Semantic Search */}
-                <div className="relative">
-                    <input 
-                        type="text"
-                        placeholder="Semantic Search: e.g. 'database connection issues'..."
-                        value={semanticQuery}
-                        onChange={(e) => setSemanticQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSemanticSearch()}
-                        className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-3 px-10 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                    />
-                    <Icon name="search" className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                    <button 
-                        onClick={handleSemanticSearch}
-                        disabled={isSearching}
-                        className="absolute right-2 top-1.5 bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors"
-                    >
-                        {isSearching ? '...' : 'Search'}
-                    </button>
-                </div>
-
-                {semanticResults.length > 0 && (
-                    <div className="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4 space-y-2">
-                        <h4 className="text-xs font-bold text-purple-400 uppercase tracking-widest">Semantic Matches</h4>
-                        {semanticResults.map((res, i) => (
-                            <div key={i} className="flex items-center justify-between text-xs p-2 bg-white dark:bg-gray-900 rounded border border-gray-100 dark:border-gray-800">
-                                <span className="truncate flex-1 text-gray-700 dark:text-gray-300">{res.log.message}</span>
-                                <span className="ml-2 font-mono text-purple-500">{(res.score * 100).toFixed(0)}%</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Health & Forecast */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
-                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Proactive Health</h4>
-                        {healthScore ? (
-                            <div className="flex items-end gap-2">
-                                <span className={`text-3xl font-bold ${healthScore.score > 80 ? 'text-green-500' : healthScore.score > 50 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                    {healthScore.score}%
-                                </span>
-                                <span className="text-xs text-gray-400 mb-1">{healthScore.status}</span>
-                            </div>
-                        ) : <div className="text-xs text-gray-400 italic">Train model to see health...</div>}
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
-                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Volume Forecast</h4>
-                        {forecast ? (
-                            <div className="flex items-center gap-4">
-                                <div className="flex-1 h-8 flex items-end gap-1">
-                                    {forecast.forecast.map((v: number, i: number) => (
-                                        <div key={i} className="flex-1 bg-blue-500/30 rounded-t" style={{ height: `${(v/Math.max(...forecast.forecast))*100}%` }}></div>
-                                    ))}
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-xs font-bold text-blue-500 block">{forecast.trend}</span>
-                                    <span className="text-[10px] text-gray-400">Next 3h</span>
-                                </div>
-                            </div>
-                        ) : <div className="text-xs text-gray-400 italic">Predicting trend...</div>}
-                    </div>
-                </div>
-
-                {/* Clusters */}
-                <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Log Hotspots (Clustering)</h4>
-                    {clusters.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-2">
-                            {clusters.map((c) => (
-                                <div key={c.id} className="p-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold">
-                                        {c.count}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{c.sample}</p>
-                                        <p className="text-[10px] text-gray-400">Cluster #{c.id + 1} • Similar Patterns</p>
-                                    </div>
-                                    <Icon name="chevron-right" className="w-4 h-4 text-gray-300" />
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
-                            <Icon name="brain" className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                            <p className="text-xs text-gray-400">Run 'Train Advanced Model' to discover clusters</p>
-                        </div>
-                    )}
-                </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <AiDashboard logs={DEMO_DATASET} />
               </div>
             )}
           </Card>
