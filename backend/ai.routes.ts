@@ -87,6 +87,14 @@ const handleAiError = (e: any, res: express.Response) => {
     res.status(status).json({ message });
 };
 
+const getPythonServiceUrl = () => {
+    let url = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+    if (!url.startsWith('http')) {
+        url = `http://${url}`;
+    }
+    return url.replace(/\/$/, '');
+};
+
 
 // GET /api/ai/status
 router.get('/status', (req: express.Request, res: express.Response) => {
@@ -127,11 +135,8 @@ router.post('/explain', async (req: express.Request, res: express.Response) => {
             });
             explanation = response.text || 'No explanation was returned from the Gemini API.';
         } else if (provider === 'python') {
-            let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
-            if (!pythonServiceUrl.startsWith('http')) {
-                pythonServiceUrl = `http://${pythonServiceUrl}`;
-            }
-            pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+            const pythonServiceUrl = getPythonServiceUrl();
+            console.log(`Calling Python service (explain) at: ${pythonServiceUrl}/explain`);
             
             const response = await fetch(`${pythonServiceUrl}/explain`, {
                 method: 'POST',
@@ -213,11 +218,8 @@ router.post('/chat', async (req: express.Request, res: express.Response) => {
             const response = await chat.sendMessage({ message });
             reply = response.text || 'I am unable to respond right now.';
         } else if (provider === 'python') {
-            let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
-            if (!pythonServiceUrl.startsWith('http')) {
-                pythonServiceUrl = `http://${pythonServiceUrl}`;
-            }
-            pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+            const pythonServiceUrl = getPythonServiceUrl();
+            console.log(`Calling Python service (chat) at: ${pythonServiceUrl}/chat`);
 
             const response = await fetch(`${pythonServiceUrl}/chat`, {
                 method: 'POST',
@@ -347,11 +349,8 @@ router.post('/root-cause-analysis', async (req: express.Request, res: express.Re
     const { targetLog, logHistory, provider } = req.body;
     if (provider === 'python') {
         try {
-            let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
-            if (!pythonServiceUrl.startsWith('http')) {
-                pythonServiceUrl = `http://${pythonServiceUrl}`;
-            }
-            pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+            const pythonServiceUrl = getPythonServiceUrl();
+            console.log(`Calling Python service (rca) at: ${pythonServiceUrl}/rca`);
 
             const response = await fetch(`${pythonServiceUrl}/rca`, {
                 method: 'POST',
@@ -362,6 +361,7 @@ router.post('/root-cause-analysis', async (req: express.Request, res: express.Re
             const data = await response.json() as any;
             return res.json(data);
         } catch (error: any) {
+            console.error("Failed to call Python service (rca):", error);
             return res.status(503).json({ message: "Python service unavailable", error: error.message });
         }
     }
@@ -372,11 +372,8 @@ router.post('/generate-playbook', async (req: express.Request, res: express.Resp
     const { targetLog, provider } = req.body;
     if (provider === 'python') {
         try {
-            let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
-            if (!pythonServiceUrl.startsWith('http')) {
-                pythonServiceUrl = `http://${pythonServiceUrl}`;
-            }
-            pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+            const pythonServiceUrl = getPythonServiceUrl();
+            console.log(`Calling Python service (playbook) at: ${pythonServiceUrl}/playbook`);
 
             const response = await fetch(`${pythonServiceUrl}/playbook`, {
                 method: 'POST',
@@ -387,6 +384,7 @@ router.post('/generate-playbook', async (req: express.Request, res: express.Resp
             const data = await response.json() as any;
             return res.json(data);
         } catch (error: any) {
+            console.error("Failed to call Python service (playbook):", error);
             return res.status(503).json({ message: "Python service unavailable", error: error.message });
         }
     }
@@ -396,11 +394,8 @@ router.post('/discover-insights', (req: express.Request, res: express.Response) 
 
 router.post('/execute-python', async (req: express.Request, res: express.Response) => {
     const { script, input } = req.body;
-    let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
-    if (!pythonServiceUrl.startsWith('http')) {
-        pythonServiceUrl = `http://${pythonServiceUrl}`;
-    }
-    pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+    const pythonServiceUrl = getPythonServiceUrl();
+    console.log(`Calling Python service (predict) at: ${pythonServiceUrl}/predict`);
     
     try {
         const body = input && input.logs ? { logs: input.logs } : { logs: input || [] };
@@ -434,11 +429,8 @@ router.post('/execute-python', async (req: express.Request, res: express.Respons
 
 router.post('/train', async (req: express.Request, res: express.Response) => {
     const { logs } = req.body;
-    let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
-    if (!pythonServiceUrl.startsWith('http')) {
-        pythonServiceUrl = `http://${pythonServiceUrl}`;
-    }
-    pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+    const pythonServiceUrl = getPythonServiceUrl();
+    console.log(`Calling Python service (train) at: ${pythonServiceUrl}/train`);
 
     try {
         const response = await fetch(`${pythonServiceUrl}/train`, {
