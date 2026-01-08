@@ -68,7 +68,11 @@ export const connectDb = async () => {
     const db = getDb();
 
     // Enable the TimescaleDB extension to use functions like time_bucket
-    await db.exec('CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;');
+    try {
+        await db.exec('CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;');
+    } catch (e) {
+        console.warn('TimescaleDB extension could not be enabled. Some features might be limited.', e);
+    }
 
     // Use double quotes to preserve camelCase column names in PostgreSQL
     await db.exec(`

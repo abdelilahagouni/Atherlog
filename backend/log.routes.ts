@@ -141,7 +141,7 @@ router.get('/histogram', async (req: express.Request, res: express.Response) => 
         const whereString = whereClauses.join(' AND ');
         const histogramQuery = `
             SELECT
-                time_bucket('1 hour', "timestamp") AS bucket,
+                DATE_TRUNC('hour', "timestamp") AS bucket,
                 COUNT(*) AS count
             FROM logs
             WHERE ${whereString}
