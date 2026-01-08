@@ -11,7 +11,7 @@ services:
         value: 4000
       - key: PYTHON_SERVICE_URL
         fromService:
-          type: pvt
+          type: pserv
           name: aetherlog-python-service
           property: hostport
       - key: DATABASE_URL
@@ -24,7 +24,7 @@ services:
         sync: false # User must set this manually after deploying frontend
 
   # 2. Python AI Service
-  - type: pvt
+  - type: pserv
     name: aetherlog-python-service
     env: docker
     dockerContext: python-service
