@@ -34,7 +34,31 @@ const app: express.Express = express();
 const PORT = parseInt(process.env.PORT || '4000');
 
 // Middleware
-app.use(cors()); // Allow requests from our frontend
+// CORS Configuration
+const allowedOrigins = [
+    'http://localhost:5173', 
+    'http://localhost:4173', 
+    process.env.FRONTEND_URL // Add the production frontend URL
+].filter(Boolean) as string[];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1 || !process.env.FRONTEND_URL) {
+            // If origin is in the list, or if FRONTEND_URL is not set (dev mode), allow it
+            callback(null, true);
+        } else {
+            // For now, in production debugging, let's be permissive if the exact match fails
+            // but log it so we know.
+            console.log('CORS Origin Check:', origin, 'Allowed:', allowedOrigins);
+            // callback(new Error('Not allowed by CORS')); // Strict mode
+            callback(null, true); // Permissive mode for troubleshooting
+        }
+    },
+    credentials: true
+}));
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies, increase limit for images
 
 // API Routes
