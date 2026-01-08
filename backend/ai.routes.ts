@@ -428,11 +428,47 @@ router.post('/execute-python', async (req: express.Request, res: express.Respons
             serviceUrl: pythonServiceUrl
         });
     } catch (error: any) {
-        console.error("Failed to call Python service:", error);
+        console.error(`[AI] Failed to call Python service at ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: getPythonServiceUrl()
+        });
         res.status(503).json({ 
             message: "Python service unavailable", 
             error: error.message,
+            code: error.code,
             hint: "Ensure python-service is running and accessible."
+        });
+    }
+});
+
+router.get('/check-python', async (req, res) => {
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        console.log(`[AI] Checking Python health at: ${pythonServiceUrl}/health`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(`${pythonServiceUrl}/health`, { signal: controller.signal });
+        clearTimeout(timeout);
+        
+        const data = await response.json();
+        res.json({ 
+            status: "connected", 
+            pythonUrl: pythonServiceUrl,
+            health: data 
+        });
+    } catch (error: any) {
+        console.error("[AI] Python health check failed:", {
+            message: error.message,
+            code: error.code,
+            stack: error.stack
+        });
+        res.status(500).json({ 
+            status: "error", 
+            pythonUrl: pythonServiceUrl,
+            error: error.message,
+            code: error.code
         });
     }
 });
@@ -463,10 +499,16 @@ router.post('/train', async (req: express.Request, res: express.Response) => {
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        console.error("Failed to train Python model:", error);
+        console.error(`[AI] Failed to call Python service at ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: getPythonServiceUrl()
+        });
         res.status(503).json({ 
             message: "Python service unavailable", 
-            error: error.message
+            error: error.message,
+            code: error.code,
+            hint: "Ensure python-service is running and accessible."
         });
     }
 });

@@ -17,7 +17,7 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
   const [dependencyMap, setDependencyMap] = useState<any>(null);
   const [timeline, setTimeline] = useState<any[]>([]);
   const [clusters, setClusters] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; code?: string; hint?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,7 +43,11 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
         setClusters(clusterData && Array.isArray(clusterData.clusters) ? clusterData.clusters : []);
       } catch (err: any) {
         console.error("Failed to fetch dashboard data:", err);
-        setError(err.message || "Failed to load AI insights");
+        setError({
+          message: err.message || "Failed to load AI insights",
+          code: err.code,
+          hint: err.hint
+        });
       } finally {
         setLoading(false);
       }
@@ -66,9 +70,11 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
         <Icon name="alert-circle" className="w-16 h-16 text-red-500 opacity-50" />
         <h3 className="text-xl font-bold text-gray-200">Analysis Failed</h3>
         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 max-w-md">
-            <p className="text-red-400 text-sm font-mono">{error}</p>
+            <p className="text-red-400 text-sm font-mono">{error.message}</p>
+            {error.code && <p className="text-red-300/60 text-[10px] mt-2 font-mono">Error Code: {error.code}</p>}
+            {error.hint && <p className="text-gray-400 text-[10px] mt-1 italic">{error.hint}</p>}
         </div>
-        <p className="text-gray-500 text-xs">This usually happens when the AI service is under heavy load or the dataset format is incompatible.</p>
+        <p className="text-gray-500 text-xs">This usually happens when the AI service is under heavy load or spinning up on Render Free Tier.</p>
         <button 
           onClick={() => window.location.reload()}
           className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all transform hover:scale-105 active:scale-95"
