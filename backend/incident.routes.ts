@@ -3,6 +3,7 @@ import express from 'express';
 import { protect } from './auth.routes';
 import { getDb } from './database';
 import { Incident, IncidentStatus, User } from './types';
+import * as crypto from 'crypto';
 
 const router = express.Router();
 

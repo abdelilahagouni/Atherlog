@@ -6,6 +6,7 @@ import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { getDb, getOrganizationWithDetails, PLAN_CONFIG } from './database';
 import { User, Role } from './types';
 import { sendVerificationEmail } from './notificationService';
+import * as crypto from 'crypto';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-that-should-be-in-an-env-file'; // In production, use environment variables

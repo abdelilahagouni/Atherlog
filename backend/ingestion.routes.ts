@@ -3,6 +3,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import { getDb } from './database';
 import { LogEntry } from './types';
+import * as crypto from 'crypto';
 
 const router = express.Router();
 

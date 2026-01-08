@@ -6,6 +6,7 @@ import { Buffer } from 'buffer';
 import { getDb } from './database';
 import { ApiKey, Role, User } from './types';
 import { protect } from './auth.routes';
+import * as crypto from 'crypto';
 
 const router = express.Router();
 
