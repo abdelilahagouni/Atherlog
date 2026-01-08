@@ -3,7 +3,7 @@ import express from 'express';
 import { getDb } from './database';
 import { LogEntry, Role, User } from './types';
 import { protect } from './auth.routes';
-import { sendEmail, sendSms } from './notificationService';
+import { sendEmail, sendSms, sendWebhook, sendSlackAlert } from './notificationService';
 
 const router = express.Router();
 
@@ -94,5 +94,39 @@ router.post('/fatal-error', protect, async (req: express.Request, res: express.R
     }
 });
 
+// POST /api/notifications/test-webhook (Protected)
+router.post('/test-webhook', protect, async (req: express.Request, res: express.Response) => {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ message: 'Webhook URL is required' });
+
+    try {
+        await sendWebhook(url, {
+            event: 'test_notification',
+            message: 'This is a test webhook from AetherLog.',
+            timestamp: new Date().toISOString()
+        });
+        res.status(200).json({ message: 'Test webhook sent successfully.' });
+    } catch (e: any) {
+        res.status(500).json({ message: `Failed to send webhook: ${e.message}` });
+    }
+});
+
+// POST /api/notifications/test-slack (Protected)
+router.post('/test-slack', protect, async (req: express.Request, res: express.Response) => {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ message: 'Slack Webhook URL is required' });
+
+    try {
+        await sendSlackAlert(url, {
+            title: 'Test Alert',
+            message: 'This is a test Slack notification from AetherLog.',
+            severity: 'INFO',
+            source: 'AetherLog Dashboard'
+        });
+        res.status(200).json({ message: 'Test Slack alert sent successfully.' });
+    } catch (e: any) {
+        res.status(500).json({ message: `Failed to send Slack alert: ${e.message}` });
+    }
+});
 
 export default router;

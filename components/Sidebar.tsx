@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setMobileOpen }) => {
   const analysisPaths = ["/dashboard", "/live-anomalies", "/log-explorer", "/alert-history", "/pattern-recognition", "/learned-insights", "/incidents", "/dataset-lab"];
   const aiToolkitPaths = ["/ai-chat", "/visual-log-parser", "/live-object-detector"];
   const infraPaths = ["/container-insights"];
-  const configPaths = ["/alerting", "/notifications", "/proactive-insights", "/settings", "/data-sources", "/audit-logs", "/billing", "/saas-subscription", "/roles-permissions", "/deployment-history", "/super-admin-panel"];
+  const configPaths = ["/alerting", "/notifications", "/proactive-insights", "/enterprise-connectors", "/settings", "/data-sources", "/audit-logs", "/billing", "/saas-subscription", "/roles-permissions", "/deployment-history", "/super-admin-panel"];
 
   return (
      <>
@@ -137,6 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setMobileOpen }) => {
               {canAccessAdminPages && (
                 <>
                   <NavLink to="/proactive-insights" className={navLinkClasses}>Proactive Insights</NavLink>
+                  <NavLink to="/enterprise-connectors" className={navLinkClasses}>Enterprise Connectors</NavLink>
                   <NavLink to="/settings" className={navLinkClasses}>Org Settings</NavLink>
                   <NavLink to="/data-sources" className={navLinkClasses}>Data Sources</NavLink>
                   <NavLink to="/audit-logs" className={navLinkClasses}>Audit Logs</NavLink>

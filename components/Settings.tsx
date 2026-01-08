@@ -150,6 +150,111 @@ const MemberManagement: React.FC = () => {
 };
 
 
+const EnterpriseAlerting: React.FC = () => {
+    const [webhookUrl, setWebhookUrl] = React.useState('');
+    const [slackUrl, setSlackUrl] = React.useState('');
+    const [isTestingWebhook, setIsTestingWebhook] = React.useState(false);
+    const [isTestingSlack, setIsTestingSlack] = React.useState(false);
+    const { showToast } = useToast();
+
+    const handleTestWebhook = async () => {
+        if (!webhookUrl) return;
+        setIsTestingWebhook(true);
+        try {
+            const response = await fetch('/api/notifications/test-webhook', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+                },
+                body: JSON.stringify({ url: webhookUrl })
+            });
+            const data = await response.json();
+            if (response.ok) showToast(data.message, 'success');
+            else throw new Error(data.message);
+        } catch (err: any) {
+            showToast(err.message, 'error');
+        } finally {
+            setIsTestingWebhook(false);
+        }
+    };
+
+    const handleTestSlack = async () => {
+        if (!slackUrl) return;
+        setIsTestingSlack(true);
+        try {
+            const response = await fetch('/api/notifications/test-slack', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+                },
+                body: JSON.stringify({ url: slackUrl })
+            });
+            const data = await response.json();
+            if (response.ok) showToast(data.message, 'success');
+            else throw new Error(data.message);
+        } catch (err: any) {
+            showToast(err.message, 'error');
+        } finally {
+            setIsTestingSlack(false);
+        }
+    };
+
+    return (
+        <Card>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <Icon name="bell" className="w-6 h-6 text-blue-500" />
+                Enterprise Alerting
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Configure external endpoints to receive real-time AI alerts.</p>
+            
+            <div className="space-y-6">
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Generic Webhook URL</label>
+                    <div className="flex gap-2">
+                        <input 
+                            type="text" 
+                            value={webhookUrl}
+                            onChange={(e) => setWebhookUrl(e.target.value)}
+                            placeholder="https://your-api.com/webhook"
+                            className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-sm"
+                        />
+                        <button 
+                            onClick={handleTestWebhook}
+                            disabled={isTestingWebhook || !webhookUrl}
+                            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                        >
+                            {isTestingWebhook ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : 'Test'}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Slack Webhook URL</label>
+                    <div className="flex gap-2">
+                        <input 
+                            type="text" 
+                            value={slackUrl}
+                            onChange={(e) => setSlackUrl(e.target.value)}
+                            placeholder="https://hooks.slack.com/services/..."
+                            className="flex-1 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-sm"
+                        />
+                        <button 
+                            onClick={handleTestSlack}
+                            disabled={isTestingSlack || !slackUrl}
+                            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                        >
+                            {isTestingSlack ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : 'Test'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Card>
+    );
+};
+
+
 const Settings: React.FC = () => {
   const { anomalyThreshold, setAnomalyThreshold } = useSettings();
   const [thresholdValue, setThresholdValue] = React.useState(anomalyThreshold);
@@ -202,6 +307,8 @@ const Settings: React.FC = () => {
             />
         </div>
       </Card>
+
+      <EnterpriseAlerting />
 
       <MemberManagement />
 

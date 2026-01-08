@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { Twilio } from 'twilio';
+import fetch from 'node-fetch';
 
 // --- Email Configuration (Generic SMTP) ---
 // Falls back to SendGrid defaults if specific SMTP vars aren't provided
@@ -87,4 +88,50 @@ export const sendVerificationEmail = async (userEmail: string, token: string, us
     `;
     
     await sendEmail({ to: userEmail, subject, text, html });
+};
+
+/**
+ * Sends a generic webhook notification
+ */
+export const sendWebhook = async (url: string, payload: any): Promise<void> => {
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            throw new Error(`Webhook failed with status ${response.status}`);
+        }
+        console.log(`Webhook sent successfully to ${url}`);
+    } catch (error) {
+        console.error(`Failed to send webhook to ${url}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Sends a formatted Slack alert
+ */
+export const sendSlackAlert = async (webhookUrl: string, alertData: { title: string; message: string; severity: string; source: string }) => {
+    const color = alertData.severity === 'CRITICAL' ? '#ff0000' : alertData.severity === 'ERROR' ? '#ff9900' : '#36a64f';
+    
+    const payload = {
+        attachments: [
+            {
+                fallback: `AetherLog Alert: ${alertData.title}`,
+                color: color,
+                title: `🚨 ${alertData.title}`,
+                text: alertData.message,
+                fields: [
+                    { title: "Severity", value: alertData.severity, short: true },
+                    { title: "Source", value: alertData.source, short: true }
+                ],
+                footer: "AetherLog AI Monitoring",
+                ts: Math.floor(Date.now() / 1000)
+            }
+        ]
+    };
+
+    return sendWebhook(webhookUrl, payload);
 };

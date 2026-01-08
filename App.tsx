@@ -48,6 +48,7 @@ const RolesAndPermissions = lazy(() => import('./components/RolesAndPermissions'
 const DeploymentHistory = lazy(() => import('./components/DeploymentHistory'));
 const ProactiveInsights = lazy(() => import('./components/ProactiveInsights'));
 const DatasetLaboratory = lazy(() => import('./components/DatasetLaboratory'));
+const EnterpriseConnectors = lazy(() => import('./components/EnterpriseConnectors'));
 
 const SuspenseFallback: React.FC = () => (
   <div className="flex items-center justify-center h-full w-full">
@@ -162,11 +163,19 @@ const App: React.FC = () => {
                                     </ProtectedRoute>
                                   } 
                                 />
-                                  <Route 
+                                <Route 
                                   path="/proactive-insights" 
                                   element={
                                     <ProtectedRoute roles={[Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.ANALYST]}>
                                       <ProactiveInsights />
+                                    </ProtectedRoute>
+                                  } 
+                                />
+                                <Route 
+                                  path="/enterprise-connectors" 
+                                  element={
+                                    <ProtectedRoute roles={[Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.ANALYST]}>
+                                      <EnterpriseConnectors />
                                     </ProtectedRoute>
                                   } 
                                 />
