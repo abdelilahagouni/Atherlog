@@ -322,7 +322,6 @@ def train():
     global model, feature_max
     import numpy as np
     tf = get_tensorflow()
-    if not tf: return jsonify({'error': 'TensorFlow not available'}), 503
     
     try:
         data = request.json
@@ -344,63 +343,84 @@ def train():
         split_idx = int(len(X_scaled) * 0.8)
         X_train, X_val = X_scaled[:split_idx], X_scaled[split_idx:]
         
-        if model_type == 'tensorflow':
-            class LogAutoencoder(tf.keras.Model):
-                def __init__(self, input_dim, dropout):
-                    super(LogAutoencoder, self).__init__()
-                    self.encoder = tf.keras.Sequential([
-                        tf.keras.layers.Dense(8, activation='relu'),
-                        tf.keras.layers.Dropout(dropout),
-                        tf.keras.layers.Dense(4, activation='relu')
-                    ])
-                    self.decoder = tf.keras.Sequential([
-                        tf.keras.layers.Dense(8, activation='relu'),
-                        tf.keras.layers.Dense(input_dim, activation='sigmoid')
-                    ])
-
-                def call(self, x):
-                    encoded = self.encoder(x)
-                    decoded = self.decoder(encoded)
-                    return decoded
-
-            model = LogAutoencoder(X_train.shape[1], dropout_rate)
-            model.compile(optimizer='adam', loss='mse')
+        # If TensorFlow is not available, use scikit-learn as fallback
+        if not tf or model_type == 'huggingface':
+            from sklearn.ensemble import IsolationForest
+            model = IsolationForest(contamination=0.1, random_state=42)
+            model.fit(X_train)
             
-            history = model.fit(
-                X_train, X_train, 
-                epochs=epochs, 
-                batch_size=batch_size, 
-                validation_data=(X_val, X_val) if len(X_val) > 0 else None,
-                verbose=0
-            )
+            # Simple train/val loss simulation
+            train_scores = model.score_samples(X_train)
+            val_scores = model.score_samples(X_val) if len(X_val) > 0 else train_scores
             
-            train_loss = history.history['loss'][-1]
-            val_loss = history.history.get('val_loss', [train_loss])[-1]
+            train_loss = float(-np.mean(train_scores))
+            val_loss = float(-np.mean(val_scores))
             
-            # Analysis
             analysis = "Balanced"
             if val_loss > train_loss * 1.5: analysis = "Overfitting"
-            elif train_loss > 0.1: analysis = "Underfitting"
+            elif train_loss > 0.5: analysis = "Underfitting"
             
             return jsonify({
-                'message': 'Model trained', 
+                'message': 'Model trained using scikit-learn (TensorFlow unavailable)', 
                 'samples': len(logs), 
                 'status': 'ready',
                 'metrics': {
-                    'train_loss': float(train_loss),
-                    'val_loss': float(val_loss),
+                    'train_loss': train_loss,
+                    'val_loss': val_loss,
                     'analysis': analysis
                 },
-                'framework': 'TensorFlow'
+                'framework': 'Scikit-learn (Isolation Forest)'
             })
-        else:
-            # Placeholder for Hugging Face training (requires more resources)
-            return jsonify({
-                'message': 'Hugging Face training is currently simulated using TF-IDF for memory efficiency on Render Free Tier.',
-                'samples': len(logs),
-                'status': 'ready',
-                'framework': 'Hugging Face (Simulated)'
-            })
+        
+        # TensorFlow path
+        class LogAutoencoder(tf.keras.Model):
+            def __init__(self, input_dim, dropout):
+                super(LogAutoencoder, self).__init__()
+                self.encoder = tf.keras.Sequential([
+                    tf.keras.layers.Dense(8, activation='relu'),
+                    tf.keras.layers.Dropout(dropout),
+                    tf.keras.layers.Dense(4, activation='relu')
+                ])
+                self.decoder = tf.keras.Sequential([
+                    tf.keras.layers.Dense(8, activation='relu'),
+                    tf.keras.layers.Dense(input_dim, activation='sigmoid')
+                ])
+
+            def call(self, x):
+                encoded = self.encoder(x)
+                decoded = self.decoder(encoded)
+                return decoded
+
+        model = LogAutoencoder(X_train.shape[1], dropout_rate)
+        model.compile(optimizer='adam', loss='mse')
+        
+        history = model.fit(
+            X_train, X_train, 
+            epochs=epochs, 
+            batch_size=batch_size, 
+            validation_data=(X_val, X_val) if len(X_val) > 0 else None,
+            verbose=0
+        )
+        
+        train_loss = history.history['loss'][-1]
+        val_loss = history.history.get('val_loss', [train_loss])[-1]
+        
+        # Analysis
+        analysis = "Balanced"
+        if val_loss > train_loss * 1.5: analysis = "Overfitting"
+        elif train_loss > 0.1: analysis = "Underfitting"
+        
+        return jsonify({
+            'message': 'Model trained', 
+            'samples': len(logs), 
+            'status': 'ready',
+            'metrics': {
+                'train_loss': float(train_loss),
+                'val_loss': float(val_loss),
+                'analysis': analysis
+            },
+            'framework': 'TensorFlow'
+        })
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
