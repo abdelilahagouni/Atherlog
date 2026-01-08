@@ -235,25 +235,38 @@ def get_timeline():
         logs = data.get('logs', [])
         if not logs: return jsonify([])
         
-        # Group logs by hour and count anomalies
         df = pd.DataFrame(logs)
         if 'timestamp' not in df.columns:
             return jsonify([])
             
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        # Harden datetime conversion
+        df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+        df = df.dropna(subset=['timestamp'])
+        
+        if df.empty:
+            return jsonify([])
+            
         df = df.set_index('timestamp')
-        resampled = df.resample('1H').size()
+        # Use 'h' instead of 'H' to avoid deprecation warning in newer pandas
+        resampled = df.resample('h').size()
+        
+        mean_val = resampled.mean() if not resampled.empty else 0
         
         timeline = []
         for ts, count in resampled.items():
-            timeline.append({
-                "time": ts.strftime('%Y-%m-%d %H:%M'),
-                "count": int(count),
-                "isAnomaly": count > df.resample('1H').size().mean() + 1
-            })
+            try:
+                timeline.append({
+                    "time": ts.strftime('%Y-%m-%d %H:%M'),
+                    "count": int(count),
+                    "isAnomaly": bool(count > mean_val + 1)
+                })
+            except Exception as loop_e:
+                print(f"Error in timeline loop: {loop_e}")
+                continue
             
         return jsonify(timeline)
     except Exception as e:
+        print(f"Timeline error: {e}")
         return jsonify({'error': str(e)}), 500
 
 # --- Existing Advanced AI: Autoencoder ---

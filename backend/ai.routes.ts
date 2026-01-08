@@ -469,7 +469,12 @@ router.post('/semantic-search', async (req: express.Request, res: express.Respon
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return res.status(response.status).json({ message: "Python service error", error: errorText });
+            let errorMessage = "Python service error";
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+            } catch (e) {}
+            return res.status(response.status).json({ message: errorMessage, error: errorText });
         }
         const data = await response.json();
         res.json(data);
@@ -489,7 +494,12 @@ router.post('/cluster', async (req: express.Request, res: express.Response) => {
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return res.status(response.status).json({ message: "Python service error", error: errorText });
+            let errorMessage = "Python service error";
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+            } catch (e) {}
+            return res.status(response.status).json({ message: errorMessage, error: errorText });
         }
         const data = await response.json();
         res.json(data);
@@ -509,7 +519,12 @@ router.post('/urgency', async (req: express.Request, res: express.Response) => {
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return res.status(response.status).json({ message: "Python service error", error: errorText });
+            let errorMessage = "Python service error";
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+            } catch (e) {}
+            return res.status(response.status).json({ message: errorMessage, error: errorText });
         }
         const data = await response.json();
         res.json(data);
@@ -529,7 +544,12 @@ router.post('/forecast', async (req: express.Request, res: express.Response) => 
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return res.status(response.status).json({ message: "Python service error", error: errorText });
+            let errorMessage = "Python service error";
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+            } catch (e) {}
+            return res.status(response.status).json({ message: errorMessage, error: errorText });
         }
         const data = await response.json();
         res.json(data);
@@ -549,7 +569,12 @@ router.post('/attribute', async (req: express.Request, res: express.Response) =>
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return res.status(response.status).json({ message: "Python service error", error: errorText });
+            let errorMessage = "Python service error";
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+            } catch (e) {}
+            return res.status(response.status).json({ message: errorMessage, error: errorText });
         }
         const data = await response.json();
         res.json(data);
@@ -569,7 +594,12 @@ router.post('/tag', async (req: express.Request, res: express.Response) => {
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return res.status(response.status).json({ message: "Python service error", error: errorText });
+            let errorMessage = "Python service error";
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+            } catch (e) {}
+            return res.status(response.status).json({ message: errorMessage, error: errorText });
         }
         const data = await response.json();
         res.json(data);
@@ -589,7 +619,12 @@ router.post('/health-score', async (req: express.Request, res: express.Response)
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return res.status(response.status).json({ message: "Python service error", error: errorText });
+            let errorMessage = "Python service error";
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+            } catch (e) {}
+            return res.status(response.status).json({ message: errorMessage, error: errorText });
         }
         const data = await response.json();
         res.json(data);
@@ -609,7 +644,12 @@ router.post('/dependency-map', async (req: express.Request, res: express.Respons
         });
         if (!response.ok) {
             const errorText = await response.text();
-            return res.status(response.status).json({ message: "Python service error", error: errorText });
+            let errorMessage = "Python service error";
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+            } catch (e) {}
+            return res.status(response.status).json({ message: errorMessage, error: errorText });
         }
         const data = await response.json();
         res.json(data);

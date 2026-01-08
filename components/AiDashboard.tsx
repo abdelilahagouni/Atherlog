@@ -62,13 +62,16 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 space-y-4 text-center">
+      <div className="flex flex-col items-center justify-center h-96 space-y-4 text-center p-6">
         <Icon name="alert-circle" className="w-16 h-16 text-red-500 opacity-50" />
         <h3 className="text-xl font-bold text-gray-200">Analysis Failed</h3>
-        <p className="text-gray-400 max-w-md">{error}</p>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 max-w-md">
+            <p className="text-red-400 text-sm font-mono">{error}</p>
+        </div>
+        <p className="text-gray-500 text-xs">This usually happens when the AI service is under heavy load or the dataset format is incompatible.</p>
         <button 
           onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors"
+          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all transform hover:scale-105 active:scale-95"
         >
           Retry Analysis
         </button>
