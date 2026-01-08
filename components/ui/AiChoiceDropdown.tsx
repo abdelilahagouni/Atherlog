@@ -3,8 +3,8 @@ import { Icon } from './Icon';
 
 interface AiChoice {
   label: string;
-  provider: 'gemini' | 'openai';
-  action: (provider: 'gemini' | 'openai') => void;
+  provider: 'gemini' | 'openai' | 'python';
+  action: (provider: 'gemini' | 'openai' | 'python') => void;
   disabled?: boolean;
   icon: string;
 }
@@ -12,7 +12,7 @@ interface AiChoice {
 interface AiChoiceDropdownProps {
   choices: AiChoice[];
   isLoading?: boolean;
-  onAction: (provider: 'gemini' | 'openai') => void;
+  onAction: (provider: 'gemini' | 'openai' | 'python') => void;
   children: React.ReactNode;
   className?: string;
   size?: 'sm' | 'md';

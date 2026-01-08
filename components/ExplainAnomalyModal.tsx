@@ -3,7 +3,7 @@ import { LogEntry } from '../types';
 import { explainLogEntry } from '../services/geminiService';
 import { Icon } from './ui/Icon';
 
-type AiProvider = 'gemini' | 'openai';
+type AiProvider = 'gemini' | 'openai' | 'python';
 
 interface ExplainAnomalyModalProps {
   logEntry: LogEntry;

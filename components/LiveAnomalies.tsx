@@ -12,7 +12,7 @@ import RootCauseAnalysisModal from './RootCauseAnalysisModal';
 import AiPlaybookModal from './AiPlaybookModal';
 import { AiChoiceDropdown } from './ui/AiChoiceDropdown';
 
-type AiProvider = 'gemini' | 'openai';
+type AiProvider = 'gemini' | 'openai' | 'python';
 
 const LogLevelBadge: React.FC<{ level: LogLevel }> = ({ level }) => {
   const levelColorMap: Record<LogLevel, string> = {
@@ -55,6 +55,7 @@ const AiQueryModal: React.FC<{ onClose: () => void, onApplyFilters: (filters: Ge
     const aiChoices = [
         { label: 'Generate with OpenAI', provider: 'openai' as AiProvider, action: handleGenerate, disabled: !apiStatus.openaiConfigured, icon: 'sparkles' },
         { label: 'Generate with Gemini', provider: 'gemini' as AiProvider, action: handleGenerate, disabled: !apiStatus.geminiConfigured, icon: 'logo' },
+        { label: 'Generate with Python AI', provider: 'python' as AiProvider, action: handleGenerate, disabled: false, icon: 'code' },
     ];
 
     return (
@@ -210,21 +211,25 @@ const LiveAnomalies: React.FC = () => {
     });
   };
 
-  const playbookChoices: any[] = [
+   const playbookChoices: any[] = [
         { label: 'Generate with OpenAI', provider: 'openai', icon: 'sparkles', disabled: !apiStatus.openaiConfigured },
         { label: 'Generate with Gemini', provider: 'gemini', icon: 'logo', disabled: !apiStatus.geminiConfigured },
+        { label: 'Generate with Python AI', provider: 'python', icon: 'code', disabled: false },
     ];
   const explainChoices: any[] = [
         { label: 'Explain with OpenAI', provider: 'openai', icon: 'sparkles', disabled: !apiStatus.openaiConfigured },
         { label: 'Explain with Gemini', provider: 'gemini', icon: 'logo', disabled: !apiStatus.geminiConfigured },
+        { label: 'Explain with Python AI', provider: 'python', icon: 'code', disabled: false },
     ];
     const rcaChoices: any[] = [
         { label: 'Analyze with OpenAI', provider: 'openai', icon: 'sparkles', disabled: !apiStatus.openaiConfigured },
         { label: 'Analyze with Gemini', provider: 'gemini', icon: 'logo', disabled: !apiStatus.geminiConfigured },
+        { label: 'Analyze with Python AI', provider: 'python', icon: 'code', disabled: false },
     ];
     const discussChoices: any[] = [
         { label: 'Discuss with OpenAI', provider: 'openai', icon: 'sparkles', disabled: !apiStatus.openaiConfigured },
         { label: 'Discuss with Gemini', provider: 'gemini', icon: 'logo', disabled: !apiStatus.geminiConfigured },
+        { label: 'Discuss with Python AI', provider: 'python', icon: 'code', disabled: false },
     ];
 
 

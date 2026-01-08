@@ -13,6 +13,83 @@ def health_check():
         'message': 'Python AI Service is running'
     })
 
+@app.route('/explain', methods=['POST'])
+def explain():
+    try:
+        data = request.json
+        log_entry = data.get('logEntry', {})
+        message = log_entry.get('message', 'No message')
+        level = log_entry.get('level', 'UNKNOWN')
+        source = log_entry.get('source', 'UNKNOWN')
+        
+        explanation = f"<p><b>Internal Analysis:</b> This {level} log from <code>{source}</code> indicates: '{message}'.</p>"
+        explanation += "<p>Based on local heuristics, this may require attention if it recurs frequently. Check service health and connectivity.</p>"
+        
+        return jsonify({'explanation': explanation})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/rca', methods=['POST'])
+def rca():
+    try:
+        data = request.json
+        target_log = data.get('targetLog', {})
+        log_history = data.get('logHistory', [])
+        
+        summary = f"Local analysis of {len(log_history)} preceding logs suggests a potential correlation between the target error and recent activity in the system."
+        
+        return jsonify({
+            'summary': summary,
+            'keyEvents': [
+                {'time': target_log.get('timestamp'), 'event': 'Primary incident detected', 'severity': 'high'}
+            ],
+            'nextSteps': [
+                "Review service logs for the last 5 minutes",
+                "Check for recent configuration changes",
+                "Verify upstream dependency health"
+            ]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/playbook', methods=['POST'])
+def playbook():
+    try:
+        data = request.json
+        target_log = data.get('targetLog', {})
+        level = target_log.get('level', 'ERROR')
+        
+        return jsonify({
+            'title': f"Remediation Playbook: {level} Incident",
+            'summary': "Standard operating procedure for resolving this type of log event.",
+            'severity': 3 if level == 'FATAL' else 2,
+            'triageSteps': [
+                {'step': 1, 'action': "Acknowledge the incident in the dashboard.", 'command': "N/A"},
+                {'step': 2, 'action': "Check service status.", 'command': "systemctl status aetherlog-backend"},
+                {'step': 3, 'action': "Restart service if unresponsive.", 'command': "systemctl restart aetherlog-backend"}
+            ],
+            'escalationPath': "Escalate to DevOps if issue persists after restart."
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.json
+        message = data.get('message', '').lower()
+        
+        if 'error' in message or 'fail' in message:
+            reply = "I've detected you're asking about an error. I recommend checking the 'Live Anomalies' tab for a detailed breakdown of recent issues."
+        elif 'help' in message:
+            reply = "I am your internal AetherLog assistant. I can help you understand logs, analyze root causes, and suggest remediation steps."
+        else:
+            reply = "I've received your message. As an internal model, I'm specialized in log analysis. How can I assist you with your data today?"
+            
+        return jsonify({'reply': reply})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:

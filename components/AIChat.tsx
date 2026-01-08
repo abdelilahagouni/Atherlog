@@ -6,7 +6,7 @@ import { ChatMessage } from '../types';
 import { sendChatMessage, getApiKeyStatus } from '../services/geminiService';
 import { useToast } from '../hooks/useToast';
 
-type AiProvider = 'gemini' | 'openai';
+type AiProvider = 'gemini' | 'openai' | 'python';
 
 const CodeBlock: React.FC<{ content: string }> = ({ content }) => {
     const { showToast } = useToast();
@@ -91,6 +91,8 @@ const AIChat: React.FC = () => {
                 setProvider('openai');
             } else if (status.geminiConfigured) {
                 setProvider('gemini');
+            } else {
+                setProvider('python');
             }
         });
     }, []);
@@ -201,11 +203,11 @@ const AIChat: React.FC = () => {
                         id="provider-select"
                         value={provider}
                         onChange={(e) => setProvider(e.target.value as AiProvider)}
-                        disabled={!isAnyProviderAvailable}
                         className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600 disabled:opacity-50"
                     >
                         <option value="openai" disabled={!apiStatus.openaiConfigured}>OpenAI</option>
                         <option value="gemini" disabled={!apiStatus.geminiConfigured}>Gemini</option>
+                        <option value="python">Python AI (Internal)</option>
                     </select>
                 </div>
             </div>
@@ -232,14 +234,13 @@ const AIChat: React.FC = () => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={isAnyProviderAvailable ? "Ask the AI anything..." : "Please configure an AI provider in Settings."}
+                        placeholder="Ask the AI anything..."
                         rows={1}
-                        disabled={!isAnyProviderAvailable}
                         className="w-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg p-3 pr-16 focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600 resize-none disabled:opacity-50"
                     />
                     <button 
                         onClick={handleSendMessage} 
-                        disabled={isLoading || !input.trim() || !isAnyProviderAvailable}
+                        disabled={isLoading || !input.trim()}
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
                         aria-label="Send message"
                     >

@@ -29,7 +29,7 @@ export const getApiKeyStatus = async (): Promise<ApiStatusResponse> => {
     return handleResponse(response);
 };
 
-export const explainLogEntry = async (logEntry: LogEntry, provider: 'gemini' | 'openai'): Promise<string> => {
+export const explainLogEntry = async (logEntry: LogEntry, provider: 'gemini' | 'openai' | 'python'): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/explain`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -39,7 +39,7 @@ export const explainLogEntry = async (logEntry: LogEntry, provider: 'gemini' | '
     return data.explanation;
 };
 
-export const generateFiltersFromQuery = async (query: string, provider: 'gemini' | 'openai'): Promise<GeneratedFilters> => {
+export const generateFiltersFromQuery = async (query: string, provider: 'gemini' | 'openai' | 'python'): Promise<GeneratedFilters> => {
     const response = await fetch(`${API_BASE_URL}/generate-filters`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -49,7 +49,7 @@ export const generateFiltersFromQuery = async (query: string, provider: 'gemini'
     return data.filters;
 };
 
-export const sendChatMessage = async (history: ChatMessage[], message: string, provider: 'gemini' | 'openai'): Promise<string> => {
+export const sendChatMessage = async (history: ChatMessage[], message: string, provider: 'gemini' | 'openai' | 'python'): Promise<string> => {
      const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -59,7 +59,7 @@ export const sendChatMessage = async (history: ChatMessage[], message: string, p
     return data.reply;
 };
 
-export const extractTextFromImage = async (base64Image: string, mimeType: string, provider: 'gemini' | 'openai'): Promise<string> => {
+export const extractTextFromImage = async (base64Image: string, mimeType: string, provider: 'gemini' | 'openai' | 'python'): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/extract-text`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -80,7 +80,7 @@ export const editImageWithAI = async (base64Image: string, mimeType: string, pro
     return data.editedImage;
 };
 
-export const generateFlowchartFromText = async (text: string, provider: 'gemini' | 'openai'): Promise<FlowchartResponse> => {
+export const generateFlowchartFromText = async (text: string, provider: 'gemini' | 'openai' | 'python'): Promise<FlowchartResponse> => {
     const response = await fetch(`${API_BASE_URL}/generate-flowchart`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -89,7 +89,7 @@ export const generateFlowchartFromText = async (text: string, provider: 'gemini'
     return handleResponse(response);
 };
 
-export const performRootCauseAnalysis = async (targetLog: LogEntry, logHistory: LogEntry[], provider: 'gemini' | 'openai'): Promise<RootCauseAnalysisResponse> => {
+export const performRootCauseAnalysis = async (targetLog: LogEntry, logHistory: LogEntry[], provider: 'gemini' | 'openai' | 'python'): Promise<RootCauseAnalysisResponse> => {
     const response = await fetch(`${API_BASE_URL}/root-cause-analysis`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -98,7 +98,7 @@ export const performRootCauseAnalysis = async (targetLog: LogEntry, logHistory: 
     return handleResponse(response);
 };
 
-export const detectObjectInImage = async (base64Image: string, mimeType: string, provider: 'gemini' | 'openai'): Promise<DetectedObjectInfo> => {
+export const detectObjectInImage = async (base64Image: string, mimeType: string, provider: 'gemini' | 'openai' | 'python'): Promise<DetectedObjectInfo> => {
      const response = await fetch(`${API_BASE_URL}/detect-object`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -107,7 +107,7 @@ export const detectObjectInImage = async (base64Image: string, mimeType: string,
     return handleResponse(response);
 };
 
-export const executePythonOnText = async (logText: string, script: string, provider: 'gemini' | 'openai'): Promise<string> => {
+export const executePythonOnText = async (logText: string, script: string, provider: 'gemini' | 'openai' | 'python'): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/execute-python`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -117,7 +117,7 @@ export const executePythonOnText = async (logText: string, script: string, provi
     return data.output;
 };
 
-export const findLogPatterns = async (logs: LogEntry[], provider: 'gemini' | 'openai'): Promise<LogPattern[]> => {
+export const findLogPatterns = async (logs: LogEntry[], provider: 'gemini' | 'openai' | 'python'): Promise<LogPattern[]> => {
     const response = await fetch(`${API_BASE_URL}/find-patterns`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -126,7 +126,7 @@ export const findLogPatterns = async (logs: LogEntry[], provider: 'gemini' | 'op
     return handleResponse(response);
 };
 
-export const generateRemediationPlaybook = async (targetLog: LogEntry, provider: 'gemini' | 'openai'): Promise<AiPlaybook> => {
+export const generateRemediationPlaybook = async (targetLog: LogEntry, provider: 'gemini' | 'openai' | 'python'): Promise<AiPlaybook> => {
     const response = await fetch(`${API_BASE_URL}/generate-playbook`, {
         method: 'POST',
         headers: getAuthHeaders(),

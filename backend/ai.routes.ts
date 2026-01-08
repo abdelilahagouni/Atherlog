@@ -103,7 +103,7 @@ router.get('/status', (req: express.Request, res: express.Response) => {
 router.use(protect);
 
 router.post('/explain', async (req: express.Request, res: express.Response) => {
-    const { logEntry, provider } = req.body as { logEntry: LogEntry, provider: 'gemini' | 'openai' };
+    const { logEntry, provider } = req.body as { logEntry: LogEntry, provider: 'gemini' | 'openai' | 'python' };
 
     if (!logEntry) {
         return res.status(400).json({ message: "logEntry is required." });
@@ -125,6 +125,16 @@ router.post('/explain', async (req: express.Request, res: express.Response) => {
                 contents: prompt
             });
             explanation = response.text || 'No explanation was returned from the Gemini API.';
+        } else if (provider === 'python') {
+            const pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+            const response = await fetch(`${pythonServiceUrl}/explain`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ logEntry })
+            });
+            if (!response.ok) throw new Error(`Python service error: ${response.statusText}`);
+            const data = await response.json();
+            explanation = data.explanation;
         } else {
             return res.status(400).json({ message: `Provider ${provider} is not configured or available.` });
         }
@@ -136,7 +146,7 @@ router.post('/explain', async (req: express.Request, res: express.Response) => {
 
 
 router.post('/generate-filters', async (req: express.Request, res: express.Response) => {
-    const { query, provider } = req.body;
+    const { query, provider } = req.body as { query: string, provider: 'gemini' | 'openai' | 'python' };
     if (!query) {
         return res.status(400).json({ message: "Query is required." });
     }
@@ -196,6 +206,16 @@ router.post('/chat', async (req: express.Request, res: express.Response) => {
             const chat = ai.chats.create({ model: 'gemini-1.5-flash' });
             const response = await chat.sendMessage({ message });
             reply = response.text || 'I am unable to respond right now.';
+        } else if (provider === 'python') {
+            const pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+            const response = await fetch(`${pythonServiceUrl}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ history, message })
+            });
+            if (!response.ok) throw new Error(`Python service error: ${response.statusText}`);
+            const data = await response.json();
+            reply = data.reply;
         } else {
             return res.status(400).json({ message: `Provider ${provider} is not configured or available.` });
         }
@@ -311,46 +331,46 @@ router.post('/edit-image', async (req: express.Request, res: express.Response) =
 });
 
 router.post('/generate-flowchart', (req: express.Request, res: express.Response) => res.json(mockFlowchart));
-router.post('/root-cause-analysis', (req: express.Request, res: express.Response) => res.json(mockRca));
-router.post('/detect-object', (req: express.Request, res: express.Response) => res.json({ name: "Laptop", description: "A portable computer with a hinged screen.", confidence: 92.5, emoji: "💻" }));
-router.post('/execute-python', async (req: express.Request, res: express.Response) => {
-    const { script, input } = req.body;
-    // In a real scenario, we might pass the script name or specific parameters
-    // For this integration, we'll call the /predict endpoint of our Python service
-    
-    let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
-    if (!pythonServiceUrl.startsWith('http')) {
-        pythonServiceUrl = `http://${pythonServiceUrl}`;
-    }
-    
-    try {
-        const response = await fetch(`${pythonServiceUrl}/predict`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input: input || 10 }) // Default input if missing
-        });
 
-        if (!response.ok) {
-            throw new Error(`Python service returned ${response.status}: ${response.statusText}`);
+router.post('/root-cause-analysis', async (req: express.Request, res: express.Response) => {
+    const { targetLog, logHistory, provider } = req.body;
+    if (provider === 'python') {
+        try {
+            const pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+            const response = await fetch(`${pythonServiceUrl}/rca`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetLog, logHistory })
+            });
+            if (!response.ok) throw new Error(`Python service error: ${response.statusText}`);
+            const data = await response.json();
+            return res.json(data);
+        } catch (error: any) {
+            return res.status(503).json({ message: "Python service unavailable", error: error.message });
         }
-
-        const data = await response.json();
-        res.json({ 
-            output: "Python execution successful", 
-            result: data,
-            serviceUrl: pythonServiceUrl
-        });
-    } catch (error: any) {
-        console.error("Failed to call Python service:", error);
-        res.status(503).json({ 
-            message: "Python service unavailable", 
-            error: error.message,
-            hint: "Ensure python-service is running and accessible."
-        });
     }
+    res.json(mockRca);
 });
-router.post('/find-patterns', (req: express.Request, res: express.Response) => res.json([{ id: 'p1', title: 'DB Connection Timeout', type: 'Causal', description: 'A recurring pattern where `db-replicator` logs a timeout error, followed by `api-gateway` logging 503 Service Unavailable errors.', exampleLogIds: [] }]));
-router.post('/generate-playbook', (req: express.Request, res: express.Response) => res.json({ title: "Database Connection Failure", summary: "This playbook outlines steps to diagnose and resolve a database connection failure originating from the user-service.", severity: 4, triageSteps: [{ step: 1, action: "Check the status of the PostgreSQL container.", command: "docker ps | grep postgres-db" },{ step: 2, action: "Tail the logs of the user-service to look for specific connection error messages.", command: "docker logs -f ai-log-analyzer-backend" },{ step: 3, action: "Attempt to connect to the database directly from the backend container to rule out network issues.", command: "docker exec -it ai-log-analyzer-backend psql -h postgres-db -U admin -d ailoganalyzer" }], escalationPath: "If the database is down and cannot be restarted, escalate to the on-call SRE."}));
+
+router.post('/generate-playbook', async (req: express.Request, res: express.Response) => {
+    const { targetLog, provider } = req.body;
+    if (provider === 'python') {
+        try {
+            const pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+            const response = await fetch(`${pythonServiceUrl}/playbook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetLog })
+            });
+            if (!response.ok) throw new Error(`Python service error: ${response.statusText}`);
+            const data = await response.json();
+            return res.json(data);
+        } catch (error: any) {
+            return res.status(503).json({ message: "Python service unavailable", error: error.message });
+        }
+    }
+    res.json({ title: "Database Connection Failure", summary: "This playbook outlines steps to diagnose and resolve a database connection failure originating from the user-service.", severity: 4, triageSteps: [{ step: 1, action: "Check the status of the PostgreSQL container.", command: "docker ps | grep postgres-db" },{ step: 2, action: "Tail the logs of the user-service to look for specific connection error messages.", command: "docker logs -f ai-log-analyzer-backend" },{ step: 3, action: "Attempt to connect to the database directly from the backend container to rule out network issues.", command: "docker exec -it ai-log-analyzer-backend psql -h postgres-db -U admin -d ailoganalyzer" }], escalationPath: "If the database is down and cannot be restarted, escalate to the on-call SRE."});
+});
 router.post('/discover-insights', (req: express.Request, res: express.Response) => res.json([{id: 'd1', type: 'NEW_ERROR', title: 'New Error Type Detected', summary: "A `NullPointerException` has been observed for the first time in `user-service`.", implication: "This could indicate a new unhandled edge case in user profile retrieval, potentially impacting user sessions.", investigationFilters: { keyword: "NullPointerException", source: "user-service", level: "ERROR" }}]));
 
 export default router;
