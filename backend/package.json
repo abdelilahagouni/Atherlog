@@ -21,7 +21,8 @@
     "nodemailer": "^6.9.7",
     "openai": "^4.52.7",
     "pg": "^8.12.0",
-    "twilio": "^4.19.0"
+    "twilio": "^4.19.0",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",

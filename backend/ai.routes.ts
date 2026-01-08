@@ -4,6 +4,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from 'openai';
 import { protect } from './auth.routes';
 import { LogEntry, LogLevel } from './types';
+import fetch from 'node-fetch';
 
 const router = express.Router();
 
@@ -133,7 +134,7 @@ router.post('/explain', async (req: express.Request, res: express.Response) => {
                 body: JSON.stringify({ logEntry })
             });
             if (!response.ok) throw new Error(`Python service error: ${response.statusText}`);
-            const data = await response.json();
+            const data = await response.json() as any;
             explanation = data.explanation;
         } else {
             return res.status(400).json({ message: `Provider ${provider} is not configured or available.` });
@@ -214,7 +215,7 @@ router.post('/chat', async (req: express.Request, res: express.Response) => {
                 body: JSON.stringify({ history, message })
             });
             if (!response.ok) throw new Error(`Python service error: ${response.statusText}`);
-            const data = await response.json();
+            const data = await response.json() as any;
             reply = data.reply;
         } else {
             return res.status(400).json({ message: `Provider ${provider} is not configured or available.` });
@@ -372,5 +373,36 @@ router.post('/generate-playbook', async (req: express.Request, res: express.Resp
     res.json({ title: "Database Connection Failure", summary: "This playbook outlines steps to diagnose and resolve a database connection failure originating from the user-service.", severity: 4, triageSteps: [{ step: 1, action: "Check the status of the PostgreSQL container.", command: "docker ps | grep postgres-db" },{ step: 2, action: "Tail the logs of the user-service to look for specific connection error messages.", command: "docker logs -f ai-log-analyzer-backend" },{ step: 3, action: "Attempt to connect to the database directly from the backend container to rule out network issues.", command: "docker exec -it ai-log-analyzer-backend psql -h postgres-db -U admin -d ailoganalyzer" }], escalationPath: "If the database is down and cannot be restarted, escalate to the on-call SRE."});
 });
 router.post('/discover-insights', (req: express.Request, res: express.Response) => res.json([{id: 'd1', type: 'NEW_ERROR', title: 'New Error Type Detected', summary: "A `NullPointerException` has been observed for the first time in `user-service`.", implication: "This could indicate a new unhandled edge case in user profile retrieval, potentially impacting user sessions.", investigationFilters: { keyword: "NullPointerException", source: "user-service", level: "ERROR" }}]));
+
+router.post('/execute-python', async (req: express.Request, res: express.Response) => {
+    const { script, input } = req.body;
+    let pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+    
+    try {
+        const response = await fetch(`${pythonServiceUrl}/predict`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: input || [] })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Python service returned ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        res.json({ 
+            output: "Python execution successful", 
+            result: data,
+            serviceUrl: pythonServiceUrl
+        });
+    } catch (error: any) {
+        console.error("Failed to call Python service:", error);
+        res.status(503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            hint: "Ensure python-service is running and accessible."
+        });
+    }
+});
 
 export default router;
