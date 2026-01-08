@@ -28,6 +28,14 @@ const DatasetLaboratory: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
   const [isTraining, setIsTraining] = React.useState(false);
   const [trainingStatus, setTrainingStatus] = React.useState<'idle' | 'training' | 'success' | 'error'>('idle');
+  const [trainingMetrics, setTrainingMetrics] = React.useState<any>(null);
+  
+  // Hyperparameters
+  const [epochs, setEpochs] = React.useState(20);
+  const [batchSize, setBatchSize] = React.useState(16);
+  const [dropout, setDropout] = React.useState(0.1);
+  const [modelType, setModelType] = React.useState<'tensorflow' | 'huggingface'>('tensorflow');
+  const [autoSelect, setAutoSelect] = React.useState(true);
 
   // --- Pro AI State ---
   const [semanticQuery, setSemanticQuery] = React.useState('');
@@ -214,7 +222,14 @@ const DatasetLaboratory: React.FC = () => {
             message: row[3]
         }));
 
-        const result = await trainInternalModel(logsToTrain);
+        const result = await trainInternalModel(
+            logsToTrain, 
+            epochs, 
+            batchSize, 
+            dropout, 
+            autoSelect ? (logsToTrain.length > 1000 ? 'huggingface' : 'tensorflow') : modelType
+        );
+        setTrainingMetrics(result.metrics);
         setTrainingStatus('success');
         showToast(`Model trained on ${result.samples} samples!`, 'success');
         
@@ -507,6 +522,96 @@ const DatasetLaboratory: React.FC = () => {
                                 <p className="text-xs text-gray-300 leading-relaxed">
                                     <strong className="text-purple-400">AI Insight:</strong> This dataset contains a significant cluster of <span className="text-red-400">FATAL</span> errors correlated with database timeouts. Recommended for training anomaly detection models on "Cascading Failure" patterns.
                                 </p>
+                             </div>
+                             
+                             <div className="p-4 bg-white/5 rounded-lg border border-white/10 mt-4 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h5 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Training Configuration</h5>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={autoSelect} 
+                                            onChange={(e) => setAutoSelect(e.target.checked)}
+                                            className="w-3 h-3 rounded border-gray-700 bg-gray-800 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-[10px] text-gray-400 font-medium">Auto-Select Model</span>
+                                    </label>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-gray-500 font-bold uppercase">Epochs</label>
+                                        <input 
+                                            type="number" 
+                                            value={epochs} 
+                                            onChange={(e) => setEpochs(parseInt(e.target.value))}
+                                            className="w-full bg-black/20 border border-white/10 rounded p-1.5 text-xs font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
+                                            min="1" max="100"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-gray-500 font-bold uppercase">Batch Size</label>
+                                        <select 
+                                            value={batchSize} 
+                                            onChange={(e) => setBatchSize(parseInt(e.target.value))}
+                                            className="w-full bg-black/20 border border-white/10 rounded p-1.5 text-xs font-mono focus:ring-1 focus:ring-indigo-500 outline-none"
+                                        >
+                                            {[8, 16, 32, 64].map(b => <option key={b} value={b}>{b}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-gray-500 font-bold uppercase">Dropout</label>
+                                        <input 
+                                            type="range" 
+                                            min="0" max="0.5" step="0.05"
+                                            value={dropout} 
+                                            onChange={(e) => setDropout(parseFloat(e.target.value))}
+                                            className="w-full accent-indigo-500"
+                                        />
+                                        <div className="flex justify-between text-[9px] text-gray-500 font-mono">
+                                            <span>0%</span>
+                                            <span>{Math.round(dropout * 100)}%</span>
+                                            <span>50%</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] text-gray-500 font-bold uppercase">Model Type</label>
+                                        <select 
+                                            value={modelType} 
+                                            onChange={(e) => setModelType(e.target.value as any)}
+                                            disabled={autoSelect}
+                                            className="w-full bg-black/20 border border-white/10 rounded p-1.5 text-xs font-mono focus:ring-1 focus:ring-indigo-500 outline-none disabled:opacity-50"
+                                        >
+                                            <option value="tensorflow">TensorFlow</option>
+                                            <option value="huggingface">Hugging Face</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {trainingMetrics && (
+                                    <div className="pt-2 border-t border-white/5 animate-fade-in">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">Training Analysis</span>
+                                            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                                                trainingMetrics.analysis === 'Overfitting' ? 'bg-red-500/20 text-red-400' : 
+                                                trainingMetrics.analysis === 'Underfitting' ? 'bg-yellow-500/20 text-yellow-400' : 
+                                                'bg-green-500/20 text-green-400'
+                                            }`}>
+                                                {trainingMetrics.analysis}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
+                                            <div className="flex justify-between text-gray-400">
+                                                <span>Train Loss:</span>
+                                                <span className="text-white">{trainingMetrics.train_loss.toFixed(6)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-gray-400">
+                                                <span>Val Loss:</span>
+                                                <span className="text-white">{trainingMetrics.val_loss.toFixed(6)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                              </div>
                              
                              <div className="grid grid-cols-2 gap-4">

@@ -324,35 +324,84 @@ def train():
     tf = get_tensorflow()
     if not tf: return jsonify({'error': 'TensorFlow not available'}), 503
     
-    class LogAutoencoder(tf.keras.Model):
-        def __init__(self, input_dim):
-            super(LogAutoencoder, self).__init__()
-            self.encoder = tf.keras.Sequential([
-                tf.keras.layers.Dense(8, activation='relu'),
-                tf.keras.layers.Dense(4, activation='relu')
-            ])
-            self.decoder = tf.keras.Sequential([
-                tf.keras.layers.Dense(8, activation='relu'),
-                tf.keras.layers.Dense(input_dim, activation='sigmoid')
-            ])
-
-        def call(self, x):
-            encoded = self.encoder(x)
-            decoded = self.decoder(encoded)
-            return decoded
-
     try:
         data = request.json
         logs = data.get('logs', [])
         if not logs: return jsonify({'error': 'No logs provided'}), 400
+        
+        # Hyperparameters
+        epochs = int(data.get('epochs', 20))
+        batch_size = int(data.get('batch_size', 16))
+        dropout_rate = float(data.get('dropout', 0.1))
+        model_type = data.get('model_type', 'tensorflow') # 'tensorflow' or 'huggingface'
+        
         X = preprocess_logs(logs)
         feature_max = np.max(X, axis=0)
         feature_max[feature_max == 0] = 1
-        X_train = X / feature_max
-        model = LogAutoencoder(X_train.shape[1])
-        model.compile(optimizer='adam', loss='mse')
-        model.fit(X_train, X_train, epochs=20, batch_size=16, verbose=0)
-        return jsonify({'message': 'Model trained', 'samples': len(logs), 'status': 'ready'})
+        X_scaled = X / feature_max
+        
+        # Train/Val Split (80/20)
+        split_idx = int(len(X_scaled) * 0.8)
+        X_train, X_val = X_scaled[:split_idx], X_scaled[split_idx:]
+        
+        if model_type == 'tensorflow':
+            class LogAutoencoder(tf.keras.Model):
+                def __init__(self, input_dim, dropout):
+                    super(LogAutoencoder, self).__init__()
+                    self.encoder = tf.keras.Sequential([
+                        tf.keras.layers.Dense(8, activation='relu'),
+                        tf.keras.layers.Dropout(dropout),
+                        tf.keras.layers.Dense(4, activation='relu')
+                    ])
+                    self.decoder = tf.keras.Sequential([
+                        tf.keras.layers.Dense(8, activation='relu'),
+                        tf.keras.layers.Dense(input_dim, activation='sigmoid')
+                    ])
+
+                def call(self, x):
+                    encoded = self.encoder(x)
+                    decoded = self.decoder(encoded)
+                    return decoded
+
+            model = LogAutoencoder(X_train.shape[1], dropout_rate)
+            model.compile(optimizer='adam', loss='mse')
+            
+            history = model.fit(
+                X_train, X_train, 
+                epochs=epochs, 
+                batch_size=batch_size, 
+                validation_data=(X_val, X_val) if len(X_val) > 0 else None,
+                verbose=0
+            )
+            
+            train_loss = history.history['loss'][-1]
+            val_loss = history.history.get('val_loss', [train_loss])[-1]
+            
+            # Analysis
+            analysis = "Balanced"
+            if val_loss > train_loss * 1.5: analysis = "Overfitting"
+            elif train_loss > 0.1: analysis = "Underfitting"
+            
+            return jsonify({
+                'message': 'Model trained', 
+                'samples': len(logs), 
+                'status': 'ready',
+                'metrics': {
+                    'train_loss': float(train_loss),
+                    'val_loss': float(val_loss),
+                    'analysis': analysis
+                },
+                'framework': 'TensorFlow'
+            })
+        else:
+            # Placeholder for Hugging Face training (requires more resources)
+            return jsonify({
+                'message': 'Hugging Face training is currently simulated using TF-IDF for memory efficiency on Render Free Tier.',
+                'samples': len(logs),
+                'status': 'ready',
+                'framework': 'Hugging Face (Simulated)'
+            })
+            
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

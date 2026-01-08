@@ -142,11 +142,23 @@ export const discoverInsights = async (logs: LogEntry[]): Promise<AiDiscovery[]>
     return handleResponse(response);
 };
 
-export const trainInternalModel = async (logs: LogEntry[]): Promise<{ message: string, samples: number, status: string }> => {
+export const trainInternalModel = async (
+    logs: LogEntry[], 
+    epochs: number = 20, 
+    batch_size: number = 16, 
+    dropout: number = 0.1, 
+    model_type: string = 'tensorflow'
+): Promise<{ 
+    message: string, 
+    samples: number, 
+    status: string, 
+    metrics?: { train_loss: number, val_loss: number, analysis: string },
+    framework: string 
+}> => {
     const response = await fetch(`${API_BASE_URL}/train`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ logs }),
+        body: JSON.stringify({ logs, epochs, batch_size, dropout, model_type }),
     });
     return handleResponse(response);
 };

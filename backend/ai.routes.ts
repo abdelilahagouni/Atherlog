@@ -482,7 +482,7 @@ router.get('/check-python', async (req, res) => {
 });
 
 router.post('/train', async (req: express.Request, res: express.Response) => {
-    const { logs } = req.body;
+    const { logs, epochs, batch_size, dropout, model_type } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     console.log(`Calling Python service (train) at: ${pythonServiceUrl}/train`);
 
@@ -493,7 +493,7 @@ router.post('/train', async (req: express.Request, res: express.Response) => {
         const response = await fetch(`${pythonServiceUrl}/train`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logs }),
+            body: JSON.stringify({ logs, epochs, batch_size, dropout, model_type }),
             signal: controller.signal
         });
         clearTimeout(timeout);
