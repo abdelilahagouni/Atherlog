@@ -4,6 +4,7 @@ services:
     name: aetherlog-backend
     env: docker
     dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
     plan: free
     envVars:
       - key: PORT
