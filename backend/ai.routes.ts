@@ -428,16 +428,24 @@ router.post('/execute-python', async (req: express.Request, res: express.Respons
             serviceUrl: pythonServiceUrl
         });
     } catch (error: any) {
-        console.error(`[AI] Failed to call Python service at ${req.path}:`, {
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
             message: error.message,
             code: error.code,
-            url: getPythonServiceUrl()
+            url: pythonServiceUrl
         });
-        res.status(503).json({ 
+        
+        // If it's a timeout or connection error, provide a helpful hint
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
             message: "Python service unavailable", 
             error: error.message,
-            code: error.code,
-            hint: "Ensure python-service is running and accessible."
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
         });
     }
 });
@@ -499,16 +507,24 @@ router.post('/train', async (req: express.Request, res: express.Response) => {
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        console.error(`[AI] Failed to call Python service at ${req.path}:`, {
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
             message: error.message,
             code: error.code,
-            url: getPythonServiceUrl()
+            url: pythonServiceUrl
         });
-        res.status(503).json({ 
+        
+        // If it's a timeout or connection error, provide a helpful hint
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
             message: "Python service unavailable", 
             error: error.message,
-            code: error.code,
-            hint: "Ensure python-service is running and accessible."
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
         });
     }
 });
@@ -531,18 +547,40 @@ router.post('/semantic-search', async (req: express.Request, res: express.Respon
         clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
-            let errorMessage = "Python service error";
+            console.error(`[AI] Python service returned error ${response.status} at ${req.path}:`, errorText);
+            let data;
             try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+                data = JSON.parse(errorText);
             } catch (e) {}
-            return res.status(response.status).json({ message: errorMessage, error: errorText });
+            
+            return res.status(response.status).json({
+                message: data?.message || data?.error || "Python service error",
+                error: errorText,
+                code: `PYTHON_ERROR_${response.status}`,
+                hint: "Check Python service logs on Render."
+            });
         }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        res.status(503).json({ message: "Python service unavailable", error: error.message });
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: pythonServiceUrl
+        });
+        
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
+        });
     }
 });
 
@@ -562,18 +600,40 @@ router.post('/cluster', async (req: express.Request, res: express.Response) => {
         clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
-            let errorMessage = "Python service error";
+            console.error(`[AI] Python service returned error ${response.status} at ${req.path}:`, errorText);
+            let data;
             try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+                data = JSON.parse(errorText);
             } catch (e) {}
-            return res.status(response.status).json({ message: errorMessage, error: errorText });
+            
+            return res.status(response.status).json({
+                message: data?.message || data?.error || "Python service error",
+                error: errorText,
+                code: `PYTHON_ERROR_${response.status}`,
+                hint: "Check Python service logs on Render."
+            });
         }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        res.status(503).json({ message: "Python service unavailable", error: error.message });
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: pythonServiceUrl
+        });
+        
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
+        });
     }
 });
 
@@ -593,18 +653,40 @@ router.post('/urgency', async (req: express.Request, res: express.Response) => {
         clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
-            let errorMessage = "Python service error";
+            console.error(`[AI] Python service returned error ${response.status} at ${req.path}:`, errorText);
+            let data;
             try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+                data = JSON.parse(errorText);
             } catch (e) {}
-            return res.status(response.status).json({ message: errorMessage, error: errorText });
+            
+            return res.status(response.status).json({
+                message: data?.message || data?.error || "Python service error",
+                error: errorText,
+                code: `PYTHON_ERROR_${response.status}`,
+                hint: "Check Python service logs on Render."
+            });
         }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        res.status(503).json({ message: "Python service unavailable", error: error.message });
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: pythonServiceUrl
+        });
+        
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
+        });
     }
 });
 
@@ -624,18 +706,40 @@ router.post('/forecast', async (req: express.Request, res: express.Response) => 
         clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
-            let errorMessage = "Python service error";
+            console.error(`[AI] Python service returned error ${response.status} at ${req.path}:`, errorText);
+            let data;
             try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+                data = JSON.parse(errorText);
             } catch (e) {}
-            return res.status(response.status).json({ message: errorMessage, error: errorText });
+            
+            return res.status(response.status).json({
+                message: data?.message || data?.error || "Python service error",
+                error: errorText,
+                code: `PYTHON_ERROR_${response.status}`,
+                hint: "Check Python service logs on Render."
+            });
         }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        res.status(503).json({ message: "Python service unavailable", error: error.message });
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: pythonServiceUrl
+        });
+        
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
+        });
     }
 });
 
@@ -655,18 +759,40 @@ router.post('/attribute', async (req: express.Request, res: express.Response) =>
         clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
-            let errorMessage = "Python service error";
+            console.error(`[AI] Python service returned error ${response.status} at ${req.path}:`, errorText);
+            let data;
             try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+                data = JSON.parse(errorText);
             } catch (e) {}
-            return res.status(response.status).json({ message: errorMessage, error: errorText });
+            
+            return res.status(response.status).json({
+                message: data?.message || data?.error || "Python service error",
+                error: errorText,
+                code: `PYTHON_ERROR_${response.status}`,
+                hint: "Check Python service logs on Render."
+            });
         }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        res.status(503).json({ message: "Python service unavailable", error: error.message });
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: pythonServiceUrl
+        });
+        
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
+        });
     }
 });
 
@@ -686,18 +812,40 @@ router.post('/tag', async (req: express.Request, res: express.Response) => {
         clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
-            let errorMessage = "Python service error";
+            console.error(`[AI] Python service returned error ${response.status} at ${req.path}:`, errorText);
+            let data;
             try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+                data = JSON.parse(errorText);
             } catch (e) {}
-            return res.status(response.status).json({ message: errorMessage, error: errorText });
+            
+            return res.status(response.status).json({
+                message: data?.message || data?.error || "Python service error",
+                error: errorText,
+                code: `PYTHON_ERROR_${response.status}`,
+                hint: "Check Python service logs on Render."
+            });
         }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        res.status(503).json({ message: "Python service unavailable", error: error.message });
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: pythonServiceUrl
+        });
+        
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
+        });
     }
 });
 
@@ -717,18 +865,40 @@ router.post('/health-score', async (req: express.Request, res: express.Response)
         clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
-            let errorMessage = "Python service error";
+            console.error(`[AI] Python service returned error ${response.status} at ${req.path}:`, errorText);
+            let data;
             try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+                data = JSON.parse(errorText);
             } catch (e) {}
-            return res.status(response.status).json({ message: errorMessage, error: errorText });
+            
+            return res.status(response.status).json({
+                message: data?.message || data?.error || "Python service error",
+                error: errorText,
+                code: `PYTHON_ERROR_${response.status}`,
+                hint: "Check Python service logs on Render."
+            });
         }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        res.status(503).json({ message: "Python service unavailable", error: error.message });
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: pythonServiceUrl
+        });
+        
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
+        });
     }
 });
 
@@ -748,18 +918,40 @@ router.post('/dependency-map', async (req: express.Request, res: express.Respons
         clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
-            let errorMessage = "Python service error";
+            console.error(`[AI] Python service returned error ${response.status} at ${req.path}:`, errorText);
+            let data;
             try {
-                const errorJson = JSON.parse(errorText);
-                if (errorJson.error) errorMessage = `Python Error: ${errorJson.error}`;
+                data = JSON.parse(errorText);
             } catch (e) {}
-            return res.status(response.status).json({ message: errorMessage, error: errorText });
+            
+            return res.status(response.status).json({
+                message: data?.message || data?.error || "Python service error",
+                error: errorText,
+                code: `PYTHON_ERROR_${response.status}`,
+                hint: "Check Python service logs on Render."
+            });
         }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
-        res.status(503).json({ message: "Python service unavailable", error: error.message });
+        const pythonServiceUrl = getPythonServiceUrl();
+        console.error(`[AI] Error in ${req.path}:`, {
+            message: error.message,
+            code: error.code,
+            url: pythonServiceUrl
+        });
+        
+        let hint = "Ensure python-service is running and accessible.";
+        if (error.name === 'AbortError') hint = "Python service took too long to respond (Cold Start). Try again in 30 seconds.";
+        if (error.code === 'ECONNREFUSED') hint = "Connection refused. The Python service might be down or starting up.";
+        
+        res.status(error.status || 503).json({ 
+            message: "Python service unavailable", 
+            error: error.message,
+            code: error.code || `HTTP_${error.status || 503}`,
+            hint: hint,
+            url: pythonServiceUrl
+        });
     }
 });
 
