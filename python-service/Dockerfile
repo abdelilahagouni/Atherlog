@@ -19,4 +19,5 @@ ENV PORT=5000
 
 # Use Gunicorn with a timeout to allow for slow TF startup
 # Bind to 0.0.0.0:$PORT
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
+# Reduced workers and threads to stay within 512MB RAM on Render Free Tier
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 2 --timeout 120 app:app

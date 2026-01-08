@@ -1,23 +1,41 @@
 import os
 from flask import Flask, request, jsonify
-import tensorflow as tf
 import numpy as np
-from sklearn.cluster import KMeans
-from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 from datetime import datetime, timedelta
 
-# Optional: Hugging Face for Semantic Search
-try:
-    from transformers import pipeline
-    # Use a very small model to fit in Render Free Tier
-    nlp_model = pipeline("feature-extraction", model="prajjwal1/bert-tiny")
-    HAS_TRANSFORMERS = True
-except Exception as e:
-    print(f"Transformers not available: {e}")
-    HAS_TRANSFORMERS = False
+# Lazy loading flags
+HAS_TRANSFORMERS = False
+HAS_TENSORFLOW = False
+
+def get_transformers():
+    global HAS_TRANSFORMERS
+    try:
+        from transformers import pipeline
+        # Use a very small model to fit in Render Free Tier
+        model = pipeline("feature-extraction", model="prajjwal1/bert-tiny")
+        HAS_TRANSFORMERS = True
+        return model
+    except Exception as e:
+        print(f"Transformers not available: {e}")
+        return None
+
+def get_tensorflow():
+    global HAS_TENSORFLOW
+    try:
+        import tensorflow as tf
+        HAS_TENSORFLOW = True
+        return tf
+    except Exception as e:
+        print(f"TensorFlow not available: {e}")
+        return None
 
 app = Flask(__name__)
+
+# Global model state
+model = None
+feature_max = None
+nlp_model = None # Lazy loaded
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -32,6 +50,7 @@ def health_check():
 @app.route('/semantic-search', methods=['POST'])
 def semantic_search():
     try:
+        global nlp_model
         data = request.json
         query = data.get('query', '')
         logs = data.get('logs', [])
@@ -41,11 +60,13 @@ def semantic_search():
 
         messages = [log.get('message', '') for log in logs]
         
-        # Fallback to TF-IDF if transformers are too slow/heavy
+        # Fallback to TF-IDF (always used for speed/memory unless transformers are explicitly requested)
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+        
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform(messages + [query])
         
-        from sklearn.metrics.pairwise import cosine_similarity
         scores = cosine_similarity(tfidf_matrix[-1:], tfidf_matrix[:-1])[0]
         
         results = []
@@ -64,6 +85,9 @@ def semantic_search():
 @app.route('/cluster', methods=['POST'])
 def cluster_logs():
     try:
+        from sklearn.cluster import KMeans
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        
         data = request.json
         logs = data.get('logs', [])
         if len(logs) < 3:
@@ -271,22 +295,7 @@ def get_timeline():
 
 # --- Existing Advanced AI: Autoencoder ---
 
-class LogAutoencoder(tf.keras.Model):
-    def __init__(self, input_dim):
-        super(LogAutoencoder, self).__init__()
-        self.encoder = tf.keras.Sequential([
-            tf.keras.layers.Dense(8, activation='relu'),
-            tf.keras.layers.Dense(4, activation='relu')
-        ])
-        self.decoder = tf.keras.Sequential([
-            tf.keras.layers.Dense(8, activation='relu'),
-            tf.keras.layers.Dense(input_dim, activation='sigmoid')
-        ])
-
-    def call(self, x):
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-        return decoded
+# LogAutoencoder class moved inside train() for lazy TF loading
 
 model = None
 feature_max = None
@@ -305,6 +314,26 @@ def preprocess_logs(logs):
 @app.route('/train', methods=['POST'])
 def train():
     global model, feature_max
+    tf = get_tensorflow()
+    if not tf: return jsonify({'error': 'TensorFlow not available'}), 503
+    
+    class LogAutoencoder(tf.keras.Model):
+        def __init__(self, input_dim):
+            super(LogAutoencoder, self).__init__()
+            self.encoder = tf.keras.Sequential([
+                tf.keras.layers.Dense(8, activation='relu'),
+                tf.keras.layers.Dense(4, activation='relu')
+            ])
+            self.decoder = tf.keras.Sequential([
+                tf.keras.layers.Dense(8, activation='relu'),
+                tf.keras.layers.Dense(input_dim, activation='sigmoid')
+            ])
+
+        def call(self, x):
+            encoded = self.encoder(x)
+            decoded = self.decoder(encoded)
+            return decoded
+
     try:
         data = request.json
         logs = data.get('logs', [])

@@ -88,23 +88,27 @@ const handleAiError = (e: any, res: express.Response) => {
 };
 
 const getPythonServiceUrl = () => {
-    let url = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+    // Default to localhost:5000 for local development if not specified
+    let url = process.env.PYTHON_SERVICE_URL || 'http://localhost:5000';
     if (!url.startsWith('http')) {
         url = `http://${url}`;
     }
-    return url.replace(/\/$/, '');
+    const finalUrl = url.replace(/\/$/, '');
+    return finalUrl;
 };
 
 
 // GET /api/ai/status
 router.get('/status', (req: express.Request, res: express.Response) => {
-    // In a real app, this might ping the APIs to check for validity/quota.
-    // For this demo, we just check if the keys are present.
+    const pythonServiceUrl = getPythonServiceUrl();
     res.json({
+        status: 'online',
+        pythonServiceUrl,
         geminiConfigured: !!ai,
         openaiConfigured: !!openai,
         geminiStatus: !!ai ? 'ok' : 'not_configured',
         openaiStatus: !!openai ? 'ok' : 'not_configured',
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -469,6 +473,7 @@ router.post('/semantic-search', async (req: express.Request, res: express.Respon
         });
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
             let errorMessage = "Python service error";
             try {
                 const errorJson = JSON.parse(errorText);
@@ -494,6 +499,7 @@ router.post('/cluster', async (req: express.Request, res: express.Response) => {
         });
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
             let errorMessage = "Python service error";
             try {
                 const errorJson = JSON.parse(errorText);
@@ -519,6 +525,7 @@ router.post('/urgency', async (req: express.Request, res: express.Response) => {
         });
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
             let errorMessage = "Python service error";
             try {
                 const errorJson = JSON.parse(errorText);
@@ -544,6 +551,7 @@ router.post('/forecast', async (req: express.Request, res: express.Response) => 
         });
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
             let errorMessage = "Python service error";
             try {
                 const errorJson = JSON.parse(errorText);
@@ -569,6 +577,7 @@ router.post('/attribute', async (req: express.Request, res: express.Response) =>
         });
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
             let errorMessage = "Python service error";
             try {
                 const errorJson = JSON.parse(errorText);
@@ -594,6 +603,7 @@ router.post('/tag', async (req: express.Request, res: express.Response) => {
         });
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
             let errorMessage = "Python service error";
             try {
                 const errorJson = JSON.parse(errorText);
@@ -619,6 +629,7 @@ router.post('/health-score', async (req: express.Request, res: express.Response)
         });
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
             let errorMessage = "Python service error";
             try {
                 const errorJson = JSON.parse(errorText);
@@ -644,6 +655,7 @@ router.post('/dependency-map', async (req: express.Request, res: express.Respons
         });
         if (!response.ok) {
             const errorText = await response.text();
+            console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
             let errorMessage = "Python service error";
             try {
                 const errorJson = JSON.parse(errorText);
