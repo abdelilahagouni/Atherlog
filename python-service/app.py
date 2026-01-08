@@ -39,9 +39,16 @@ nlp_model = None # Lazy loaded
 
 @app.route('/health', methods=['GET'])
 def health_check():
+    tf_version = 'not_loaded'
+    if HAS_TENSORFLOW:
+        try:
+            import tensorflow as tf
+            tf_version = tf.__version__
+        except: pass
+        
     return jsonify({
         'status': 'healthy',
-        'tensorflow_version': tf.__version__,
+        'tensorflow_version': tf_version,
         'has_transformers': HAS_TRANSFORMERS,
         'message': 'Python AI Service is running with Pro Features'
     })

@@ -94,6 +94,7 @@ const getPythonServiceUrl = () => {
         url = `http://${url}`;
     }
     const finalUrl = url.replace(/\/$/, '');
+    console.log(`[AI] Using Python Service URL: ${finalUrl}`);
     return finalUrl;
 };
 
@@ -466,11 +467,16 @@ router.post('/semantic-search', async (req: express.Request, res: express.Respon
     const { query, logs } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/semantic-search`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query, logs })
+            body: JSON.stringify({ query, logs }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
@@ -492,11 +498,16 @@ router.post('/cluster', async (req: express.Request, res: express.Response) => {
     const { logs } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/cluster`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logs })
+            body: JSON.stringify({ logs }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
@@ -518,11 +529,16 @@ router.post('/urgency', async (req: express.Request, res: express.Response) => {
     const { log } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/urgency`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ log })
+            body: JSON.stringify({ log }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
@@ -544,11 +560,16 @@ router.post('/forecast', async (req: express.Request, res: express.Response) => 
     const { history } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/forecast`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ history })
+            body: JSON.stringify({ history }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
@@ -570,11 +591,16 @@ router.post('/attribute', async (req: express.Request, res: express.Response) =>
     const { log } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/attribute`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ log })
+            body: JSON.stringify({ log }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
@@ -596,11 +622,16 @@ router.post('/tag', async (req: express.Request, res: express.Response) => {
     const { log } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/tag`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ log })
+            body: JSON.stringify({ log }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
@@ -622,11 +653,16 @@ router.post('/health-score', async (req: express.Request, res: express.Response)
     const { logs } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/health-score`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logs })
+            body: JSON.stringify({ logs }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
@@ -648,11 +684,16 @@ router.post('/dependency-map', async (req: express.Request, res: express.Respons
     const { logs } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/dependency-map`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logs })
+            body: JSON.stringify({ logs }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Python Service Error [${response.status}] at ${req.path}:`, errorText);
@@ -674,11 +715,16 @@ router.post('/timeline', async (req: express.Request, res: express.Response) => 
     const { logs } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+
         const response = await fetch(`${pythonServiceUrl}/timeline`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logs })
+            body: JSON.stringify({ logs }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
         if (!response.ok) {
             const errorText = await response.text();
             return res.status(response.status).json({ message: "Python service error", error: errorText });
