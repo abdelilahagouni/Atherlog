@@ -127,7 +127,12 @@ router.post('/explain', async (req: express.Request, res: express.Response) => {
             });
             explanation = response.text || 'No explanation was returned from the Gemini API.';
         } else if (provider === 'python') {
-            const pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+            let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+            if (!pythonServiceUrl.startsWith('http')) {
+                pythonServiceUrl = `http://${pythonServiceUrl}`;
+            }
+            pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+            
             const response = await fetch(`${pythonServiceUrl}/explain`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -208,7 +213,12 @@ router.post('/chat', async (req: express.Request, res: express.Response) => {
             const response = await chat.sendMessage({ message });
             reply = response.text || 'I am unable to respond right now.';
         } else if (provider === 'python') {
-            const pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+            let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+            if (!pythonServiceUrl.startsWith('http')) {
+                pythonServiceUrl = `http://${pythonServiceUrl}`;
+            }
+            pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+
             const response = await fetch(`${pythonServiceUrl}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -337,7 +347,12 @@ router.post('/root-cause-analysis', async (req: express.Request, res: express.Re
     const { targetLog, logHistory, provider } = req.body;
     if (provider === 'python') {
         try {
-            const pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+            let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+            if (!pythonServiceUrl.startsWith('http')) {
+                pythonServiceUrl = `http://${pythonServiceUrl}`;
+            }
+            pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+
             const response = await fetch(`${pythonServiceUrl}/rca`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -357,7 +372,12 @@ router.post('/generate-playbook', async (req: express.Request, res: express.Resp
     const { targetLog, provider } = req.body;
     if (provider === 'python') {
         try {
-            const pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+            let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+            if (!pythonServiceUrl.startsWith('http')) {
+                pythonServiceUrl = `http://${pythonServiceUrl}`;
+            }
+            pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+
             const response = await fetch(`${pythonServiceUrl}/playbook`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -376,7 +396,11 @@ router.post('/discover-insights', (req: express.Request, res: express.Response) 
 
 router.post('/execute-python', async (req: express.Request, res: express.Response) => {
     const { script, input } = req.body;
-    let pythonServiceUrl = (process.env.PYTHON_SERVICE_URL || 'http://python-service:5000').replace(/\/$/, '');
+    let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+    if (!pythonServiceUrl.startsWith('http')) {
+        pythonServiceUrl = `http://${pythonServiceUrl}`;
+    }
+    pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
     
     try {
         const response = await fetch(`${pythonServiceUrl}/predict`, {
