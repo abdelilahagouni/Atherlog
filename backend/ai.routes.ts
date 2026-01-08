@@ -318,7 +318,10 @@ router.post('/execute-python', async (req: express.Request, res: express.Respons
     // In a real scenario, we might pass the script name or specific parameters
     // For this integration, we'll call the /predict endpoint of our Python service
     
-    const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+    let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+    if (!pythonServiceUrl.startsWith('http')) {
+        pythonServiceUrl = `http://${pythonServiceUrl}`;
+    }
     
     try {
         const response = await fetch(`${pythonServiceUrl}/predict`, {
