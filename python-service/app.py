@@ -1,7 +1,3 @@
-import os
-from flask import Flask, request, jsonify
-import numpy as np
-import pandas as pd
 from datetime import datetime, timedelta
 
 # Lazy loading flags
@@ -9,16 +5,7 @@ HAS_TRANSFORMERS = False
 HAS_TENSORFLOW = False
 
 def get_transformers():
-    global HAS_TRANSFORMERS
-    try:
-        from transformers import pipeline
-        # Use a very small model to fit in Render Free Tier
-        model = pipeline("feature-extraction", model="prajjwal1/bert-tiny")
-        HAS_TRANSFORMERS = True
-        return model
-    except Exception as e:
-        print(f"Transformers not available: {e}")
-        return None
+    return None
 
 def get_tensorflow():
     global HAS_TENSORFLOW
@@ -108,6 +95,7 @@ def cluster_logs():
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
         clusters = kmeans.fit_predict(X)
         
+        import numpy as np
         result_clusters = []
         for i in range(n_clusters):
             cluster_indices = np.where(clusters == i)[0]
@@ -151,6 +139,8 @@ def classify_urgency():
 @app.route('/forecast', methods=['POST'])
 def forecast_volume():
     try:
+        import pandas as pd
+        import numpy as np
         data = request.json
         history = data.get('history', []) # List of counts per hour
         
@@ -209,6 +199,8 @@ def tag_log():
 @app.route('/health-score', methods=['POST'])
 def system_health():
     try:
+        import pandas as pd
+        import numpy as np
         data = request.json
         logs = data.get('logs', [])
         if not logs: return jsonify({'score': 100})
@@ -234,6 +226,8 @@ def system_health():
 @app.route('/dependency-map', methods=['POST'])
 def dependency_map():
     try:
+        import pandas as pd
+        import numpy as np
         data = request.json
         logs = data.get('logs', [])
         if not logs: return jsonify({"nodes": [], "links": []})
@@ -262,6 +256,8 @@ def dependency_map():
 @app.route('/timeline', methods=['POST'])
 def get_timeline():
     try:
+        import pandas as pd
+        import numpy as np
         data = request.json
         logs = data.get('logs', [])
         if not logs: return jsonify([])
@@ -308,6 +304,7 @@ model = None
 feature_max = None
 
 def preprocess_logs(logs):
+    import numpy as np
     features = []
     level_map = {'DEBUG': 0, 'INFO': 1, 'WARN': 2, 'ERROR': 3, 'FATAL': 4}
     source_map = {'api-gateway': 0, 'user-service': 1, 'db-replicator': 2, 'frontend-logger': 3, 'auth-service': 4}
@@ -321,6 +318,7 @@ def preprocess_logs(logs):
 @app.route('/train', methods=['POST'])
 def train():
     global model, feature_max
+    import numpy as np
     tf = get_tensorflow()
     if not tf: return jsonify({'error': 'TensorFlow not available'}), 503
     
@@ -360,6 +358,7 @@ def train():
 def predict():
     global model, feature_max
     try:
+        import numpy as np
         data = request.json
         logs = data.get('logs', [])
         if not logs: return jsonify({'error': 'No logs provided'}), 400

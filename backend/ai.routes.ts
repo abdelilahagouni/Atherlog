@@ -404,11 +404,16 @@ router.post('/execute-python', async (req: express.Request, res: express.Respons
     
     try {
         const body = input && input.logs ? { logs: input.logs } : { logs: input || [] };
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+
         const response = await fetch(`${pythonServiceUrl}/predict`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
 
         if (!response.ok) {
             const errorBody = await response.text();
@@ -438,11 +443,16 @@ router.post('/train', async (req: express.Request, res: express.Response) => {
     console.log(`Calling Python service (train) at: ${pythonServiceUrl}/train`);
 
     try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+
         const response = await fetch(`${pythonServiceUrl}/train`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logs })
+            body: JSON.stringify({ logs }),
+            signal: controller.signal
         });
+        clearTimeout(timeout);
 
         if (!response.ok) {
             const errorBody = await response.text();
@@ -468,7 +478,7 @@ router.post('/semantic-search', async (req: express.Request, res: express.Respon
     const pythonServiceUrl = getPythonServiceUrl();
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const response = await fetch(`${pythonServiceUrl}/semantic-search`, {
             method: 'POST',
@@ -499,7 +509,7 @@ router.post('/cluster', async (req: express.Request, res: express.Response) => {
     const pythonServiceUrl = getPythonServiceUrl();
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const response = await fetch(`${pythonServiceUrl}/cluster`, {
             method: 'POST',
@@ -530,7 +540,7 @@ router.post('/urgency', async (req: express.Request, res: express.Response) => {
     const pythonServiceUrl = getPythonServiceUrl();
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const response = await fetch(`${pythonServiceUrl}/urgency`, {
             method: 'POST',
@@ -561,7 +571,7 @@ router.post('/forecast', async (req: express.Request, res: express.Response) => 
     const pythonServiceUrl = getPythonServiceUrl();
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const response = await fetch(`${pythonServiceUrl}/forecast`, {
             method: 'POST',
@@ -592,7 +602,7 @@ router.post('/attribute', async (req: express.Request, res: express.Response) =>
     const pythonServiceUrl = getPythonServiceUrl();
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const response = await fetch(`${pythonServiceUrl}/attribute`, {
             method: 'POST',
@@ -623,7 +633,7 @@ router.post('/tag', async (req: express.Request, res: express.Response) => {
     const pythonServiceUrl = getPythonServiceUrl();
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const response = await fetch(`${pythonServiceUrl}/tag`, {
             method: 'POST',
@@ -654,7 +664,7 @@ router.post('/health-score', async (req: express.Request, res: express.Response)
     const pythonServiceUrl = getPythonServiceUrl();
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const response = await fetch(`${pythonServiceUrl}/health-score`, {
             method: 'POST',
@@ -685,7 +695,7 @@ router.post('/dependency-map', async (req: express.Request, res: express.Respons
     const pythonServiceUrl = getPythonServiceUrl();
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 25000);
+        const timeout = setTimeout(() => controller.abort(), 90000);
 
         const response = await fetch(`${pythonServiceUrl}/dependency-map`, {
             method: 'POST',
