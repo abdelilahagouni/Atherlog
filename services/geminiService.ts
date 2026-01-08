@@ -143,3 +143,12 @@ export const discoverInsights = async (logs: LogEntry[]): Promise<AiDiscovery[]>
     });
     return handleResponse(response);
 };
+
+export const trainInternalModel = async (logs: LogEntry[]): Promise<{ message: string, samples: number, status: string }> => {
+    const response = await fetch(`${API_BASE_URL}/train`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ logs }),
+    });
+    return handleResponse(response);
+};

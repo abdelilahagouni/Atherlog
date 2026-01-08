@@ -7,6 +7,7 @@ import { bulkIngestLogs } from '../services/logService';
 import { DatasetMapping, LogLevel } from '../types';
 import { DEMO_DATASET, generateLargeDataset } from '../assets/demo_dataset';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
+import { trainInternalModel } from '../services/geminiService';
 
 const DatasetLaboratory: React.FC = () => {
   const [file, setFile] = React.useState<File | null>(null);
@@ -24,6 +25,8 @@ const DatasetLaboratory: React.FC = () => {
   const [showDemoVisuals, setShowDemoVisuals] = React.useState(false);
   const [aiResult, setAiResult] = React.useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+  const [isTraining, setIsTraining] = React.useState(false);
+  const [trainingStatus, setTrainingStatus] = React.useState<'idle' | 'training' | 'success' | 'error'>('idle');
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
@@ -151,8 +154,13 @@ const DatasetLaboratory: React.FC = () => {
     if (!previewData.length) return;
     setIsAnalyzing(true);
     try {
-        // Extract anomaly scores from preview data (assuming index 4 based on demo data)
-        const scores = previewData.map(row => parseFloat(row[4]) || 0);
+        // Convert preview data back to log objects for the AI
+        const logsToAnalyze = previewData.map(row => ({
+            timestamp: row[0],
+            level: row[1] as LogLevel,
+            source: row[2],
+            message: row[3]
+        }));
         
         const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
         const response = await fetch(`${API_BASE_URL}/api/ai/execute-python`, {
@@ -161,9 +169,14 @@ const DatasetLaboratory: React.FC = () => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` 
             },
-            body: JSON.stringify({ input: scores })
+            body: JSON.stringify({ 
+                script: 'anomaly_detection', 
+                input: { logs: logsToAnalyze } 
+            })
         });
 
+        // The execute-python endpoint returns { output, result, serviceUrl }
+        // Our Python service /predict returns { analysis, model, framework }
         if (!response.ok) throw new Error('AI Analysis failed');
         
         const data = await response.json();
@@ -174,6 +187,30 @@ const DatasetLaboratory: React.FC = () => {
         showToast('Failed to run AI analysis', 'error');
     } finally {
         setIsAnalyzing(false);
+    }
+  };
+
+  const handleTrainModel = async () => {
+    if (!previewData.length) return;
+    setIsTraining(true);
+    setTrainingStatus('training');
+    try {
+        const logsToTrain = previewData.map(row => ({
+            timestamp: row[0],
+            level: row[1] as LogLevel,
+            source: row[2],
+            message: row[3]
+        }));
+
+        const result = await trainInternalModel(logsToTrain);
+        setTrainingStatus('success');
+        showToast(`Model trained on ${result.samples} samples!`, 'success');
+    } catch (err) {
+        console.error(err);
+        setTrainingStatus('error');
+        showToast('Training failed', 'error');
+    } finally {
+        setIsTraining(false);
     }
   };
 
@@ -402,14 +439,27 @@ const DatasetLaboratory: React.FC = () => {
                                 </p>
                              </div>
                              
-                             <button
-                                onClick={handleAiAnalysis}
-                                disabled={isAnalyzing}
-                                className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                             >
-                                {isAnalyzing ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="cpu" className="w-4 h-4" />}
-                                {isAnalyzing ? 'Running TensorFlow Model...' : 'Run Python AI Analysis'}
-                             </button>
+                             <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={handleTrainModel}
+                                    disabled={isTraining}
+                                    className={`py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                                        trainingStatus === 'success' ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'
+                                    } text-white disabled:opacity-50`}
+                                >
+                                    {isTraining ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="brain" className="w-4 h-4" />}
+                                    {isTraining ? 'Training...' : trainingStatus === 'success' ? 'Model Trained!' : 'Train Advanced Model'}
+                                </button>
+
+                                <button
+                                    onClick={handleAiAnalysis}
+                                    disabled={isAnalyzing || isTraining}
+                                    className="py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                                >
+                                    {isAnalyzing ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="cpu" className="w-4 h-4" />}
+                                    {isAnalyzing ? 'Analyzing...' : 'Run Prediction'}
+                                </button>
+                             </div>
 
                              {aiResult && (
                                  <div className="mt-4 p-4 bg-black/40 rounded-lg border border-purple-500/30 animate-fade-in">

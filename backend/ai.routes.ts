@@ -403,10 +403,11 @@ router.post('/execute-python', async (req: express.Request, res: express.Respons
     pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
     
     try {
+        const body = input && input.logs ? { logs: input.logs } : { logs: input || [] };
         const response = await fetch(`${pythonServiceUrl}/predict`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ input: input || [] })
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
@@ -425,6 +426,36 @@ router.post('/execute-python', async (req: express.Request, res: express.Respons
             message: "Python service unavailable", 
             error: error.message,
             hint: "Ensure python-service is running and accessible."
+        });
+    }
+});
+
+router.post('/train', async (req: express.Request, res: express.Response) => {
+    const { logs } = req.body;
+    let pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://python-service:5000';
+    if (!pythonServiceUrl.startsWith('http')) {
+        pythonServiceUrl = `http://${pythonServiceUrl}`;
+    }
+    pythonServiceUrl = pythonServiceUrl.replace(/\/$/, '');
+
+    try {
+        const response = await fetch(`${pythonServiceUrl}/train`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logs })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Python service returned ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        console.error("Failed to train Python model:", error);
+        res.status(503).json({ 
+            message: "Python service unavailable", 
+            error: error.message
         });
     }
 });
