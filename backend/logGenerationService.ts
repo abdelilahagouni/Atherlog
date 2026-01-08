@@ -1,5 +1,6 @@
 import { getDb } from './database';
 import { LogLevel, LogEntry, Organization } from './types';
+import * as crypto from 'crypto';
 
 const sources = ['api-gateway', 'user-service', 'db-replicator', 'frontend-logger', 'auth-service'];
 const messages = [
