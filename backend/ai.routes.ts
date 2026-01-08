@@ -344,7 +344,7 @@ router.post('/root-cause-analysis', async (req: express.Request, res: express.Re
                 body: JSON.stringify({ targetLog, logHistory })
             });
             if (!response.ok) throw new Error(`Python service error: ${response.statusText}`);
-            const data = await response.json();
+            const data = await response.json() as any;
             return res.json(data);
         } catch (error: any) {
             return res.status(503).json({ message: "Python service unavailable", error: error.message });
@@ -364,7 +364,7 @@ router.post('/generate-playbook', async (req: express.Request, res: express.Resp
                 body: JSON.stringify({ targetLog })
             });
             if (!response.ok) throw new Error(`Python service error: ${response.statusText}`);
-            const data = await response.json();
+            const data = await response.json() as any;
             return res.json(data);
         } catch (error: any) {
             return res.status(503).json({ message: "Python service unavailable", error: error.message });
