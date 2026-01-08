@@ -1,7 +1,9 @@
 import { ApiKey } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = 'http://localhost:4000/api/keys';
+const API_BASE_URL = import.meta.env.VITE_API_URL 
+    ? `${import.meta.env.VITE_API_URL}/api/keys` 
+    : 'http://localhost:4000/api/keys';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('jwt_token');

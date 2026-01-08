@@ -2,7 +2,9 @@
 import { LogEntry, Anomaly, LogSummary, AlertHistoryEntry, AlertRule, NotificationContact, Role, LogFilter, LogLevel } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL 
+    ? `${import.meta.env.VITE_API_URL}/api` 
+    : 'http://localhost:4000/api';
 
 // This is now the single source of truth for available sources, fetched from the backend.
 // For now, we keep it hardcoded to avoid another API call, but in a real app this could be dynamic.
