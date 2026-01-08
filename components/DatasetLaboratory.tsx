@@ -453,7 +453,7 @@ const DatasetLaboratory: React.FC = () => {
 
                                 <button
                                     onClick={handleAiAnalysis}
-                                    disabled={isAnalyzing || isTraining}
+                                    disabled={isAnalyzing || isTraining || !previewData.length}
                                     className="py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                                 >
                                     {isAnalyzing ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="cpu" className="w-4 h-4" />}

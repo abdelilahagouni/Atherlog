@@ -411,7 +411,9 @@ router.post('/execute-python', async (req: express.Request, res: express.Respons
         });
 
         if (!response.ok) {
-            throw new Error(`Python service returned ${response.status}: ${response.statusText}`);
+            const errorBody = await response.text();
+            console.error(`Python service error at ${pythonServiceUrl}/predict:`, errorBody);
+            throw new Error(`Python service returned ${response.status}: ${response.statusText}. Details: ${errorBody}`);
         }
 
         const data = await response.json();
@@ -446,7 +448,9 @@ router.post('/train', async (req: express.Request, res: express.Response) => {
         });
 
         if (!response.ok) {
-            throw new Error(`Python service returned ${response.status}: ${response.statusText}`);
+            const errorBody = await response.text();
+            console.error(`Python service error at ${pythonServiceUrl}/train:`, errorBody);
+            throw new Error(`Python service returned ${response.status}: ${response.statusText}. Details: ${errorBody}`);
         }
 
         const data = await response.json();
