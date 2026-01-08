@@ -17,12 +17,17 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
   const [dependencyMap, setDependencyMap] = useState<any>(null);
   const [timeline, setTimeline] = useState<any[]>([]);
   const [clusters, setClusters] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!logs || logs.length === 0) return;
+      if (!logs || logs.length === 0) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
+      setError(null);
       try {
         const [healthData, depData, timelineData, clusterData] = await Promise.all([
           getSystemHealth(logs),
@@ -30,12 +35,15 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
           getTimeline(logs),
           clusterLogs(logs)
         ]);
-        setHealth(healthData);
-        setDependencyMap(depData);
-        setTimeline(timelineData);
-        setClusters(clusterData.clusters || []);
-      } catch (err) {
+        
+        // Defensive checks for data types
+        setHealth(healthData && typeof healthData === 'object' ? healthData : { score: 0, status: 'Unknown' });
+        setDependencyMap(depData && depData.nodes ? depData : { nodes: [], links: [] });
+        setTimeline(Array.isArray(timelineData) ? timelineData : []);
+        setClusters(clusterData && Array.isArray(clusterData.clusters) ? clusterData.clusters : []);
+      } catch (err: any) {
         console.error("Failed to fetch dashboard data:", err);
+        setError(err.message || "Failed to load AI insights");
       } finally {
         setLoading(false);
       }
@@ -48,6 +56,32 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
       <div className="flex flex-col items-center justify-center h-96 space-y-4">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         <p className="text-gray-400 animate-pulse">Synthesizing AI Insights...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 space-y-4 text-center">
+        <Icon name="alert-circle" className="w-16 h-16 text-red-500 opacity-50" />
+        <h3 className="text-xl font-bold text-gray-200">Analysis Failed</h3>
+        <p className="text-gray-400 max-w-md">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors"
+        >
+          Retry Analysis
+        </button>
+      </div>
+    );
+  }
+
+  if (!logs || logs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 space-y-4 text-center">
+        <Icon name="database" className="w-16 h-16 text-gray-600 opacity-20" />
+        <h3 className="text-xl font-bold text-gray-400">No Data for Analysis</h3>
+        <p className="text-gray-500 max-w-md">Please import a dataset in the Laboratory to generate AI insights.</p>
       </div>
     );
   }

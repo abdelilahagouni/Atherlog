@@ -37,6 +37,7 @@ const DatasetLaboratory: React.FC = () => {
   const [isClustering, setIsClustering] = React.useState(false);
   const [healthScore, setHealthScore] = React.useState<any>(null);
   const [forecast, setForecast] = React.useState<any>(null);
+  const [fullLogs, setFullLogs] = React.useState<any[]>([]);
   const [activeTab, setActiveTab] = React.useState<'preview' | 'pro-ai'>('preview');
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,6 +158,7 @@ const DatasetLaboratory: React.FC = () => {
     // Create a fake file object for UI consistency
     const file = new File([""], "demo_dataset_large.csv", { type: "text/csv" });
     setFile(file);
+    setFullLogs(demoData);
     setShowDemoVisuals(true);
     showToast('Demo dataset loaded successfully!', 'success');
   };
@@ -165,8 +167,8 @@ const DatasetLaboratory: React.FC = () => {
     if (!previewData.length) return;
     setIsAnalyzing(true);
     try {
-        // Convert preview data back to log objects for the AI
-        const logsToAnalyze = previewData.map(row => ({
+        // Convert logs for the AI
+        const logsToAnalyze = fullLogs.length > 0 ? fullLogs : previewData.map(row => ({
             timestamp: row[0],
             level: row[1] as LogLevel,
             source: row[2],
@@ -205,7 +207,7 @@ const DatasetLaboratory: React.FC = () => {
     setIsTraining(true);
     setTrainingStatus('training');
     try {
-        const logsToTrain = previewData.map(row => ({
+        const logsToTrain = fullLogs.length > 0 ? fullLogs : previewData.map(row => ({
             timestamp: row[0],
             level: row[1] as LogLevel,
             source: row[2],
@@ -446,7 +448,7 @@ const DatasetLaboratory: React.FC = () => {
               )
             ) : (
               <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                <AiDashboard logs={DEMO_DATASET} />
+                <AiDashboard logs={fullLogs.length > 0 ? fullLogs : DEMO_DATASET} />
               </div>
             )}
           </Card>

@@ -467,6 +467,10 @@ router.post('/semantic-search', async (req: express.Request, res: express.Respon
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query, logs })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
@@ -483,6 +487,10 @@ router.post('/cluster', async (req: express.Request, res: express.Response) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ logs })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
@@ -499,6 +507,10 @@ router.post('/urgency', async (req: express.Request, res: express.Response) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ log })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
@@ -515,6 +527,10 @@ router.post('/forecast', async (req: express.Request, res: express.Response) => 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ history })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
@@ -531,6 +547,10 @@ router.post('/attribute', async (req: express.Request, res: express.Response) =>
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ log })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
@@ -547,6 +567,10 @@ router.post('/tag', async (req: express.Request, res: express.Response) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ log })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
@@ -563,6 +587,10 @@ router.post('/health-score', async (req: express.Request, res: express.Response)
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ logs })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
@@ -579,6 +607,10 @@ router.post('/dependency-map', async (req: express.Request, res: express.Respons
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ logs })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
@@ -595,6 +627,10 @@ router.post('/timeline', async (req: express.Request, res: express.Response) => 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ logs })
         });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ message: "Python service error", error: errorText });
+        }
         const data = await response.json();
         res.json(data);
     } catch (error: any) {
