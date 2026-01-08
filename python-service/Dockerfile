@@ -5,8 +5,12 @@ WORKDIR /app
 # Install system dependencies if needed (e.g., for some TF ops or numpy)
 # RUN apt-get update && apt-get install -y --no-install-recommends build-essential
 
+# Upgrade pip to avoid some download issues
+RUN pip install --upgrade pip
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Increase timeout to handle large downloads like TensorFlow
+RUN pip install --no-cache-dir -r requirements.txt --default-timeout=1000
 
 COPY . .
 
