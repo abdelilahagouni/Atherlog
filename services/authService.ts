@@ -3,11 +3,17 @@ import { Role, User, Organization } from '../types';
 const API_BASE_URL = '/api';
 
 export const handleResponse = async (response: Response) => {
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        data = { message: text || `HTTP error! status: ${response.status}` };
+    }
+
     if (!response.ok) {
         const error = new Error(data.message || `HTTP error! status: ${response.status}`);
         (error as any).status = response.status;
-        // Attach all properties from the response data (like code, hint, error)
         Object.assign(error, data);
         throw error;
     }
