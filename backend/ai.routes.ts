@@ -121,7 +121,7 @@ router.post('/explain', async (req: express.Request, res: express.Response) => {
             explanation = completion.choices[0].message.content || 'No explanation available.';
         } else if (provider === 'gemini' && ai) {
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-1.5-flash',
                 contents: prompt
             });
             explanation = response.text || 'No explanation was returned from the Gemini API.';
@@ -154,7 +154,7 @@ router.post('/generate-filters', async (req: express.Request, res: express.Respo
             filterJsonString = completion.choices[0].message.content || '{}';
         } else if (provider === 'gemini' && ai) {
              const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-1.5-flash',
                 contents: prompt,
                 config: {
                     responseMimeType: 'application/json',
@@ -193,7 +193,7 @@ router.post('/chat', async (req: express.Request, res: express.Response) => {
             });
             reply = completion.choices[0].message.content || 'I am unable to respond right now.';
         } else if (provider === 'gemini' && ai) {
-            const chat = ai.chats.create({ model: 'gemini-2.5-flash' });
+            const chat = ai.chats.create({ model: 'gemini-1.5-flash' });
             const response = await chat.sendMessage({ message });
             reply = response.text || 'I am unable to respond right now.';
         } else {
@@ -234,7 +234,7 @@ router.post('/extract-text', async (req: express.Request, res: express.Response)
             text = response.choices[0].message.content || '';
         } else if (provider === 'gemini' && ai) {
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-1.5-flash',
                 contents: { parts: [ { text: prompt }, imagePart ]}
             });
             text = response.text || '';
@@ -274,7 +274,7 @@ router.post('/edit-image', async (req: express.Request, res: express.Response) =
     try {
         if (ai) {
              const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: 'gemini-1.5-flash-image',
                 contents: {
                     parts: [
                         { inlineData: { data: image, mimeType: mimeType || 'image/png' } },
