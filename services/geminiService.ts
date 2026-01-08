@@ -150,3 +150,68 @@ export const trainInternalModel = async (logs: LogEntry[]): Promise<{ message: s
     });
     return handleResponse(response);
 };
+
+// --- Pro AI Service Functions ---
+
+export const semanticSearch = async (query: string, logs: LogEntry[]): Promise<{ results: { log: LogEntry, score: number }[] }> => {
+    const response = await fetch(`${API_BASE_URL}/semantic-search`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ query, logs }),
+    });
+    return handleResponse(response);
+};
+
+export const clusterLogs = async (logs: LogEntry[]): Promise<{ clusters: { id: number, count: number, sample: string, logs: LogEntry[] }[] }> => {
+    const response = await fetch(`${API_BASE_URL}/cluster`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ logs }),
+    });
+    return handleResponse(response);
+};
+
+export const classifyUrgency = async (log: LogEntry): Promise<{ urgency: string, score: number }> => {
+    const response = await fetch(`${API_BASE_URL}/urgency`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ log }),
+    });
+    return handleResponse(response);
+};
+
+export const forecastVolume = async (history: number[]): Promise<{ forecast: number[], trend: string }> => {
+    const response = await fetch(`${API_BASE_URL}/forecast`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ history }),
+    });
+    return handleResponse(response);
+};
+
+export const attributeAnomaly = async (log: LogEntry): Promise<{ primary_cause: string, confidence: number, details: string }> => {
+    const response = await fetch(`${API_BASE_URL}/attribute`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ log }),
+    });
+    return handleResponse(response);
+};
+
+export const tagLog = async (log: LogEntry): Promise<{ tags: string[] }> => {
+    const response = await fetch(`${API_BASE_URL}/tag`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ log }),
+    });
+    return handleResponse(response);
+};
+
+export const getSystemHealth = async (logs: LogEntry[]): Promise<{ score: number, status: string, factors: { name: string, impact: string }[] }> => {
+    const response = await fetch(`${API_BASE_URL}/health-score`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ logs }),
+    });
+    return handleResponse(response);
+};

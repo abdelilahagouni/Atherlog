@@ -456,4 +456,118 @@ router.post('/train', async (req: express.Request, res: express.Response) => {
     }
 });
 
+// --- Pro AI Proxy Routes ---
+
+router.post('/semantic-search', async (req: express.Request, res: express.Response) => {
+    const { query, logs } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/semantic-search`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query, logs })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
+router.post('/cluster', async (req: express.Request, res: express.Response) => {
+    const { logs } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/cluster`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logs })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
+router.post('/urgency', async (req: express.Request, res: express.Response) => {
+    const { log } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/urgency`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ log })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
+router.post('/forecast', async (req: express.Request, res: express.Response) => {
+    const { history } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/forecast`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ history })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
+router.post('/attribute', async (req: express.Request, res: express.Response) => {
+    const { log } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/attribute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ log })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
+router.post('/tag', async (req: express.Request, res: express.Response) => {
+    const { log } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/tag`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ log })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
+router.post('/health-score', async (req: express.Request, res: express.Response) => {
+    const { logs } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/health-score`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ logs })
+        });
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
 export default router;
