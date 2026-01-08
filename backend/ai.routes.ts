@@ -90,6 +90,13 @@ const handleAiError = (e: any, res: express.Response) => {
 const getPythonServiceUrl = () => {
     // Default to localhost:5000 for local development if not specified
     let url = process.env.PYTHON_SERVICE_URL || 'http://localhost:5000';
+    const port = process.env.PYTHON_SERVICE_PORT;
+
+    // If we have a host but no port in the URL, and a separate port is provided
+    if (url && port && !url.includes(':') && !url.startsWith('http://localhost')) {
+        url = `${url}:${port}`;
+    }
+
     if (!url.startsWith('http')) {
         url = `http://${url}`;
     }

@@ -13,7 +13,9 @@ services:
         fromService:
           type: web
           name: aetherlog-python-service
-          property: hostport
+          property: host
+      - key: PYTHON_SERVICE_PORT
+        value: "10000"
       - key: DATABASE_URL
         fromDatabase:
           name: aetherlog-db
@@ -32,7 +34,7 @@ services:
     plan: free
     envVars:
       - key: PORT
-        value: 5000
+        value: 10000
 
 databases:
   - name: aetherlog-db
