@@ -6,7 +6,9 @@ export const handleResponse = async (response: Response) => {
     const data = await response.json();
     if (!response.ok) {
         const error = new Error(data.message || `HTTP error! status: ${response.status}`);
-        (error as any).status = response.status; // Attach status code to the error
+        (error as any).status = response.status;
+        // Attach all properties from the response data (like code, hint, error)
+        Object.assign(error, data);
         throw error;
     }
     return data;

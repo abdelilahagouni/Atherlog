@@ -75,6 +75,17 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
             {error.hint && <p className="text-gray-400 text-[10px] mt-1 italic">{error.hint}</p>}
         </div>
         <p className="text-gray-500 text-xs">This usually happens when the AI service is under heavy load or spinning up on Render Free Tier.</p>
+        <div className="flex flex-col space-y-2">
+            <a 
+                href="/api/ai/check-python" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-400 text-[10px] hover:underline"
+            >
+                Verify Backend-to-Python Connectivity ↗
+            </a>
+            {error.error && <p className="text-red-300/40 text-[9px] font-mono max-w-xs truncate">Raw: {error.error}</p>}
+        </div>
         <button 
           onClick={() => window.location.reload()}
           className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all transform hover:scale-105 active:scale-95"
