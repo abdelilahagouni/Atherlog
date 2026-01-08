@@ -42,13 +42,20 @@ export const connectDb = async () => {
 
     try {
         console.log('Connecting to PostgreSQL database...');
-        pool = new Pool({
-            host: process.env.POSTGRES_HOST || 'localhost',
-            port: parseInt(process.env.POSTGRES_PORT || '5434'),
-            user: process.env.POSTGRES_USER || 'admin',
-            password: process.env.POSTGRES_PASSWORD || 'password123',
-            database: process.env.POSTGRES_DB || 'ailoganalyzer',
-        });
+        const connectionConfig = process.env.DATABASE_URL
+            ? { 
+                connectionString: process.env.DATABASE_URL,
+                ssl: { rejectUnauthorized: false } // Required for Render/Cloud DBs
+              }
+            : {
+                host: process.env.POSTGRES_HOST || 'localhost',
+                port: parseInt(process.env.POSTGRES_PORT || '5434'),
+                user: process.env.POSTGRES_USER || 'admin',
+                password: process.env.POSTGRES_PASSWORD || 'password123',
+                database: process.env.POSTGRES_DB || 'ailoganalyzer',
+            };
+
+        pool = new Pool(connectionConfig);
 
         // Test the connection
         await pool.query('SELECT NOW()');

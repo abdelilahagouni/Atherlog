@@ -31,7 +31,7 @@ import databaseRouter from './database.routes';
 import incidentRouter from './incident.routes'; // Import the new incident router
 
 const app: express.Express = express();
-const PORT = 4000;
+const PORT = parseInt(process.env.PORT || '4000');
 
 // Middleware
 app.use(cors()); // Allow requests from our frontend
