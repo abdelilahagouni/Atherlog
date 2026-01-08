@@ -8,6 +8,22 @@ import * as crypto from 'crypto';
 const router = express.Router();
 
 router.use(protect);
+ 
+// GET /api/logs - Fetch recent logs for live view
+router.get('/', async (req: express.Request, res: express.Response) => {
+    const user = (req as any).user as User;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const db = getDb();
+    try {
+        const logs = await db.all<LogEntry>(
+            'SELECT * FROM logs WHERE "organizationId" = ? ORDER BY "timestamp" DESC LIMIT ?',
+            [user.organizationId, limit]
+        );
+        res.status(200).json(logs);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch logs." });
+    }
+});
 
 // POST /api/logs/bulk - Optimized multi-row insert for datasets
 router.post('/bulk', async (req: express.Request, res: express.Response) => {
