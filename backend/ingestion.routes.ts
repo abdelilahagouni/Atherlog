@@ -67,10 +67,25 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
 
     const db = getDb();
     try {
+        const id = crypto.randomUUID();
+        const timestamp = new Date().toISOString();
         await db.run(
             'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore") VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [crypto.randomUUID(), newLog.organizationId, new Date().toISOString(), newLog.level, newLog.message, newLog.source, newLog.anomalyScore]
+            [id, newLog.organizationId, timestamp, newLog.level, newLog.message, newLog.source, newLog.anomalyScore]
         );
+        
+        // Trigger alerting check
+        const { checkAndAlert } = require('./alertingService');
+        checkAndAlert({
+            id,
+            organizationId: newLog.organizationId,
+            timestamp,
+            level: newLog.level,
+            message: newLog.message,
+            source: newLog.source,
+            anomalyScore: newLog.anomalyScore
+        }).catch((e: any) => console.error('Alerting check failed:', e));
+
         res.status(202).json({ message: 'Log received.' });
     } catch (error) {
         console.error('Failed to ingest log:', error);

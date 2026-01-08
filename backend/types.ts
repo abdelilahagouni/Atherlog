@@ -102,6 +102,9 @@ export interface Organization {
     id: string;
     name: string;
     plan: PlanDetails;
+    anomalyThreshold?: number;
+    slackWebhookUrl?: string;
+    webhookUrl?: string;
 }
 
 export interface GeneratedFilters {

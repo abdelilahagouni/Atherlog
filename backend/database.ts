@@ -80,7 +80,10 @@ export const connectDb = async () => {
         CREATE TABLE IF NOT EXISTS organizations (
             "id" TEXT PRIMARY KEY,
             "name" TEXT NOT NULL UNIQUE,
-            "plan" TEXT NOT NULL
+            "plan" TEXT NOT NULL,
+            "anomalyThreshold" REAL DEFAULT 0.7,
+            "slackWebhookUrl" TEXT,
+            "webhookUrl" TEXT
         );
     `);
 
@@ -229,13 +232,15 @@ export const getDb = () => {
 
 export const getOrganizationWithDetails = async (orgId: string): Promise<Organization | null> => {
     const db = getDb();
-    const row = await db.get<{id: string; name: string; plan: string;}>('SELECT * FROM organizations WHERE "id" = ?', [orgId]);
+    const row = await db.get<{id: string; name: string; plan: string; anomalyThreshold: number; slackWebhookUrl: string; webhookUrl: string;}>('SELECT * FROM organizations WHERE "id" = ?', [orgId]);
     if (!row) return null;
     return {
         id: row.id,
         name: row.name,
-        // The plan is stored as JSON TEXT, so parse it
-        plan: JSON.parse(row.plan) 
+        plan: JSON.parse(row.plan),
+        anomalyThreshold: row.anomalyThreshold,
+        slackWebhookUrl: row.slackWebhookUrl,
+        webhookUrl: row.webhookUrl
     };
 }
 
