@@ -3,6 +3,7 @@ import express from 'express';
 import { getDb } from './database';
 import { User, LogEntry, LogFilter } from './types';
 import { protect } from './auth.routes';
+import crypto from 'crypto';
 
 const router = express.Router();
 
