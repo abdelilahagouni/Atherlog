@@ -7,8 +7,9 @@ import { useToast } from '../hooks/useToast';
 
 const CodeSnippet: React.FC<{ apiKey: string }> = ({ apiKey }) => {
     const { showToast } = useToast();
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
     const snippets = {
-        cURL: `curl -X POST http://localhost:4000/api/ingest \\
+        cURL: `curl -X POST ${API_BASE_URL}/api/ingest \\
 -H "Content-Type: application/json" \\
 -H "X-API-KEY: ${apiKey}" \\
 -d '{

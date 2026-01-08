@@ -154,7 +154,8 @@ const DatasetLaboratory: React.FC = () => {
         // Extract anomaly scores from preview data (assuming index 4 based on demo data)
         const scores = previewData.map(row => parseFloat(row[4]) || 0);
         
-        const response = await fetch('http://localhost:4000/api/ai/execute-python', {
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+        const response = await fetch(`${API_BASE_URL}/api/ai/execute-python`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
