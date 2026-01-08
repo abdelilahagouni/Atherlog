@@ -2,7 +2,7 @@
 
 
 import { Pool } from 'pg';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { exit } from 'process';
 import bcrypt from 'bcryptjs';
 import { PlanDetails, Role, SubscriptionPlan, User, Organization } from './types';
