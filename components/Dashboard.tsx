@@ -58,7 +58,7 @@ const AiDiscoveriesSection: React.FC<{
   return (
     <div>
        {header}
-        <div className="flex gap-6 pb-4 -mx-4 px-4 overflow-x-auto custom-scrollbar">
+        <div className="flex gap-6 pb-4 -mx-4 px-4 overflow-x-auto custom-scrollbar horizontal-scroll">
             {discoveries.map((discovery, index) => (
                 <div key={discovery.id} className="flex-shrink-0 w-full sm:w-[400px]">
                     <AiDiscoveryCard 
@@ -164,15 +164,54 @@ const Dashboard: React.FC = () => {
   const logsQuota = currentOrganization?.plan.quotas.logsPerMonth ?? Infinity;
   const isOverQuota = totalLogs > logsQuota;
 
-  const cardHoverEffect = "transition-transform duration-200 hover:scale-[1.03] hover:shadow-xl dark:hover:shadow-blue-500/10";
+  const cardHoverEffect = "transition-transform duration-200 hover:scale-[1.03] hover:shadow-xl dark:hover:shadow-blue-500/10 touch-feedback";
 
 
   if (loading) {
     return (
-        <div className="flex items-center justify-center h-full">
-            <Icon name="loader" className="w-12 h-12 animate-spin text-blue-500" />
+      <div className="space-y-8">
+        <div className="h-8 w-48 skeleton" />
+        
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="glass-card p-6 rounded-lg">
+              <div className="flex items-center">
+                <div className="w-14 h-14 rounded-lg skeleton mr-4" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-24 skeleton" />
+                  <div className="h-8 w-20 skeleton" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-    )
+
+        {/* Chart Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 glass-card p-6 rounded-lg">
+            <div className="h-6 w-48 skeleton mb-4" />
+            <div className="h-80 skeleton" />
+          </div>
+          <div className="lg:col-span-1 glass-card p-6 rounded-lg">
+            <div className="h-6 w-32 skeleton mb-4" />
+            <div className="h-80 flex items-center justify-center">
+              <div className="w-40 h-40 rounded-full skeleton" />
+            </div>
+          </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="glass-card p-6 rounded-lg">
+          <div className="h-6 w-40 skeleton mb-4" />
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-16 skeleton" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

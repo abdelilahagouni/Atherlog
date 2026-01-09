@@ -19,7 +19,7 @@ const LogLevelCell: React.FC<{ level: LogLevel }> = ({ level }) => {
 export const AnomalyTable: React.FC<{ anomalies: Anomaly[] }> = ({ anomalies }) => {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left text-gray-600 dark:text-gray-300">
+      <table className="w-full text-sm text-left text-gray-600 dark:text-gray-300 mobile-card-view">
         <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase bg-transparent">
           <tr>
             <th scope="col" className="px-6 py-3 border-b border-gray-200 dark:border-gray-700">Timestamp</th>
@@ -32,11 +32,11 @@ export const AnomalyTable: React.FC<{ anomalies: Anomaly[] }> = ({ anomalies }) 
         <tbody>
           {anomalies.map((anomaly) => (
             <tr key={anomaly.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-              <td className="px-6 py-4 whitespace-nowrap">{new Date(anomaly.timestamp).toLocaleString()}</td>
-              <td className="px-6 py-4"><LogLevelCell level={anomaly.level} /></td>
-              <td className="px-6 py-4 font-mono">{anomaly.source}</td>
-              <td className="px-6 py-4 max-w-lg truncate" title={anomaly.message}>{anomaly.message}</td>
-              <td className="px-6 py-4 text-right font-semibold text-red-600 dark:text-red-400">{anomaly.anomalyScore.toFixed(2)}</td>
+              <td className="px-6 py-4 whitespace-nowrap" data-label="Timestamp">{new Date(anomaly.timestamp).toLocaleString()}</td>
+              <td className="px-6 py-4" data-label="Level"><LogLevelCell level={anomaly.level} /></td>
+              <td className="px-6 py-4 font-mono" data-label="Source">{anomaly.source}</td>
+              <td className="px-6 py-4 max-w-lg truncate" data-label="Message" title={anomaly.message}>{anomaly.message}</td>
+              <td className="px-6 py-4 text-right font-semibold text-red-600 dark:text-red-400" data-label="Score">{anomaly.anomalyScore.toFixed(2)}</td>
             </tr>
           ))}
         </tbody>

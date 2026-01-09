@@ -5,6 +5,7 @@ import CommandPalette from './CommandPalette';
 import { useCommandPalette } from '../contexts/CommandPaletteContext';
 import ApiStatusBanner from './ApiStatusBanner';
 import HamburgerMenu from './ui/HamburgerMenu';
+import BottomNavigation from './ui/BottomNavigation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -45,10 +46,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="w-8" /> {/* Spacer to balance the hamburger menu button */}
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto pb-20 md:pb-8">
           <ApiStatusBanner />
           {children}
         </main>
+        
+        {/* Bottom Navigation for Mobile */}
+        <BottomNavigation />
       </div>
       <CommandPalette />
     </div>
