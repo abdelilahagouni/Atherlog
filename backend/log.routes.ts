@@ -25,6 +25,23 @@ router.get('/', async (req: express.Request, res: express.Response) => {
     }
 });
 
+// GET /api/logs/history - Fetch historical logs for analysis
+router.get('/history', async (req: express.Request, res: express.Response) => {
+    const user = (req as any).user as User;
+    const limit = parseInt(req.query.limit as string) || 200;
+    const db = getDb();
+    try {
+        const logs = await db.all<LogEntry>(
+            'SELECT * FROM logs WHERE "organizationId" = ? ORDER BY "timestamp" DESC LIMIT ?',
+            [user.organizationId, limit]
+        );
+        res.status(200).json(logs);
+    } catch (error) {
+        console.error("Failed to fetch history:", error);
+        res.status(500).json({ message: "Failed to fetch log history." });
+    }
+});
+
 // POST /api/logs/bulk - Optimized multi-row insert for datasets
 router.post('/bulk', async (req: express.Request, res: express.Response) => {
     const user = (req as any).user as User;
