@@ -57,9 +57,12 @@ const SuspenseFallback: React.FC = () => (
 );
 
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 const App: React.FC = () => {
   return (
-    <ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
           <CommandPaletteProvider>
@@ -192,6 +195,7 @@ const App: React.FC = () => {
         </AuthProvider>
       </ToastProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 };
 

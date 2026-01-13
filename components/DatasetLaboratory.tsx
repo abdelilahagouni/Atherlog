@@ -338,7 +338,7 @@ const DatasetLaboratory: React.FC = () => {
               </div>
               <button
                 onClick={downloadSampleDataset}
-                className="w-full text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1"
+                className="w-full text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1 min-h-touch"
               >
                 <Icon name="download" className="w-3 h-3" />
                 Download System Template (.csv)
@@ -355,7 +355,7 @@ const DatasetLaboratory: React.FC = () => {
 
               <button
                 onClick={handleLoadDemo}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95"
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-95 min-h-touch"
               >
                 <Icon name="database" className="w-5 h-5" />
                 Load Rich Demo Dataset
@@ -375,7 +375,7 @@ const DatasetLaboratory: React.FC = () => {
                     <select
                       value={mapping[key]}
                       onChange={(e) => setMapping({ ...mapping, [key]: e.target.value })}
-                      className="w-full bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 text-sm border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 text-sm border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 min-h-touch"
                     >
                       <option value="">-- Ignore Column --</option>
                       {headers.map((h) => (
@@ -389,7 +389,7 @@ const DatasetLaboratory: React.FC = () => {
                   <button
                     onClick={handleImport}
                     disabled={isImporting}
-                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 flex items-center justify-center gap-3 transition-all transform active:scale-95 disabled:opacity-50"
+                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 flex items-center justify-center gap-3 transition-all transform active:scale-95 disabled:opacity-50 min-h-touch"
                   >
                     {isImporting ? (
                       <>
@@ -415,13 +415,13 @@ const DatasetLaboratory: React.FC = () => {
                 <div className="flex items-center gap-4">
                     <button 
                         onClick={() => setActiveTab('preview')}
-                        className={`text-sm font-bold pb-1 border-b-2 transition-colors ${activeTab === 'preview' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500'}`}
+                        className={`text-sm font-bold pb-1 border-b-2 transition-colors min-h-touch flex items-center ${activeTab === 'preview' ? 'border-blue-500 text-blue-500' : 'border-transparent text-gray-500'}`}
                     >
                         Raw Preview
                     </button>
                     <button 
                         onClick={() => setActiveTab('pro-ai')}
-                        className={`text-sm font-bold pb-1 border-b-2 transition-colors ${activeTab === 'pro-ai' ? 'border-purple-500 text-purple-500' : 'border-transparent text-gray-500'}`}
+                        className={`text-sm font-bold pb-1 border-b-2 transition-colors min-h-touch flex items-center ${activeTab === 'pro-ai' ? 'border-purple-500 text-purple-500' : 'border-transparent text-gray-500'}`}
                     >
                         Pro AI Dashboard
                     </button>
@@ -437,8 +437,8 @@ const DatasetLaboratory: React.FC = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto flex-1 custom-scrollbar">
-                  <table className="w-full text-xs text-left">
-                    <thead>
+                  <table className="w-full text-xs text-left mobile-card-view">
+                    <thead className="hidden md:table-header-group">
                       <tr className="bg-gray-50 dark:bg-gray-800">
                         {headers.map((h) => (
                           <th key={h} className="p-4 border-b border-gray-200 dark:border-gray-700 font-bold uppercase tracking-tight text-gray-500">{h}</th>
@@ -449,7 +449,7 @@ const DatasetLaboratory: React.FC = () => {
                       {previewData.map((row, i) => (
                         <tr key={i} className="border-b border-gray-100 dark:border-gray-800 hover:bg-black/5 transition-colors">
                           {row.map((cell, j) => (
-                            <td key={j} className="p-4 font-mono truncate max-w-[200px] text-gray-700 dark:text-gray-300">{cell}</td>
+                            <td key={j} className="p-4 font-mono truncate max-w-[200px] text-gray-700 dark:text-gray-300" data-label={headers[j]}>{cell}</td>
                           ))}
                         </tr>
                       ))}

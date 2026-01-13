@@ -32,12 +32,28 @@ const AlertHistory: React.FC = () => {
     const { showToast } = useToast();
 
 
+    const [error, setError] = React.useState<string | null>(null);
+
     React.useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const historyData = await getAlertHistory();
-            setHistory(historyData);
-            setLoading(false);
+            setError(null);
+            try {
+                const historyData = await getAlertHistory();
+                if (Array.isArray(historyData)) {
+                    setHistory(historyData);
+                } else {
+                    console.error("Invalid history data received:", historyData);
+                    setHistory([]);
+                    setError("Received invalid data from server.");
+                }
+            } catch (err: any) {
+                console.error("Failed to fetch alert history:", err);
+                setError(err.message || "Failed to load alert history.");
+                setHistory([]);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchData();
     }, []);
@@ -91,6 +107,22 @@ const AlertHistory: React.FC = () => {
         return (
             <div className="flex items-center justify-center h-full">
                 <Icon name="loader" className="w-12 h-12 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                <Icon name="alert-triangle" className="w-16 h-16 text-red-500 mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Failed to Load History</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">{error}</p>
+                <button 
+                    onClick={() => window.location.reload()} 
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                    Retry
+                </button>
             </div>
         );
     }

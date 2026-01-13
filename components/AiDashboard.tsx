@@ -88,7 +88,7 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
         </div>
         <button 
           onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all transform hover:scale-105 active:scale-95"
+          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all transform hover:scale-105 active:scale-95 min-h-touch"
         >
           Retry Analysis
         </button>
@@ -179,7 +179,7 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
 
         <div className="glass-card p-6 rounded-2xl relative overflow-hidden">
           <h3 className="text-sm font-medium text-gray-400 mb-6">Service Dependency Map</h3>
-          <div className="h-64 flex items-center justify-center">
+          <div className="h-64 md:h-80 flex items-center justify-center">
             {/* Simple SVG Graph for Dependency Map */}
             <svg width="100%" height="100%" viewBox="0 0 400 250">
               {dependencyMap?.links.map((link: any, i: number) => {
