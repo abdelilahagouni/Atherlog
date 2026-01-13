@@ -26,6 +26,21 @@ This project includes a professional Continuous Integration (CI) pipeline using 
 
 This automated process guarantees that the project is always in a buildable state, preventing bugs and demonstrating a mature, industry-standard development practice.
 
+## Deployment Automation
+
+This project is configured for automated deployment via GitHub integrations:
+
+- **Frontend (Vercel)**: Pushes to the `main` branch automatically trigger a deployment on Vercel. The configuration is defined in `vercel.json`.
+- **Backend (Render)**: Pushes to the `main` branch automatically trigger a deployment on Render. The configuration is defined in `render.yaml`.
+
+To deploy updates, simply commit your changes and push to the `main` branch:
+
+```bash
+git add .
+git commit -m "feat: your new feature"
+git push origin main
+```
+
 ---
 
 ## Configuration: The `.env` File

@@ -346,7 +346,7 @@ const LogExplorer: React.FC = () => {
         {/* Log Table */}
         <Card>
             <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm mobile-card-view">
                     <thead className="border-b border-gray-200 dark:border-gray-700">
                         <tr>
                             <th className="text-left p-2 w-8"></th>
@@ -362,11 +362,11 @@ const LogExplorer: React.FC = () => {
                         ) : logs.map(log => (
                             <React.Fragment key={log.id}>
                                 <tr onClick={() => setExpandedLogId(log.id === expandedLogId ? null : log.id)} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer">
-                                    <td className="p-3 text-center"><Icon name="chevron-down" className={`w-4 h-4 transition-transform ${log.id === expandedLogId ? 'rotate-180' : ''}`}/></td>
-                                    <td className="p-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(log.timestamp).toISOString()}</td>
-                                    <td className="p-3"><LogLevelBadge level={log.level}/></td>
-                                    <td className="p-3 text-sky-600 dark:text-sky-400">{log.source}</td>
-                                    <td className="p-3 text-gray-800 dark:text-gray-200 truncate max-w-lg">{log.message}</td>
+                                    <td className="p-3 text-center" data-label="Expand"><Icon name="chevron-down" className={`w-4 h-4 transition-transform ${log.id === expandedLogId ? 'rotate-180' : ''}`}/></td>
+                                    <td className="p-3 text-gray-500 dark:text-gray-400 whitespace-nowrap" data-label="Timestamp">{new Date(log.timestamp).toISOString()}</td>
+                                    <td className="p-3" data-label="Level"><LogLevelBadge level={log.level}/></td>
+                                    <td className="p-3 text-sky-600 dark:text-sky-400" data-label="Source">{log.source}</td>
+                                    <td className="p-3 text-gray-800 dark:text-gray-200 truncate max-w-lg" data-label="Message">{log.message}</td>
                                 </tr>
                                 {log.id === expandedLogId && (
                                     <tr className="bg-gray-100 dark:bg-gray-800">

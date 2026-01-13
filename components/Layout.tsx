@@ -11,6 +11,8 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+import PullToRefresh from './ui/PullToRefresh';
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = React.useState(false);
   const { openPalette } = useCommandPalette();
@@ -29,6 +31,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [openPalette]);
 
+  const handleRefresh = async () => {
+    // Simulate a refresh delay and reload the page to fetch fresh data
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    window.location.reload();
+  };
 
   return (
     <div className="flex h-screen bg-transparent relative overflow-hidden">
@@ -46,9 +53,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="w-8" /> {/* Spacer to balance the hamburger menu button */}
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto pb-20 md:pb-8">
-          <ApiStatusBanner />
-          {children}
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-8 relative" id="main-content">
+          <PullToRefresh onRefresh={handleRefresh}>
+            <div className="p-4 sm:p-6 lg:p-8 min-h-full">
+              <ApiStatusBanner />
+              {children}
+            </div>
+          </PullToRefresh>
         </main>
         
         {/* Bottom Navigation for Mobile */}

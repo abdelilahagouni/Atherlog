@@ -40,7 +40,8 @@ const MobileSearchBar: React.FC<MobileSearchBarProps> = ({
         {value && (
           <button
             onClick={handleClear}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 touch-feedback"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-3 touch-feedback min-w-touch min-h-touch flex items-center justify-center"
+            aria-label="Clear search"
           >
             <Icon name="x" className="w-5 h-5 text-gray-400" />
           </button>

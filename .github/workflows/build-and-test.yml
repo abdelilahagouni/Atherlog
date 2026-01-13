@@ -38,6 +38,12 @@ jobs:
     - name: Build Backend (Type-Check)
       run: npm run build --prefix backend
 
+    - name: Build Frontend
+      run: npm run build
+
+    # - name: Lint Code
+    #   run: npm run lint --if-present
+
     - name: Build Python Service Docker Image
       run: docker build ./python-service -t python-service-test
       

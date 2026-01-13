@@ -244,9 +244,9 @@ const LiveAnomalies: React.FC = () => {
             <div className="flex gap-2">
                 <div className="relative flex-grow">
                     <Icon name="search" className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-                    <input type="text" placeholder="Keyword..." value={keyword} onChange={e => setKeyword(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500"/>
+                    <input type="text" placeholder="Keyword..." value={keyword} onChange={e => setKeyword(e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500"/>
                 </div>
-                 <button onClick={() => setIsAiQueryModalOpen(true)} title="AI Query" className="flex-shrink-0 flex items-center gap-2 px-3 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-900 rounded-lg text-blue-600 dark:text-blue-300 font-semibold transition-colors">
+                 <button onClick={() => setIsAiQueryModalOpen(true)} title="AI Query" className="flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-900 rounded-lg text-blue-600 dark:text-blue-300 font-semibold transition-colors min-w-touch min-h-touch">
                     <Icon name="sparkles" className="w-5 h-5" />
                 </button>
             </div>
@@ -258,7 +258,7 @@ const LiveAnomalies: React.FC = () => {
                     const colors = levelColorMap[level as LogLevel];
                     const isSelected = selectedLevels.has(level);
                     return (
-                        <button key={level} onClick={() => toggleLevel(level)} className={`px-2 py-1 text-xs font-bold rounded-full border transition-colors ${isSelected ? colors.selected : `bg-transparent ${colors.border} ${colors.darkBorder} ${colors.text} ${colors.darkText} ${colors.hover} ${colors.darkHover}`}`}>
+                        <button key={level} onClick={() => toggleLevel(level)} className={`px-3 py-2 text-sm font-bold rounded-full border transition-colors min-h-touch flex items-center justify-center ${isSelected ? colors.selected : `bg-transparent ${colors.border} ${colors.darkBorder} ${colors.text} ${colors.darkText} ${colors.hover} ${colors.darkHover}`}`}>
                             {level}
                         </button>
                     )
@@ -268,7 +268,7 @@ const LiveAnomalies: React.FC = () => {
         <div>
             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-2">Source</label>
             <div className="relative" ref={sourceDropdownRef}>
-                <button onClick={() => setIsSourceDropdownOpen(!isSourceDropdownOpen)} className="w-full flex justify-between items-center bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600">
+                <button onClick={() => setIsSourceDropdownOpen(!isSourceDropdownOpen)} className="w-full flex justify-between items-center bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-gray-600 min-h-touch">
                     <span>{selectedSources.size > 0 ? `${selectedSources.size} selected` : 'All Sources'}</span>
                     <Icon name="chevron-down" className={`w-5 h-5 transition-transform ${isSourceDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -286,7 +286,9 @@ const LiveAnomalies: React.FC = () => {
         </div>
         <div>
             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 block mb-2">Anomaly Score: {scoreRange[0].toFixed(2)} - {scoreRange[1].toFixed(2)}</label>
-            <input type="range" min="0" max="1" step="0.05" value={scoreRange[1]} onChange={e => setScoreRange([scoreRange[0], parseFloat(e.target.value)])} className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+            <div className="h-10 flex items-center">
+                <input type="range" min="0" max="1" step="0.05" value={scoreRange[1]} onChange={e => setScoreRange([scoreRange[0], parseFloat(e.target.value)])} className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer" />
+            </div>
         </div>
     </div>
       

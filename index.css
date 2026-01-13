@@ -696,3 +696,30 @@ select {
   }
 }
 
+
+/* Mobile Safe Areas */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.min-h-safe-screen {
+  min-height: 100vh; /* Fallback */
+  min-height: 100dvh;
+}
+
+/* Touch Target Utilities */
+.min-h-touch {
+  min-height: 44px;
+}
+.min-w-touch {
+  min-width: 44px;
+}
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
