@@ -100,8 +100,17 @@ export const getAlertHistory = (): Promise<AlertHistoryEntry[]> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             try {
-                const history = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '[]');
-                resolve(history.sort((a: AlertHistoryEntry, b: AlertHistoryEntry) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+                const rawHistory = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '[]');
+                // Filter out any corrupt entries that might cause crashes
+                const validHistory = Array.isArray(rawHistory) ? rawHistory.filter((item: any) => 
+                    item && 
+                    item.id && 
+                    item.timestamp && 
+                    item.log && 
+                    item.log.message
+                ) : [];
+                
+                resolve(validHistory.sort((a: AlertHistoryEntry, b: AlertHistoryEntry) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
             } catch (error) {
                 console.error("Failed to fetch alert history:", error);
                 reject(error);

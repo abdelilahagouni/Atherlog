@@ -83,11 +83,16 @@ const AlertHistory: React.FC = () => {
     
     const filteredHistory = React.useMemo(() => {
         return history.filter(entry => {
-            const searchTermMatch = searchTerm === '' || 
-                entry.log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                entry.log.source.toLowerCase().includes(searchTerm.toLowerCase());
+            if (!entry || !entry.log) return false; // Safety check
             
-            const levelMatch = selectedLevels.size === 0 || selectedLevels.has(entry.log.level);
+            const message = entry.log.message || '';
+            const source = entry.log.source || '';
+            
+            const searchTermMatch = searchTerm === '' || 
+                message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                source.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const levelMatch = selectedLevels.size === 0 || (entry.log.level && selectedLevels.has(entry.log.level));
 
             return searchTermMatch && levelMatch;
         });
@@ -188,23 +193,31 @@ const AlertHistory: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredHistory.map((entry) => (
+                            {filteredHistory.map((entry) => {
+                                if (!entry || !entry.log) return null;
+                                return (
                                 <tr 
-                                    key={entry.id} 
+                                    key={entry.id || Math.random()} 
                                     className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
                                     onClick={() => setSelectedAlert(entry)}
                                 >
-                                    <td className="px-6 py-4 whitespace-nowrap">{new Date(entry.timestamp).toLocaleString()}</td>
-                                    <td className="px-6 py-4"><LogLevelCell level={entry.log.level} /></td>
-                                    <td className="px-6 py-4 font-mono">{entry.log.source}</td>
-                                    <td className="px-6 py-4 max-w-md truncate" title={entry.log.message}>{entry.log.message}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {entry.log.level ? <LogLevelCell level={entry.log.level} /> : <span className="text-gray-400">-</span>}
+                                    </td>
+                                    <td className="px-6 py-4 font-mono">{entry.log.source || 'Unknown'}</td>
+                                    <td className="px-6 py-4 max-w-md truncate" title={entry.log.message}>
+                                        {entry.log.message || 'No message'}
+                                    </td>
                                     <td className="px-6 py-4 text-center">
-                                        <button onClick={(e) => handleCopy(e, entry.log.message)} className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-md" title="Copy message">
+                                        <button onClick={(e) => handleCopy(e, entry.log.message || '')} className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-md" title="Copy message">
                                             <Icon name="copy" className="w-4 h-4" />
                                         </button>
                                     </td>
                                 </tr>
-                            ))}
+                            )})}
                         </tbody>
                     </table>
                     {filteredHistory.length === 0 && (
