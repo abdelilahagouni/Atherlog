@@ -97,10 +97,15 @@ export const bulkIngestLogs = async (logs: Partial<LogEntry>[]): Promise<{ count
 // The alert history remains a frontend simulation using localStorage for now to limit scope.
 const ALERT_HISTORY_KEY = 'alertHistory';
 export const getAlertHistory = (): Promise<AlertHistoryEntry[]> => {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         setTimeout(() => {
-            const history = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '[]');
-            resolve(history.sort((a: AlertHistoryEntry, b: AlertHistoryEntry) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+            try {
+                const history = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '[]');
+                resolve(history.sort((a: AlertHistoryEntry, b: AlertHistoryEntry) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+            } catch (error) {
+                console.error("Failed to fetch alert history:", error);
+                reject(error);
+            }
         }, 200);
     });
 };
@@ -148,22 +153,32 @@ const initializeAlertRules = () => {
 initializeAlertRules();
 
 export const getAlertRules = (): Promise<AlertRule[]> => {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         setTimeout(() => {
-            const rules = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
-            resolve(rules);
+            try {
+                const rules = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
+                resolve(rules);
+            } catch (error) {
+                console.error("Failed to fetch alert rules:", error);
+                reject(error);
+            }
         }, 200);
     });
 };
 
 export const createAlertRule = (ruleData: Omit<AlertRule, 'id'>): Promise<AlertRule> => {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         setTimeout(() => {
-            const rules = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
-            const newRule: AlertRule = { ...ruleData, id: crypto.randomUUID() };
-            rules.push(newRule);
-            localStorage.setItem(ALERT_RULES_KEY, JSON.stringify(rules));
-            resolve(newRule);
+            try {
+                const rules = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
+                const newRule: AlertRule = { ...ruleData, id: crypto.randomUUID() };
+                rules.push(newRule);
+                localStorage.setItem(ALERT_RULES_KEY, JSON.stringify(rules));
+                resolve(newRule);
+            } catch (error) {
+                console.error("Failed to create alert rule:", error);
+                reject(error);
+            }
         }, 200);
     });
 };
@@ -171,40 +186,55 @@ export const createAlertRule = (ruleData: Omit<AlertRule, 'id'>): Promise<AlertR
 export const updateAlertRule = (ruleId: string, updates: Partial<AlertRule>): Promise<AlertRule> => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
-            const rules: AlertRule[] = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
-            const index = rules.findIndex(r => r.id === ruleId);
-            if (index === -1) {
-                return reject(new Error('Rule not found'));
+            try {
+                const rules: AlertRule[] = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
+                const index = rules.findIndex(r => r.id === ruleId);
+                if (index === -1) {
+                    return reject(new Error('Rule not found'));
+                }
+                rules[index] = { ...rules[index], ...updates };
+                localStorage.setItem(ALERT_RULES_KEY, JSON.stringify(rules));
+                resolve(rules[index]);
+            } catch (error) {
+                console.error("Failed to update alert rule:", error);
+                reject(error);
             }
-            rules[index] = { ...rules[index], ...updates };
-            localStorage.setItem(ALERT_RULES_KEY, JSON.stringify(rules));
-            resolve(rules[index]);
         }, 200);
     });
 };
 
 export const deleteAlertRule = (ruleId: string): Promise<void> => {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         setTimeout(() => {
-            let rules: AlertRule[] = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
-            rules = rules.filter(r => r.id !== ruleId);
-            localStorage.setItem(ALERT_RULES_KEY, JSON.stringify(rules));
-            resolve();
+            try {
+                let rules: AlertRule[] = JSON.parse(localStorage.getItem(ALERT_RULES_KEY) || '[]');
+                rules = rules.filter(r => r.id !== ruleId);
+                localStorage.setItem(ALERT_RULES_KEY, JSON.stringify(rules));
+                resolve();
+            } catch (error) {
+                console.error("Failed to delete alert rule:", error);
+                reject(error);
+            }
         }, 200);
     });
 };
 
 
 export const getNotificationContacts = (): Promise<NotificationContact[]> => {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
         // In a real app, this would come from a user's settings or an API.
         // For this mock, we'll return a static list of contacts.
         setTimeout(() => {
-            const contacts: NotificationContact[] = [
-                { id: 'user-1', name: 'Admin User', phone: '+15551234567', role: Role.ADMIN },
-                { id: 'user-2', name: 'On-Call Analyst', phone: '+15557654321', role: Role.ANALYST },
-            ];
-            resolve(contacts);
+            try {
+                const contacts: NotificationContact[] = [
+                    { id: 'user-1', name: 'Admin User', phone: '+15551234567', role: Role.ADMIN },
+                    { id: 'user-2', name: 'On-Call Analyst', phone: '+15557654321', role: Role.ANALYST },
+                ];
+                resolve(contacts);
+            } catch (error) {
+                console.error("Failed to fetch notification contacts:", error);
+                reject(error);
+            }
         }, 200);
     });
 };
