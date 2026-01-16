@@ -212,6 +212,142 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
           </div>
         </div>
       </div>
+      {/* Bottom Row: Model Training */}
+      <div className="mt-6 glass-card p-6 rounded-2xl">
+        <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
+                    <Icon name="brain" className="w-6 h-6 text-yellow-500" />
+                </div>
+                <div>
+                    <h3 className="text-sm font-bold text-gray-200">Model Training Laboratory</h3>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">Hugging Face Integration</p>
+                </div>
+            </div>
+            <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full font-bold">BETA</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-4">
+                <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Model Architecture</label>
+                    <input type="text" defaultValue="distilbert-base-uncased" id="hf-model-name" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="e.g. bert-base-uncased" />
+                </div>
+                <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Dataset</label>
+                    <input type="text" defaultValue="imdb" id="hf-dataset-name" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="e.g. imdb or custom" />
+                </div>
+                <button 
+                    onClick={async () => {
+                        const btn = document.getElementById('train-btn') as HTMLButtonElement;
+                        const status = document.getElementById('train-status') as HTMLDivElement;
+                        const modelName = (document.getElementById('hf-model-name') as HTMLInputElement).value;
+                        const datasetName = (document.getElementById('hf-dataset-name') as HTMLInputElement).value;
+                        
+                        if(btn) { btn.disabled = true; btn.innerText = 'Training...'; }
+                        if(status) { status.innerText = 'Initializing training job...'; status.className = 'text-sm text-blue-400 animate-pulse'; }
+                        
+                        try {
+                            const res = await fetch('/api/ai/train', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
+                                body: JSON.stringify({ 
+                                    model_type: 'huggingface', 
+                                    model_name: modelName, 
+                                    dataset_name: datasetName,
+                                    logs: [] // HF training uses external datasets, not local logs
+                                })
+                            });
+                            const data = await res.json();
+                            if(status) {
+                                if(res.ok) {
+                                    status.innerText = `Success! ${data.message}`;
+                                    status.className = 'text-sm text-green-400';
+                                } else {
+                                    status.innerText = `Error: ${data.message || data.error}`;
+                                    status.className = 'text-sm text-red-400';
+                                }
+                            }
+                        } catch(e: any) {
+                             if(status) { status.innerText = `Network Error: ${e.message}`; status.className = 'text-sm text-red-400'; }
+                        } finally {
+                            if(btn) { btn.disabled = false; btn.innerText = 'Start Training'; }
+                        }
+                    }}
+                    id="train-btn"
+                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors shadow-lg shadow-purple-500/20"
+                >
+                    Start Training
+                </button>
+            </div>
+            <div className="md:col-span-2 bg-black/20 rounded-xl p-4 font-mono text-xs text-gray-400 overflow-y-auto h-48 border border-gray-800" id="train-status">
+                Ready to train. Select a model and dataset to begin fine-tuning.
+            </div>
+        </div>
+      </div>
+
+      {/* Model Playground */}
+      <div className="glass-card p-6 rounded-2xl">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                <Icon name="message-square" className="w-6 h-6 text-green-500" />
+            </div>
+            <div>
+                <h3 className="text-sm font-bold text-gray-200">Model Playground</h3>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest">Test Your Trained Model</p>
+            </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <textarea 
+                    id="predict-input"
+                    className="w-full h-32 bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:ring-2 focus:ring-green-500 outline-none resize-none"
+                    placeholder="Type a log message or sentence to test... (e.g. 'Database connection failed due to timeout')"
+                ></textarea>
+                <button 
+                    onClick={async () => {
+                        const input = (document.getElementById('predict-input') as HTMLTextAreaElement).value;
+                        const resultDiv = document.getElementById('predict-result');
+                        if(!input) return;
+                        
+                        if(resultDiv) {
+                            resultDiv.innerHTML = '<span class="animate-pulse text-gray-400">Analyzing...</span>';
+                        }
+
+                        try {
+                            const res = await fetch('/api/ai/predict_hf', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
+                                body: JSON.stringify({ text: input })
+                            });
+                            const data = await res.json();
+                            
+                            if(resultDiv) {
+                                if(res.ok) {
+                                    const color = data.label === 'POSITIVE' ? 'text-green-400' : 'text-red-400';
+                                    resultDiv.innerHTML = `
+                                        <div class="text-center">
+                                            <div class="text-3xl font-bold ${color} mb-1">${data.label}</div>
+                                            <div class="text-xs text-gray-500">Confidence: ${(data.score * 100).toFixed(1)}%</div>
+                                        </div>
+                                    `;
+                                } else {
+                                    resultDiv.innerHTML = `<span class="text-red-400 text-sm">Error: ${data.error}</span>`;
+                                }
+                            }
+                        } catch(e: any) {
+                            if(resultDiv) resultDiv.innerHTML = `<span class="text-red-400 text-sm">Network Error</span>`;
+                        }
+                    }}
+                    className="mt-3 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                    Analyze Text
+                </button>
+            </div>
+            <div className="flex items-center justify-center bg-black/20 rounded-xl border border-gray-800 min-h-[160px]" id="predict-result">
+                <span className="text-gray-500 text-xs">Result will appear here</span>
+            </div>
+        </div>
+      </div>
     </div>
   );
 };

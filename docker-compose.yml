@@ -16,6 +16,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password123
       POSTGRES_DB: ailoganalyzer
+      PYTHON_SERVICE_URL: http://python-service:5000
       # The .env file in the 'backend' folder provides the following keys:
       # - API_KEY
       # - SENDGRID_API_KEY

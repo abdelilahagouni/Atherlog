@@ -20,6 +20,7 @@ This workflow guides you through setting up the AetherLog application locally us
    POSTGRES_DB=ailoganalyzer
    FRONTEND_URL="http://localhost:3000"
    JWT_SECRET="dev-secret"
+   PYTHON_SERVICE_URL="http://localhost:5001"
    # Add your API keys here
    # OPENAI_API_KEY=...
    ```
@@ -39,7 +40,19 @@ npm run dev
 ```
 *Backend will start on http://localhost:4000*
 
-## 4. Start Frontend
+## 4. Start Python Service (AI Features)
+Open a new terminal for the Python service.
+```powershell
+cd python-service
+# Install dependencies if needed
+pip install -r requirements.txt
+pip install tf-keras 'accelerate>=0.26.0'
+# Run the service on port 5001
+python app_v2.py
+```
+*Python service will start on http://localhost:5001*
+
+## 5. Start Frontend
 Open a new terminal for the frontend.
 ```powershell
 npm install

@@ -6,8 +6,27 @@ from datetime import datetime, timedelta
 HAS_TRANSFORMERS = False
 HAS_TENSORFLOW = False
 
+try:
+    import transformers
+    HAS_TRANSFORMERS = True
+    print(f"Transformers loaded successfully: {transformers.__version__}")
+except Exception as e:
+    print(f"Transformers import failed: {e}")
+    # Try to provide more context
+    import sys
+    print(f"Python path: {sys.path}")
+    import traceback
+    traceback.print_exc()
+
 def get_transformers():
-    return None
+    global HAS_TRANSFORMERS
+    try:
+        import transformers
+        HAS_TRANSFORMERS = True
+        return transformers
+    except Exception as e:
+        print(f"Transformers not available: {e}")
+        return None
 
 def get_tensorflow():
     global HAS_TENSORFLOW
@@ -25,6 +44,7 @@ app = Flask(__name__)
 model = None
 feature_max = None
 nlp_model = None # Lazy loaded
+nlp_tokenizer = None
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -326,14 +346,98 @@ def train():
     try:
         data = request.json
         logs = data.get('logs', [])
-        if not logs: return jsonify({'error': 'No logs provided'}), 400
+        model_type = data.get('model_type', 'tensorflow') # 'tensorflow' or 'huggingface'
+        
+        print(f"[TRAIN] Received: logs={type(logs)}, len={len(logs) if logs else 'None'}, model_type={model_type}")
+        
+        if logs is None and model_type != 'huggingface': 
+            print("[TRAIN] Rejecting: logs is None and not HF")
+            return jsonify({'error': 'No logs provided'}), 400
         
         # Hyperparameters
         epochs = int(data.get('epochs', 20))
         batch_size = int(data.get('batch_size', 16))
         dropout_rate = float(data.get('dropout', 0.1))
-        model_type = data.get('model_type', 'tensorflow') # 'tensorflow' or 'huggingface'
         
+        print(f"[TRAIN] Checking model_type: {model_type}")
+        # Handle Hugging Face training separately (doesn't need log preprocessing)
+        if model_type == 'huggingface':
+            print("[TRAIN] Entering HF training block")
+            try:
+                from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments
+                from datasets import load_dataset
+                import torch
+                
+                model_name = data.get('model_name', 'distilbert-base-uncased')
+                dataset_name = data.get('dataset_name', 'imdb') # Default to IMDB for demo if no log dataset specified
+                
+                # Load Tokenizer & Model
+                tokenizer = AutoTokenizer.from_pretrained(model_name)
+                hf_model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+                
+                # Load Dataset
+                if dataset_name == 'custom':
+                    # Convert local logs to HF dataset format
+                    from datasets import Dataset
+                    texts = [l.get('message', '') for l in logs]
+                    labels = [1 if l.get('level') == 'ERROR' else 0 for l in logs] # Simple binary classification
+                    dataset = Dataset.from_dict({'text': texts, 'label': labels})
+                    # Split
+                    dataset = dataset.train_test_split(test_size=0.2)
+                else:
+                    # Load from Hub (limit to small subset for demo speed)
+                    dataset = load_dataset(dataset_name)
+                    # Tokenize
+                    def tokenize_function(examples):
+                        return tokenizer(examples["text"], padding="max_length", truncation=True)
+                    
+                    tokenized_datasets = dataset.map(tokenize_function, batched=True)
+                    small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(100)) # Small subset
+                    small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(100))
+                    
+                    dataset = {'train': small_train_dataset, 'test': small_eval_dataset}
+
+                training_args = TrainingArguments(
+                    output_dir="./results",
+                    num_train_epochs=1, # Keep it fast
+                    per_device_train_batch_size=4,
+                    logging_dir='./logs',
+                )
+                
+                trainer = Trainer(
+                    model=hf_model,
+                    args=training_args,
+                    train_dataset=dataset['train'],
+                    eval_dataset=dataset['test'],
+                )
+                
+                trainer.train()
+                eval_results = trainer.evaluate()
+                
+                # Save model to disk
+                save_path = "./models/hf_model"
+                os.makedirs(save_path, exist_ok=True)
+                hf_model.save_pretrained(save_path)
+                tokenizer.save_pretrained(save_path)
+                print(f"[TRAIN] Model saved to {save_path}")
+
+                # Save model to global state
+                global nlp_model, nlp_tokenizer
+                nlp_model = hf_model
+                nlp_tokenizer = tokenizer
+                
+                return jsonify({
+                    'message': f'Hugging Face model {model_name} trained on {dataset_name} and saved.',
+                    'status': 'ready',
+                    'metrics': eval_results,
+                    'framework': 'Hugging Face Transformers'
+                })
+                
+            except Exception as hf_e:
+                print(f"Hugging Face Error: {hf_e}")
+                return jsonify({'error': f"Hugging Face training failed: {str(hf_e)}"}), 500
+
+        # For TensorFlow/scikit-learn training, preprocess the logs
         X = preprocess_logs(logs)
         feature_max = np.max(X, axis=0)
         feature_max[feature_max == 0] = 1
@@ -342,9 +446,8 @@ def train():
         # Train/Val Split (80/20)
         split_idx = int(len(X_scaled) * 0.8)
         X_train, X_val = X_scaled[:split_idx], X_scaled[split_idx:]
-        
-        # If TensorFlow is not available, use scikit-learn as fallback
-        if not tf or model_type == 'huggingface':
+
+        if not tf:
             from sklearn.ensemble import IsolationForest
             model = IsolationForest(contamination=0.1, random_state=42)
             model.fit(X_train)
@@ -472,8 +575,85 @@ def playbook():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    return jsonify({'reply': 'Internal AI ready.'})
+    try:
+        data = request.json
+        message = data.get('message', '').lower()
+        
+        # Simple rule-based logic for "Internal AI"
+        reply = "I am the Internal Python AI. I can help you analyze logs, detect anomalies, and forecast trends."
+        
+        if 'hello' in message or 'hi' in message:
+            reply = "Hello! I am ready to assist you with your log analysis."
+        elif 'status' in message or 'health' in message:
+            reply = "The system appears to be running smoothly. My internal models are active."
+        elif 'log' in message or 'error' in message:
+            reply = "I can help identify errors. Please use the 'Explain' feature on a specific log entry, or ask me to 'Analyze' in the Log Explorer."
+        elif 'help' in message:
+            reply = "You can ask me about system status, or use my specialized features like 'Semantic Search' and 'Anomaly Detection' in the dashboard."
+        else:
+            reply = "I understood your message. While I am a specialized log analysis AI, for general conversation I recommend using the Gemini or OpenAI providers. I am optimized for pattern recognition and anomaly detection."
+
+        return jsonify({'reply': reply})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# --- Pro Feature 10: Hugging Face Inference ---
+@app.route('/predict_hf', methods=['POST'])
+def predict_hf():
+    global nlp_model, nlp_tokenizer
+    try:
+        if not nlp_model or not nlp_tokenizer:
+            # Try to load from disk if not in memory
+            try:
+                from transformers import AutoModelForSequenceClassification, AutoTokenizer
+                model_path = "./models/hf_model"
+                if os.path.exists(model_path):
+                    print(f"[PREDICT] Loading model from {model_path}...")
+                    nlp_model = AutoModelForSequenceClassification.from_pretrained(model_path)
+                    nlp_tokenizer = AutoTokenizer.from_pretrained(model_path)
+                else:
+                    return jsonify({'error': 'Model not trained or loaded'}), 400
+            except Exception as e:
+                print(f"[PREDICT] Load error: {e}")
+                return jsonify({'error': f'Failed to load model: {str(e)}'}), 500
+
+        data = request.json
+        text = data.get('text', '')
+        if not text: return jsonify({'error': 'No text provided'}), 400
+
+        import torch
+        inputs = nlp_tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
+        with torch.no_grad():
+            outputs = nlp_model(**inputs)
+            probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
+            predicted_class = torch.argmax(probabilities, dim=-1).item()
+            score = probabilities[0][predicted_class].item()
+        
+        # Default IMDB labels: 0=Negative, 1=Positive
+        # For custom logs, it might be 0=Info, 1=Error
+        label = "POSITIVE" if predicted_class == 1 else "NEGATIVE"
+        
+        return jsonify({
+            'label': label,
+            'score': float(score),
+            'class_id': predicted_class
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    # Try to load model on startup
+    try:
+        if HAS_TRANSFORMERS:
+            from transformers import AutoModelForSequenceClassification, AutoTokenizer
+            model_path = "./models/hf_model"
+            if os.path.exists(model_path):
+                print(f"[STARTUP] Loading saved HF model from {model_path}...")
+                nlp_model = AutoModelForSequenceClassification.from_pretrained(model_path)
+                nlp_tokenizer = AutoTokenizer.from_pretrained(model_path)
+                print("[STARTUP] Model loaded successfully.")
+    except Exception as e:
+        print(f"[STARTUP] Warning: Could not load saved model: {e}")
+
+    port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port)

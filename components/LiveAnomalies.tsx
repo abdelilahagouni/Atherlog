@@ -183,10 +183,12 @@ const LiveAnomalies: React.FC = () => {
   };
   
   const filteredLogs = React.useMemo(() => {
+    if (!Array.isArray(logs)) return [];
     return logs.filter(log => {
+      if (!log) return false;
       if (selectedLevels.size > 0 && !selectedLevels.has(log.level)) return false;
       if (selectedSources.size > 0 && !selectedSources.has(log.source)) return false;
-      if (keyword && !log.message.toLowerCase().includes(keyword.toLowerCase())) return false;
+      if (keyword && !log.message?.toLowerCase().includes(keyword.toLowerCase())) return false;
       if ((log.anomalyScore ?? 0) < scoreRange[0] || (log.anomalyScore ?? 0) > scoreRange[1]) return false;
       if (dateRange.start && new Date(log.timestamp) < new Date(dateRange.start)) return false;
       if (dateRange.end && new Date(log.timestamp) > new Date(dateRange.end)) return false;

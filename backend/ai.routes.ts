@@ -89,7 +89,7 @@ const handleAiError = (e: any, res: express.Response) => {
 
 const getPythonServiceUrl = () => {
     // Default to localhost:5000 for local development if not specified
-    let url = process.env.PYTHON_SERVICE_URL || 'http://localhost:5000';
+    let url = process.env.PYTHON_SERVICE_URL || 'http://localhost:5001';
     if (!url.startsWith('http')) {
         url = `http://${url}`;
     }
@@ -482,26 +482,46 @@ router.get('/check-python', async (req, res) => {
 });
 
 router.post('/train', async (req: express.Request, res: express.Response) => {
-    const { logs, epochs, batch_size, dropout, model_type } = req.body;
+    const { logs, epochs, batch_size, dropout, model_type, model_name, dataset_name } = req.body;
     const pythonServiceUrl = getPythonServiceUrl();
+    console.log(`[TRAIN] Received request:`, { 
+        logsCount: logs?.length || 0, 
+        epochs, 
+        batch_size, 
+        dropout, 
+        model_type,
+        model_name,
+        dataset_name
+    });
     console.log(`Calling Python service (train) at: ${pythonServiceUrl}/train`);
 
     try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 90000);
-
         const response = await fetch(`${pythonServiceUrl}/train`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ logs, epochs, batch_size, dropout, model_type }),
-            signal: controller.signal
+            body: JSON.stringify({ 
+                logs, 
+                epochs, 
+                batch_size, 
+                dropout, 
+                model_type,
+                model_name,
+                dataset_name
+            }),
+            timeout: 300000 // 5 minutes
         });
-        clearTimeout(timeout);
 
         if (!response.ok) {
             const errorBody = await response.text();
+            let errorMessage = `Python service returned ${response.status}: ${response.statusText}`;
+            try {
+                const errorJson = JSON.parse(errorBody);
+                errorMessage = errorJson.error || errorJson.message || errorMessage;
+            } catch (e) {
+                if (errorBody) errorMessage += `. Details: ${errorBody}`;
+            }
             console.error(`Python service error at ${pythonServiceUrl}/train:`, errorBody);
-            throw new Error(`Python service returned ${response.status}: ${response.statusText}. Details: ${errorBody}`);
+            return res.status(response.status).json({ error: errorMessage });
         }
 
         const data = await response.json();
@@ -977,6 +997,32 @@ router.post('/timeline', async (req: express.Request, res: express.Response) => 
         res.json(data);
     } catch (error: any) {
         res.status(503).json({ message: "Python service unavailable", error: error.message });
+    }
+});
+
+// POST /api/ai/predict_hf
+router.post('/predict_hf', async (req: express.Request, res: express.Response) => {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: "Text is required" });
+
+    const pythonServiceUrl = getPythonServiceUrl();
+    try {
+        const response = await fetch(`${pythonServiceUrl}/predict_hf`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ error: errorText });
+        }
+
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        console.error("Prediction error:", error);
+        res.status(503).json({ error: "Prediction service unavailable" });
     }
 });
 

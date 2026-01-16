@@ -15,3 +15,5 @@ venv/
 coverage/
 .vscode/
 .idea/
+python-service/models/
+python-service/results/

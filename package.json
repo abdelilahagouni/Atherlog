@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start:ai": "cd python-service && set PORT=5001 && python app.py"
   },
   "dependencies": {
     "react": "^19.1.1",
