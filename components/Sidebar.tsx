@@ -110,34 +110,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setMobileOpen }) => {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 custom-scrollbar">
-          <CollapsibleSection title="Analysis" icon="dashboard" paths={analysisPaths}>
-              <NavLink to="/dashboard" className={navLinkClasses}>Dashboard</NavLink>
-              <NavLink to="/live-anomalies" className={navLinkClasses}>Live Anomalies</NavLink>
-              <NavLink to="/dataset-lab" className={navLinkClasses}>Dataset Lab</NavLink>
-              <NavLink to="/incidents" className={navLinkClasses}>Incident Center</NavLink>
-              <NavLink to="/log-explorer" className={navLinkClasses}>Log Explorer</NavLink>
-              <NavLink to="/alert-history" className={navLinkClasses}>Alert History</NavLink>
-              <NavLink to="/pattern-recognition" className={navLinkClasses}>Pattern Recognition</NavLink>
-              <NavLink to="/learned-insights" className={navLinkClasses}>Learned Insights</NavLink>
+          <CollapsibleSection title="Intelligence" icon="search" paths={analysisPaths}>
+              <NavLink to="/dashboard" className={navLinkClasses}>Recon Overview</NavLink>
+              <NavLink to="/global-search" className={navLinkClasses}>Global Search (6.6B+)</NavLink>
+              <NavLink to="/social-recon" className={navLinkClasses}>Social Recon</NavLink>
+              <NavLink to="/hash-cracker" className={navLinkClasses}>Hash Cracker</NavLink>
+              <NavLink to="/incidents" className={navLinkClasses}>Case Files</NavLink>
           </CollapsibleSection>
 
            <CollapsibleSection title="AI Toolkit" icon="sparkles" paths={aiToolkitPaths}>
-              <NavLink to="/ai-chat" className={navLinkClasses}>AI Chat</NavLink>
-              <NavLink to="/visual-log-parser" className={navLinkClasses}>Visual Parser</NavLink>
-              <NavLink to="/live-object-detector" className={navLinkClasses}>Object Detector</NavLink>
+              <NavLink to="/ai-chat" className={navLinkClasses}>Intel Assistant</NavLink>
+              <NavLink to="/visual-log-parser" className={navLinkClasses}>Image Intel (OCR)</NavLink>
+              <NavLink to="/live-object-detector" className={navLinkClasses}>Face Recognition</NavLink>
           </CollapsibleSection>
 
           <CollapsibleSection title="Infrastructure" icon="containers" paths={infraPaths}>
-              <NavLink to="/container-insights" className={navLinkClasses}>Container Insights</NavLink>
+              <NavLink to="/container-insights" className={navLinkClasses}>Scanner Status</NavLink>
           </CollapsibleSection>
 
           <CollapsibleSection title="Configuration" icon="settings" paths={configPaths}>
-              <NavLink to="/alerting" className={navLinkClasses}>Alerting Rules</NavLink>
+              <NavLink to="/alerting" className={navLinkClasses}>Watchlist Alerts</NavLink>
               <NavLink to="/notifications" className={navLinkClasses}>Notifications</NavLink>
               {canAccessAdminPages && (
                 <>
-                  <NavLink to="/proactive-insights" className={navLinkClasses}>Proactive Insights</NavLink>
-                  <NavLink to="/enterprise-connectors" className={navLinkClasses}>Enterprise Connectors</NavLink>
+                  <NavLink to="/proactive-insights" className={navLinkClasses}>Threat Intel Feeds</NavLink>
+                  <NavLink to="/enterprise-connectors" className={navLinkClasses}>API Connectors</NavLink>
                   <NavLink to="/settings" className={navLinkClasses}>Org Settings</NavLink>
                   <NavLink to="/data-sources" className={navLinkClasses}>Data Sources</NavLink>
                   <NavLink to="/audit-logs" className={navLinkClasses}>Audit Logs</NavLink>

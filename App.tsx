@@ -24,7 +24,9 @@ import AboutPage from './components/AboutPage';
 // Lazy load components for code splitting
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const LiveAnomalies = lazy(() => import('./components/LiveAnomalies'));
-const LogExplorer = lazy(() => import('./components/LogExplorer'));
+const GlobalSearch = lazy(() => import('./components/GlobalSearch'));
+const SocialRecon = lazy(() => import('./components/SocialRecon'));
+const HashCracker = lazy(() => import('./components/HashCracker'));
 const AlertHistory = lazy(() => import('./components/AlertHistory'));
 const VisualLogParser = lazy(() => import('./components/VisualLogParser'));
 const LiveObjectDetector = lazy(() => import('./components/LiveObjectDetector'));
@@ -84,7 +86,9 @@ const App: React.FC = () => {
                               <Routes>
                                 <Route path="/dashboard" element={<Dashboard />} />
                                 <Route path="/live-anomalies" element={<LiveAnomalies />} />
-                                <Route path="/log-explorer" element={<LogExplorer />} />
+                                <Route path="/global-search" element={<GlobalSearch />} />
+                                <Route path="/social-recon" element={<SocialRecon />} />
+                                <Route path="/hash-cracker" element={<HashCracker />} />
                                 <Route path="/alert-history" element={<AlertHistory />} />
                                 <Route path="/visual-log-parser" element={<VisualLogParser />} />
                                 <Route path="/live-object-detector" element={<LiveObjectDetector />} />
