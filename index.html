@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-visual" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- iOS-specific PWA tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <title>AetherLog</title>
+    <script>
+      // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --accent-color-gold: #FBBF24;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+
+      /* Custom Scrollbar for a smoother feel in the sidebar */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+      }
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #555;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #777;
+      }
+
+
+      @keyframes slide-up-fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+      }
+      .animate-slide-up-fade-in {
+          animation: slide-up-fade-in 0.5s ease-out;
+          opacity: 0; /* Start as invisible */
+          animation-fill-mode: forwards;
+      }
+
+      @keyframes fade-in-scale-up {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .animate-fade-in-scale-up {
+        animation: fade-in-scale-up 0.4s ease-out forwards;
+      }
+
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.3s ease-out forwards;
+      }
+
+      @keyframes heartbeat {
+        from { transform: scale(1); transform-origin: center center; animation-timing-function: ease-out; }
+        10% { transform: scale(0.91); animation-timing-function: ease-in; }
+        17% { transform: scale(0.98); animation-timing-function: ease-out; }
+        33% { transform: scale(0.87); animation-timing-function: ease-in; }
+        45% { transform: scale(1); animation-timing-function: ease-out; }
+      }
+      .animate-heartbeat {
+          animation: heartbeat 2.5s ease-in-out infinite both;
+      }
+
+      @keyframes animated-gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .animated-gradient {
+        background-size: 200% 200%;
+        animation: animated-gradient 15s ease infinite;
+      }
+
+      @keyframes breathing-glow {
+        0%, 100% {
+          text-shadow: 0 0 5px var(--accent-color-gold), 0 0 10px var(--accent-color-gold);
+        }
+        50% {
+          text-shadow: 0 0 10px var(--accent-color-gold), 0 0 20px var(--accent-color-gold);
+        }
+      }
+      .animate-breathing-glow {
+        animation: breathing-glow 3s ease-in-out infinite;
+      }
+
+      /* --- Enhanced Sidebar Styles --- */
+      .sidebar-nav-link::before {
+        content: '';
+        position: absolute;
+        left: -1rem; /* Aligns with the padding of the collapsible section */
+        top: 25%;
+        height: 50%;
+        width: 4px;
+        background-color: var(--accent-color-gold);
+        border-radius: 9999px;
+        transform: scaleY(0);
+        transform-origin: center;
+        transition: transform 0.2s ease-out;
+      }
+      .sidebar-nav-link.active-link::before {
+        transform: scaleY(1);
+      }
+      .sidebar-nav-link:hover::before {
+        transform: scaleY(0.5);
+      }
+      .sidebar-nav-link.active-link:hover::before {
+          transform: scaleY(1);
+      }
+      
+      @keyframes pulsate {
+        0%, 100% {
+          box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        }
+        50% {
+          box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+        }
+      }
+      .animate-pulsate {
+        animation: pulsate 2s infinite;
+      }
+
+      /* Face ID Scanning Animation */
+      @keyframes spin-border {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-spin-border {
+        position: relative;
+        overflow: hidden;
+        padding: 4px; /* a little space for the border */
+        background-clip: padding-box; /* Important for border-radius */
+      }
+      .animate-spin-border::before {
+        content: '';
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 150%; height: 150%;
+        background: conic-gradient(
+          transparent,
+          rgba(59, 130, 246, 0.9),
+          transparent 30%
+        );
+        animation: spin-border 2s linear infinite;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.3",
+    "recharts": "https://aistudiocdn.com/recharts@^3.2.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.1.1",
+    "process": "https://aistudiocdn.com/process@^0.11.10",
+    "nodemailer": "https://aistudiocdn.com/nodemailer@^7.0.7",
+    "twilio": "https://aistudiocdn.com/twilio@^5.10.2",
+    "cors": "https://aistudiocdn.com/cors@^2.8.5",
+    "dotenv": "https://aistudiocdn.com/dotenv@^17.2.3",
+    "bcryptjs": "https://aistudiocdn.com/bcryptjs@^3.0.2",
+    "express": "https://aistudiocdn.com/express@^5.1.0",
+    "jsonwebtoken": "https://aistudiocdn.com/jsonwebtoken@^9.0.2",
+    "sqlite3": "https://aistudiocdn.com/sqlite3@^5.1.7",
+    "sqlite": "https://aistudiocdn.com/sqlite@^5.1.1",
+    "pg": "https://aistudiocdn.com/pg@^8.16.3",
+    "openai": "https://aistudiocdn.com/openai@^6.2.0",
+    "buffer": "https://aistudiocdn.com/buffer@^6.0.3",
+    "path": "https://aistudiocdn.com/path@^0.12.7"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100 dark:bg-gradient-to-r dark:from-black dark:to-[#1C1C1E] text-gray-800 dark:text-gray-200 min-h-screen animated-gradient">
+    <div id="root"></div>
+    <div id="toast-root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('SW registered: ', registration);
+          }).catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+        });
+      }
+    </script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

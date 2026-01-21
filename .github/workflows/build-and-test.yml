@@ -1,0 +1,53 @@
+# This is a basic CI workflow for the AI Log Analyzer.
+# It runs on every push or pull request to the main branch.
+# It installs dependencies and builds the TypeScript backend to ensure there are no compilation errors.
+
+name: Build and Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Install Frontend Dependencies
+      run: npm install
+
+    - name: Install Backend Dependencies
+      run: npm install --prefix backend
+
+    - name: Build Backend (Type-Check)
+      run: npm run build --prefix backend
+
+    - name: Build Frontend
+      run: npm run build
+
+    # - name: Lint Code
+    #   run: npm run lint --if-present
+
+    - name: Build Python Service Docker Image
+      run: docker build ./python-service -t python-service-test
+      
+    # - name: Run Tests (Future Step)
+    #   run: npm test --if-present
+    #   # This step is a placeholder. To make it work, you would need to add a "test" script
+    #   # to your package.json and create test files (e.g., using Jest or Vitest).

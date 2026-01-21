@@ -1,0 +1,51 @@
+PassengerId,Survived,Pclass,Name,Sex,Age,SibSp,Parch,Fare,Embarked
+1,0,3,Braund Mr. Owen Harris,male,22,1,0,7.25,S
+2,1,1,Cumings Mrs. John Bradley,female,38,1,0,71.2833,C
+3,1,3,Heikkinen Miss. Laina,female,26,0,0,7.925,S
+4,1,1,Futrelle Mrs. Jacques Heath,female,35,1,0,53.1,S
+5,0,3,Allen Mr. William Henry,male,35,0,0,8.05,S
+6,0,3,Moran Mr. James,male,27,0,0,8.4583,Q
+7,0,1,McCarthy Mr. Timothy J,male,54,0,0,51.8625,S
+8,0,3,Palsson Master. Gosta Leonard,male,2,3,1,21.075,S
+9,1,3,Johnson Mrs. Oscar W,female,27,0,2,11.1333,S
+10,1,2,Nasser Mrs. Nicholas,female,14,1,0,30.0708,C
+11,1,3,Sandstrom Miss. Marguerite Rut,female,4,1,1,16.7,S
+12,1,1,Bonnell Miss. Elizabeth,female,58,0,0,26.55,S
+13,0,3,Saundercock Mr. William Henry,male,20,0,0,8.05,S
+14,0,3,Andersson Mr. Anders Johan,male,39,1,5,31.275,S
+15,0,3,Vestrom Miss. Hulda Amanda Adolfina,female,14,0,0,7.8542,S
+16,1,2,Hewlett Mrs. Thomas,female,55,0,0,16,S
+17,0,3,Rice Master. Eugene,male,2,4,1,29.125,Q
+18,1,2,Williams Mr. Charles Eugene,male,23,0,0,13,S
+19,0,3,Vander Planke Mrs. Julius,female,31,1,0,18,S
+20,1,3,Masselmani Mrs. Fatima,female,40,0,0,7.225,C
+21,0,2,Fynney Mr. Joseph J,male,35,0,0,26,S
+22,1,2,Beesley Mr. Lawrence,male,34,0,0,13,S
+23,1,3,McGowan Miss. Anna,female,15,0,0,8.0292,Q
+24,1,1,Sloper Mr. William Thompson,male,28,0,0,35.5,S
+25,0,3,Palsson Miss. Torborg Danira,female,8,3,1,21.075,S
+26,1,3,Asplund Mrs. Carl Oscar,female,38,1,5,31.3875,S
+27,0,3,Emir Mr. Farred Chehab,male,26,0,0,7.225,C
+28,0,1,Fortune Mr. Charles Alexander,male,19,3,2,263,S
+29,1,3,O'Dwyer Miss. Ellen,female,24,0,0,7.8792,Q
+30,0,3,Todoroff Mr. Lalio,male,23,0,0,7.8958,S
+31,0,1,Uruchurtu Don. Manuel E,male,40,0,0,27.7208,C
+32,1,1,Spencer Mrs. William Augustus,female,30,1,0,146.5208,C
+33,1,3,Glynn Miss. Mary Agatha,female,19,0,0,7.75,Q
+34,0,2,Wheadon Mr. Edward H,male,66,0,0,10.5,S
+35,0,1,Meyer Mr. Edgar Joseph,male,28,1,0,82.1708,C
+36,0,1,Holverson Mr. Alexander Oskar,male,42,1,0,52,S
+37,1,3,Mamee Mr. Hanna,male,18,0,0,7.2292,C
+38,0,3,Cann Mr. Ernest Charles,male,21,0,0,8.05,S
+39,0,3,Vander Planke Miss. Augusta Maria,female,18,2,0,18,S
+40,1,3,Nicola-Yarred Miss. Jamila,female,14,1,0,11.2417,C
+41,0,3,Ahlin Mrs. Johan,female,40,1,0,9.475,S
+42,0,2,Turpin Mrs. William John Robert,female,27,1,0,21,S
+43,0,3,Kraeff Mr. Theodor,male,19,0,0,7.8958,C
+44,1,2,Laroche Mrs. Joseph,female,22,1,2,41.5792,C
+45,1,3,Devaney Miss. Margaret Delia,female,19,0,0,7.8792,Q
+46,0,3,Rogers Mr. William John,male,32,0,0,8.05,S
+47,0,3,Lennon Mr. Denis,male,20,1,0,15.5,Q
+48,1,3,O'Driscoll Miss. Bridget,female,24,0,0,7.75,Q
+49,0,3,Samaan Mr. Youssef,male,21,2,0,21.6792,C
+50,0,3,Arnold-Franchi Mrs. Josef,female,18,1,0,17.8,S

@@ -1,0 +1,7 @@
+{
+  "name": "AetherLog",
+  "description": "A user-friendly SaaS platform to analyze system and application logs in real-time, detect anomalies using AI, and visualize results. AetherLog provides a comprehensive suite for log analysis, including a dashboard, live anomaly detection, and AI-powered explanations.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
