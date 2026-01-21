@@ -242,7 +242,14 @@ const Dashboard: React.FC = () => {
                     <Icon name="logs" className="w-8 h-8" />
                 </div>
                 <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Logs (24h)</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Total Logs (24h)</p>
+                        <span className="flex h-2 w-2 relative">
+                            <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span className="text-[10px] font-bold text-green-500 uppercase tracking-wider">Live</span>
+                    </div>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalLogs.toLocaleString()}</p>
                 </div>
             </div>
