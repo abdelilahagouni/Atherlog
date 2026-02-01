@@ -1,6 +1,6 @@
 // WebSocket service for real-time log streaming
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL } from '../utils/config';
+import config from '../src/config';
 
 export interface LogStreamEvent {
     id: string;
@@ -39,10 +39,10 @@ class WebSocketService {
                 return;
             }
 
-            // Force direct connection to backend port 4000 to bypass Vite proxy issues
-            const wsUrl = 'http://localhost:4000'; 
+            // Use the URL from central config (supports prod/dev automatically)
+            const wsUrl = config.wsUrl; 
 
-            console.log(`[WebSocket] Force connecting to: ${wsUrl}`);
+            console.log(`[WebSocket] Connecting to: ${wsUrl}`);
 
             this.socket = io(wsUrl, {
                 auth: { token },
