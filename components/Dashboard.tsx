@@ -10,6 +10,7 @@ import { Icon } from './ui/Icon';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAuth } from '../contexts/AuthContext';
 import AiDiscoveryCard from './AiDiscoveryCard';
+import { soundNotificationService } from '../services/soundNotificationService';
 
 const AiDiscoveriesSection: React.FC<{
   discoveries: AiDiscovery[],
@@ -83,6 +84,15 @@ const Dashboard: React.FC = () => {
   const [aiDiscoveries, setAiDiscoveries] = React.useState<AiDiscovery[]>([]);
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const navigate = useNavigate();
+
+  // Play welcome sound on dashboard mount
+  React.useEffect(() => {
+    const playWelcome = async () => {
+      await soundNotificationService.initialize();
+      await soundNotificationService.playSound('welcome');
+    };
+    playWelcome();
+  }, []);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -239,11 +249,11 @@ const Dashboard: React.FC = () => {
         <Card>
             <div className="flex items-center">
                 <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 mr-4">
-                    <Icon name="search" className="w-8 h-8" />
+                    <Icon name="logs" className="w-8 h-8" />
                 </div>
                 <div>
                     <div className="flex items-center gap-2">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Records Scanned (24h)</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Total Logs (24h)</p>
                         <span className="flex h-2 w-2 relative">
                             <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -258,23 +268,23 @@ const Dashboard: React.FC = () => {
             <Card className={cardHoverEffect}>
                 <div className="flex items-center">
                     <div className="p-3 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-500 dark:text-red-300 mr-4">
-                        <Icon name="shield-check" className="w-8 h-8" />
+                        <Icon name="anomaly" className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Threats Detected</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Anomalies Found</p>
                         <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{totalAnomalies.toLocaleString()}</p>
                     </div>
                 </div>
             </Card>
         </Link>
-        <Link to={`/global-search?levels=${LogLevel.ERROR},${LogLevel.FATAL}`}>
+        <Link to={`/log-explorer?levels=${LogLevel.ERROR},${LogLevel.FATAL}`}>
             <Card className={cardHoverEffect}>
                 <div className="flex items-center">
                     <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-500/20 text-orange-500 dark:text-orange-300 mr-4">
                         <Icon name="percent" className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Breach Probability</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Error Rate</p>
                         <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{errorRate.toFixed(2)}%</p>
                     </div>
                 </div>
@@ -287,7 +297,7 @@ const Dashboard: React.FC = () => {
                         <Icon name="bell" className="w-8 h-8" />
                     </div>
                     <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Active Alerts</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Alerts Triggered (24h)</p>
                         <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{alertsTriggered.toLocaleString()}</p>
                     </div>
                 </div>
@@ -299,7 +309,7 @@ const Dashboard: React.FC = () => {
                     <Icon name="health" className="w-8 h-8" />
                 </div>
                 <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Platform Status</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">System Health</p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{(100 - anomalyRate).toFixed(2)}%</p>
                 </div>
             </div>
@@ -310,8 +320,8 @@ const Dashboard: React.FC = () => {
                     <Icon name="source" className="w-8 h-8" />
                 </div>
                 <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Data Feeds</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">6.6B+</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Log Sources</p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">5</p>
                 </div>
             </div>
         </Card>
@@ -320,7 +330,7 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
             <Card className="cursor-pointer hover:shadow-blue-500/10">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recon Activity & Threat Trends (24h)</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Log & Anomaly Trends (24h)</h3>
                 <div className="h-80">
                     <AnomalyChart data={logSummary} onDataClick={handleChartClick} />
                 </div>
@@ -328,7 +338,7 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="lg:col-span-1">
              <Card>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Threat Level</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Anomaly Rate</h3>
                 <div className="h-80 flex flex-col items-center justify-center">
                     <div className="relative w-40 h-40">
                         <svg className="w-full h-full" viewBox="0 0 36 36">
@@ -337,7 +347,7 @@ const Dashboard: React.FC = () => {
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">{anomalyRate.toFixed(2)}%</span>
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Critical</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Anomalous</span>
                         </div>
                     </div>
                 </div>

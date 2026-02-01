@@ -5,6 +5,42 @@ import { protect } from './auth.routes';
 
 const router = express.Router();
 
+// GET /api/organization/all-users (Protected, Super Admin only)
+router.get('/all-users', protect, async (req: express.Request, res: express.Response) => {
+    const authenticatedUser = (req as any).user as User;
+    if (authenticatedUser.role !== Role.SUPER_ADMIN) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const db = getDb();
+    try {
+        const rows = await db.all<(
+            Omit<User, 'password'> & { organizationName: string }
+        )>(
+            `SELECT 
+                u."id",
+                u."organizationId",
+                u."username",
+                u."role",
+                u."email",
+                u."jobTitle",
+                u."salary",
+                u."hireDate",
+                u."notificationEmail",
+                u."phone",
+                u."isVerified",
+                o."name" as "organizationName"
+            FROM users u
+            JOIN organizations o ON o."id" = u."organizationId"
+            ORDER BY o."name" ASC, u."username" ASC`
+        );
+
+        return res.status(200).json(rows);
+    } catch (e: any) {
+        return res.status(500).json({ message: e.message });
+    }
+});
+
 // GET /api/organization/settings (Protected)
 router.get('/settings', protect, async (req: express.Request, res: express.Response) => {
     const authenticatedUser = (req as any).user as User;

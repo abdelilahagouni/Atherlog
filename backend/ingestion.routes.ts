@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { getDb } from './database';
 import { LogEntry } from './types';
 import * as crypto from 'crypto';
+import { emitLog } from './websocket';
 
 const router = express.Router();
 
@@ -11,11 +12,14 @@ const router = express.Router();
 const authenticateApiKey = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const providedKey = req.header('X-API-KEY');
     if (!providedKey) {
+        console.warn('[Ingest] Failed: API key missing');
         return res.status(401).json({ message: 'API key is required.' });
     }
 
     const keyPrefix = providedKey.substring(0, 8);
     const db = getDb();
+
+    console.log(`[Ingest] Auth attempt. Prefix: ${keyPrefix}`);
 
     try {
         const potentialKeys = await db.all<{ keyHash: string, organizationId: string }>(
@@ -23,20 +27,24 @@ const authenticateApiKey = async (req: express.Request, res: express.Response, n
             [keyPrefix]
         );
 
+        console.log(`[Ingest] Found ${potentialKeys.length} matching prefixes`);
+
         if (potentialKeys.length === 0) {
-            return res.status(401).json({ message: 'Invalid API key.' });
+            return res.status(401).json({ message: 'Invalid API key (prefix mismatch).' });
         }
 
         for (const key of potentialKeys) {
             const isValid = await bcrypt.compare(providedKey, key.keyHash);
             if (isValid) {
+                console.log(`[Ingest] Auth successful for org: ${key.organizationId}`);
                 (req as any).organizationId = key.organizationId;
-                // Asynchronously update lastUsed without blocking the request
+                // Async update
                 db.run('UPDATE api_keys SET "lastUsed" = NOW() WHERE "keyHash" = ?', [key.keyHash]).catch(console.error);
                 return next();
             }
         }
 
+        console.warn('[Ingest] Failed: Hash mismatch for existing prefix');
         return res.status(401).json({ message: 'Invalid API key.' });
 
     } catch (error) {
@@ -66,25 +74,46 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
     };
 
     const db = getDb();
+    const { processLogThroughPipelines } = require('./pipelineService');
+
     try {
+        // Process log through organizational pipelines (PII masking, filtering, etc.)
+        const processedLog = await processLogThroughPipelines(newLog, organizationId);
+        
+        // If the pipeline filtered out the log, return success but don't save
+        if (!processedLog) {
+            return res.status(202).json({ message: 'Log processed (filtered).' });
+        }
+
         const id = crypto.randomUUID();
         const timestamp = new Date().toISOString();
         await db.run(
             'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore") VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id, newLog.organizationId, timestamp, newLog.level, newLog.message, newLog.source, newLog.anomalyScore]
+            [id, processedLog.organizationId, timestamp, processedLog.level, processedLog.message, processedLog.source, processedLog.anomalyScore]
         );
         
         // Trigger alerting check
         const { checkAndAlert } = require('./alertingService');
         checkAndAlert({
             id,
-            organizationId: newLog.organizationId,
+            organizationId: processedLog.organizationId,
             timestamp,
-            level: newLog.level,
-            message: newLog.message,
-            source: newLog.source,
-            anomalyScore: newLog.anomalyScore
+            level: processedLog.level,
+            message: processedLog.message,
+            source: processedLog.source,
+            anomalyScore: processedLog.anomalyScore
         }).catch((e: any) => console.error('Alerting check failed:', e));
+
+        // Emit log to WebSocket for real-time streaming (Live Tail)
+        emitLog({
+            id,
+            organizationId: processedLog.organizationId,
+            timestamp,
+            level: processedLog.level,
+            message: processedLog.message,
+            source: processedLog.source,
+            anomalyScore: processedLog.anomalyScore
+        });
 
         res.status(202).json({ message: 'Log received.' });
     } catch (error) {

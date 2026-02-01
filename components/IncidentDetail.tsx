@@ -54,6 +54,7 @@ const IncidentDetail: React.FC = () => {
     
     const [incident, setIncident] = React.useState<Incident | null>(null);
     const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
     const [isUpdating, setIsUpdating] = React.useState(false);
     const [newNote, setNewNote] = React.useState('');
 
@@ -64,11 +65,13 @@ const IncidentDetail: React.FC = () => {
         }
         const fetchIncident = async () => {
             try {
+                setError(null);
                 const data = await getIncidentById(id);
                 setIncident(data);
-            } catch (error: any) {
-                showToast(error.message, 'error');
-                navigate('/incidents');
+            } catch (err: any) {
+                console.error('Failed to fetch incident:', err);
+                setError(err.message || 'Failed to load incident');
+                showToast(err.message || 'Failed to load incident', 'error');
             } finally {
                 setLoading(false);
             }
@@ -109,8 +112,46 @@ const IncidentDetail: React.FC = () => {
         return <div className="flex items-center justify-center h-full"><Icon name="loader" className="w-12 h-12 animate-spin text-blue-500" /></div>;
     }
 
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                <Icon name="alert-triangle" className="w-16 h-16 text-red-500 mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Error Loading Incident</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">{error}</p>
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                    >
+                        Retry
+                    </button>
+                    <button
+                        onClick={() => navigate('/incidents')}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-100 rounded-lg font-semibold transition-colors"
+                    >
+                        Back to Incidents
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     if (!incident) {
-        return <div className="text-center">Incident not found.</div>;
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                <Icon name="alert-triangle" className="w-16 h-16 text-yellow-500 mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Incident Not Found</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+                    This incident may have been resolved or doesn't exist. FATAL logs need to be generated first for incidents to appear.
+                </p>
+                <button
+                    onClick={() => navigate('/alert-center')}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                >
+                    Go to Alert Center
+                </button>
+            </div>
+        );
     }
     
     const { title, status, severity, createdAt, rcaResult, playbook, triggeringLog, activityLog } = incident;

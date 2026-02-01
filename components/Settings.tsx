@@ -10,6 +10,7 @@ import InviteMemberModal from './InviteMemberModal';
 import ConfirmRemoveMemberModal from './ConfirmRemoveMemberModal';
 import UserDetailsModal from './UserDetailsModal';
 import ApiKeyStatus from './ApiKeyStatus';
+import SoundNotificationSettings from './SoundNotificationSettings';
 
 const MemberManagement: React.FC = () => {
     const { currentUser, organizationMembers, updateMemberRole, removeMember } = useAuth();
@@ -409,6 +410,8 @@ const Settings: React.FC = () => {
       </Card>
 
       <EnterpriseAlerting />
+
+      <SoundNotificationSettings />
 
       <MemberManagement />
 

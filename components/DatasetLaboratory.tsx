@@ -21,6 +21,7 @@ const DatasetLaboratory: React.FC = () => {
     message: '',
     source: '',
   });
+  const [validation, setValidation] = React.useState<{ errors: string[]; warnings: string[] }>({ errors: [], warnings: [] });
   const [isImporting, setIsImporting] = React.useState(false);
   const [importProgress, setImportProgress] = React.useState(0);
   const { showToast } = useToast();
@@ -53,6 +54,7 @@ const DatasetLaboratory: React.FC = () => {
     const uploadedFile = e.target.files?.[0];
     if (uploadedFile) {
       setFile(uploadedFile);
+      setValidation({ errors: [], warnings: [] });
       const reader = new FileReader();
       reader.onload = (event) => {
         const content = event.target?.result as string;
@@ -77,7 +79,67 @@ const DatasetLaboratory: React.FC = () => {
     }
   };
 
+  const validateDataset = React.useCallback((rows: string[][], hdrs: string[], map: DatasetMapping) => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    if (!map.timestamp) errors.push('Timestamp column mapping is required.');
+    if (!map.message) errors.push('Message column mapping is required.');
+
+    const getIdx = (col: string | undefined) => (col ? hdrs.findIndex(h => h === col) : -1);
+    const idxTimestamp = getIdx(map.timestamp);
+    const idxLevel = getIdx(map.level);
+    const idxMessage = getIdx(map.message);
+    const idxAnomaly = getIdx(map.anomalyScore);
+
+    if (map.timestamp && idxTimestamp < 0) errors.push(`Mapped timestamp column "${map.timestamp}" not found in headers.`);
+    if (map.message && idxMessage < 0) errors.push(`Mapped message column "${map.message}" not found in headers.`);
+
+    const allowedLevels = new Set(Object.values(LogLevel));
+
+    const sample = rows.slice(0, 20);
+    let invalidTimestampCount = 0;
+    let invalidLevelCount = 0;
+    let invalidAnomalyCount = 0;
+
+    for (const r of sample) {
+      if (idxTimestamp >= 0) {
+        const raw = (r[idxTimestamp] || '').trim();
+        const t = Date.parse(raw);
+        if (!raw || Number.isNaN(t)) invalidTimestampCount++;
+      }
+      if (idxLevel >= 0) {
+        const lvl = (r[idxLevel] || '').trim().toUpperCase();
+        if (lvl && !allowedLevels.has(lvl as LogLevel)) invalidLevelCount++;
+      }
+      if (idxAnomaly >= 0) {
+        const raw = (r[idxAnomaly] || '').trim();
+        if (raw) {
+          const v = Number(raw);
+          if (Number.isNaN(v)) invalidAnomalyCount++;
+        }
+      }
+    }
+
+    if (invalidTimestampCount > 0) errors.push(`Found ${invalidTimestampCount} invalid timestamps in the first ${sample.length} rows.`);
+    if (idxLevel < 0) warnings.push('Level is not mapped. Logs will default to INFO.');
+    if (idxLevel >= 0 && invalidLevelCount > 0) warnings.push(`Found ${invalidLevelCount} unknown log levels in the first ${sample.length} rows. Unknown values will default to INFO.`);
+    if (idxAnomaly >= 0 && invalidAnomalyCount > 0) warnings.push(`Found ${invalidAnomalyCount} invalid anomalyScore values in the first ${sample.length} rows. Those rows will use a default score.`);
+
+    return { errors, warnings };
+  }, []);
+
+  React.useEffect(() => {
+    if (!file || previewData.length === 0 || headers.length === 0) return;
+    const v = validateDataset(previewData, headers, mapping);
+    setValidation(v);
+  }, [file, previewData, headers, mapping, validateDataset]);
+
   const handleImport = async () => {
+    if (validation.errors.length > 0) {
+      showToast('Fix dataset validation errors before ingesting.', 'error');
+      return;
+    }
     if (!file || !mapping.message || !mapping.timestamp) {
       showToast('Please map at least Message and Timestamp columns.', 'error');
       return;
@@ -405,6 +467,37 @@ const DatasetLaboratory: React.FC = () => {
                     )}
                   </button>
                 </div>
+              </div>
+            </Card>
+          )}
+
+          {file && (validation.errors.length > 0 || validation.warnings.length > 0) && (
+            <Card className="animate-slide-up-fade-in">
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Icon name={validation.errors.length > 0 ? 'alert-triangle' : 'info'} className={`w-5 h-5 ${validation.errors.length > 0 ? 'text-red-500' : 'text-yellow-500'}`} />
+                Dataset Validation
+              </h3>
+              <div className="space-y-3 text-sm">
+                {validation.errors.length > 0 && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <p className="font-bold text-red-700 dark:text-red-300 mb-1">Errors (must fix)</p>
+                    <ul className="list-disc list-inside text-red-700 dark:text-red-300 space-y-1">
+                      {validation.errors.map((e, i) => (
+                        <li key={i}>{e}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {validation.warnings.length > 0 && (
+                  <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                    <p className="font-bold text-yellow-800 dark:text-yellow-300 mb-1">Warnings</p>
+                    <ul className="list-disc list-inside text-yellow-800 dark:text-yellow-300 space-y-1">
+                      {validation.warnings.map((w, i) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </Card>
           )}

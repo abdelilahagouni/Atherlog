@@ -69,6 +69,14 @@ router.post('/signup', async (req: express.Request, res: express.Response) => {
             [orgId, organizationName, JSON.stringify(PLAN_CONFIG.Free)]
         );
 
+        // Create default log processing pipeline (PII masking, etc.)
+        try {
+            const { createDefaultPipeline } = require('./pipelineService');
+            await createDefaultPipeline(orgId);
+        } catch (e) {
+            console.error('Failed to create default pipeline during signup:', e);
+        }
+
         const newUser: Omit<User, 'password'> & {password: string, isVerified: boolean} = {
             id: userId,
             organizationId: orgId,

@@ -57,6 +57,8 @@ router.post('/bulk', async (req: express.Request, res: express.Response) => {
         let placeholders: string[] = [];
         let paramIdx = 1;
 
+        const insertedLogs: LogEntry[] = [];
+
         // Process logs in chunks if necessary, but here we expect the client to chunk
         logs.forEach(log => {
             const id = crypto.randomUUID();
@@ -66,6 +68,16 @@ router.post('/bulk', async (req: express.Request, res: express.Response) => {
             const source = log.source || 'dataset-import';
             const score = log.anomalyScore || 0;
 
+            insertedLogs.push({
+                id,
+                organizationId: user.organizationId,
+                timestamp,
+                level: level as any,
+                message,
+                source,
+                anomalyScore: score,
+            });
+
             placeholders.push(`($${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++}, $${paramIdx++})`);
             values.push(id, user.organizationId, timestamp, level, message, source, score);
         });
@@ -73,6 +85,12 @@ router.post('/bulk', async (req: express.Request, res: express.Response) => {
         if (placeholders.length > 0) {
             const sql = `INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore") VALUES ${placeholders.join(', ')}`;
             await db.run(sql, values);
+        }
+
+        const candidates = insertedLogs.filter(l => l.level === 'FATAL' || (l.anomalyScore ?? 0) >= 0.7);
+        if (candidates.length > 0) {
+            const { checkAndAlert } = require('./alertingService');
+            Promise.allSettled(candidates.slice(0, 50).map(l => checkAndAlert(l))).catch(() => undefined);
         }
 
         res.status(201).json({ count: placeholders.length, message: `Successfully ingested ${placeholders.length} logs.` });
@@ -212,10 +230,10 @@ router.get('/summary', async (req: express.Request, res: express.Response) => {
         const query = `
             SELECT
                 TO_CHAR(DATE_TRUNC('hour', "timestamp"), 'HH24:00') AS hour,
-                COUNT(*) AS total,
-                COUNT(CASE WHEN "anomalyScore" > 0.5 THEN 1 END) AS anomalies,
-                COUNT(CASE WHEN "level" = 'ERROR' THEN 1 END) AS errors,
-                COUNT(CASE WHEN "level" = 'FATAL' THEN 1 END) AS fatals
+                COUNT(*)::int AS total,
+                COUNT(CASE WHEN "anomalyScore" > 0.5 THEN 1 END)::int AS anomalies,
+                COUNT(CASE WHEN "level" = 'ERROR' THEN 1 END)::int AS errors,
+                COUNT(CASE WHEN "level" = 'FATAL' THEN 1 END)::int AS fatals
             FROM logs
             WHERE "organizationId" = $1 AND "timestamp" >= NOW() - INTERVAL '24 hours'
             GROUP BY hour

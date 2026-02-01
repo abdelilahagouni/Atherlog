@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { Twilio } from 'twilio';
 import fetch from 'node-fetch';
+import { retry, withTimeout } from './resilience';
 
 // --- Email Configuration (Generic SMTP) ---
 // Falls back to SendGrid defaults if specific SMTP vars aren't provided
@@ -47,17 +48,51 @@ interface EmailOptions {
     html: string;
 }
 
+import { validateEmailForSending } from './emailValidationService';
+import { logEmailEvent } from './bounceService';
+
+// ... imports ...
+
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
     if (!mailTransporter || !emailFrom) {
         const message = 'Email service is not configured on the server.';
         console.error(message);
         throw new Error(message);
     }
-    await mailTransporter.sendMail({
-        from: `AetherLog <${emailFrom}>`,
-        ...options
+
+    // --- NEW: Validation and Suppression Check ---
+    // For now, we assume a default or system org 'system' for transactional emails
+    // In a real app, you'd pass organizationId in EmailOptions
+    const validation = await validateEmailForSending(options.to, 'system');
+    
+    if (!validation.isValid) {
+        const msg = `Email sending blocked: ${validation.error}`;
+        console.warn(`[Detailed] ${msg} (to: ${options.to})`);
+        
+        // Log the blocked attempt
+        await logEmailEvent(options.to, 'system', 'blocked', validation.error);
+        throw new Error(msg);
+    }
+    // ---------------------------------------------
+
+    await retry(async () => {
+        await withTimeout(
+            mailTransporter!.sendMail({
+                from: `AetherLog <${emailFrom}>`,
+                ...options
+            }),
+            parseInt(process.env.SMTP_TIMEOUT_MS || '10000', 10),
+            'smtp'
+        );
+    }, {
+        attempts: parseInt(process.env.SMTP_RETRY_ATTEMPTS || '2', 10),
+        initialDelayMs: 500,
+        backoffFactor: 2,
+        breakerKey: 'smtp'
     });
+    
     console.log(`Email sent to ${options.to} with subject "${options.subject}"`);
+    await logEmailEvent(options.to, 'system', 'sent', 'Delivered to SMTP server');
 };
 
 
@@ -94,20 +129,30 @@ export const sendVerificationEmail = async (userEmail: string, token: string, us
  * Sends a generic webhook notification
  */
 export const sendWebhook = async (url: string, payload: any): Promise<void> => {
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-            throw new Error(`Webhook failed with status ${response.status}`);
+    await retry(async () => {
+        const controller = new AbortController();
+        const timeoutMs = parseInt(process.env.WEBHOOK_TIMEOUT_MS || '8000', 10);
+        const t = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : null;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: controller.signal as any,
+            } as any);
+            if (!response.ok) {
+                throw new Error(`Webhook failed with status ${response.status}`);
+            }
+        } finally {
+            if (t) clearTimeout(t);
         }
-        console.log(`Webhook sent successfully to ${url}`);
-    } catch (error) {
-        console.error(`Failed to send webhook to ${url}:`, error);
-        throw error;
-    }
+    }, {
+        attempts: parseInt(process.env.WEBHOOK_RETRY_ATTEMPTS || '2', 10),
+        initialDelayMs: 500,
+        backoffFactor: 2,
+        breakerKey: 'webhook'
+    });
+    console.log(`Webhook sent successfully to ${url}`);
 };
 
 /**

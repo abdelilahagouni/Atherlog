@@ -12,6 +12,7 @@ interface AuthContextType {
   currentUser: User | null;
   currentOrganization: Organization | null;
   organizationMembers: User[];
+  token: string | null;
   isAuthLoading: boolean;
   login: (username: string, password: string) => Promise<User>;
   loginWithFaceId: (username: string) => Promise<User>;
@@ -30,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [currentOrganization, setCurrentOrganization] = React.useState<Organization | null>(null);
   const [organizationMembers, setOrganizationMembers] = React.useState<User[]>([]);
+  const [token, setToken] = React.useState<string | null>(localStorage.getItem(JWT_TOKEN_KEY));
   const [isAuthLoading, setIsAuthLoading] = React.useState(true);
   const { showToast } = useToast();
 
@@ -69,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password: string): Promise<User> => {
     const { token, user } = await authService.login(username, password);
     localStorage.setItem(JWT_TOKEN_KEY, token);
+    setToken(token);
     await fetchFullContext(token);
     return user;
   };
@@ -76,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithFaceId = async (username: string): Promise<User> => {
     const { token, user } = await authService.loginWithFaceId(username);
     localStorage.setItem(JWT_TOKEN_KEY, token);
+    setToken(token);
     await fetchFullContext(token);
     return user;
   };
@@ -90,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
     setCurrentOrganization(null);
     setOrganizationMembers([]);
+    setToken(null);
     localStorage.removeItem(JWT_TOKEN_KEY);
     localStorage.removeItem(FACE_ID_AUTOLOGIN_KEY);
   };
@@ -145,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, currentOrganization, organizationMembers, isAuthLoading, login, loginWithFaceId, logout, signup, updateUser, inviteMember, updateMemberRole, removeMember, refetchContext }}>
+    <AuthContext.Provider value={{ currentUser, currentOrganization, organizationMembers, token, isAuthLoading, login, loginWithFaceId, logout, signup, updateUser, inviteMember, updateMemberRole, removeMember, refetchContext }}>
       {children}
     </AuthContext.Provider>
   );

@@ -189,40 +189,14 @@
         animation: spin-border 2s linear infinite;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.3",
-    "recharts": "https://aistudiocdn.com/recharts@^3.2.1",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
-    "react-dom": "https://aistudiocdn.com/react-dom@^19.1.1",
-    "process": "https://aistudiocdn.com/process@^0.11.10",
-    "nodemailer": "https://aistudiocdn.com/nodemailer@^7.0.7",
-    "twilio": "https://aistudiocdn.com/twilio@^5.10.2",
-    "cors": "https://aistudiocdn.com/cors@^2.8.5",
-    "dotenv": "https://aistudiocdn.com/dotenv@^17.2.3",
-    "bcryptjs": "https://aistudiocdn.com/bcryptjs@^3.0.2",
-    "express": "https://aistudiocdn.com/express@^5.1.0",
-    "jsonwebtoken": "https://aistudiocdn.com/jsonwebtoken@^9.0.2",
-    "sqlite3": "https://aistudiocdn.com/sqlite3@^5.1.7",
-    "sqlite": "https://aistudiocdn.com/sqlite@^5.1.1",
-    "pg": "https://aistudiocdn.com/pg@^8.16.3",
-    "openai": "https://aistudiocdn.com/openai@^6.2.0",
-    "buffer": "https://aistudiocdn.com/buffer@^6.0.3",
-    "path": "https://aistudiocdn.com/path@^0.12.7"
-  }
-}
-</script>
 <link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-gray-100 dark:bg-gradient-to-r dark:from-black dark:to-[#1C1C1E] text-gray-800 dark:text-gray-200 min-h-screen animated-gradient">
     <div id="root"></div>
     <div id="toast-root"></div>
     <script>
-      if ('serviceWorker' in navigator) {
+      const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      if (!isLocalhost && 'serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(registration => {
             console.log('SW registered: ', registration);

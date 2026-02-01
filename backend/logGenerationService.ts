@@ -1,6 +1,7 @@
 import { getDb } from './database';
 import { LogLevel, LogEntry, Organization } from './types';
 import * as crypto from 'crypto';
+import { emitLog } from './websocket';
 
 const sources = ['api-gateway', 'user-service', 'db-replicator', 'frontend-logger', 'auth-service'];
 const messages = [
@@ -19,30 +20,53 @@ const messages = [
 
 const getRandomElement = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
+// Messages that should always be FATAL level
+const fatalMessages = [
+  'FATAL: Core system meltdown imminent. Evacuate datacenter.',
+  'FATAL: Database corruption detected. Immediate attention required.',
+  'FATAL: Out of memory - system crash imminent.',
+];
+
+const normalMessages = [
+  'User logged in successfully',
+  'Failed to connect to database: timeout expired',
+  'Request processed in 25ms',
+  'Invalid credentials for user: admin',
+  'Cache cleared for key: user:123',
+  'Unhandled exception: NullPointerException in UserProfile',
+  'Service started on port 8080',
+  'High CPU usage detected: 95%',
+  'Disk space is critically low on /var/log',
+  'Payment processed for order #ABC-123',
+];
+
 const generateLogEntry = (): Omit<LogEntry, 'id' | 'organizationId' | 'timestamp'> => {
   let level: LogLevel;
   let anomalyScore: number;
-  let message = getRandomElement(messages);
+  let message: string;
   
   const rand = Math.random();
   if (rand < 0.7) {
     level = LogLevel.INFO;
     anomalyScore = Math.random() * 0.1; // 0.0 - 0.1
+    message = getRandomElement(normalMessages);
   } else if (rand < 0.9) {
     level = LogLevel.WARN;
     anomalyScore = 0.2 + Math.random() * 0.3; // 0.2 - 0.5
+    message = getRandomElement(normalMessages);
   } else if (rand < 0.97) {
     level = LogLevel.ERROR;
     anomalyScore = 0.5 + Math.random() * 0.3; // 0.5 - 0.8
+    message = getRandomElement(normalMessages);
   } else {
+    // FATAL logs (3% chance)
     level = LogLevel.FATAL;
     anomalyScore = 0.8 + Math.random() * 0.2; // 0.8 - 1.0
-    if (anomalyScore > 0.95) {
-        message = messages[10]; // Ensure a very specific fatal message for high scores
-    }
+    message = getRandomElement(fatalMessages);
   }
+  
   // Sprinkle in some debug logs
-  if (Math.random() < 0.1) {
+  if (Math.random() < 0.1 && level !== LogLevel.FATAL) {
     level = LogLevel.DEBUG;
     anomalyScore = 0.1 + Math.random() * 0.1; // 0.1 - 0.2
   }
@@ -70,6 +94,12 @@ const insertLogForOrg = async (organizationId: string) => {
             'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore") VALUES (?, ?, ?, ?, ?, ?, ?)',
             [newLog.id, newLog.organizationId, newLog.timestamp, newLog.level, newLog.message, newLog.source, newLog.anomalyScore]
         );
+
+        // Emit to WebSocket for Live Tail
+        emitLog(newLog);
+
+        const { checkAndAlert } = require('./alertingService');
+        checkAndAlert(newLog).catch((e: any) => console.error('Alerting check failed:', e));
     } catch (error) {
         console.error(`Failed to insert log for org ${organizationId}:`, error);
     }

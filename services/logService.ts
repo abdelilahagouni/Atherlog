@@ -94,44 +94,36 @@ export const bulkIngestLogs = async (logs: Partial<LogEntry>[]): Promise<{ count
 };
 
 
-// The alert history remains a frontend simulation using localStorage for now to limit scope.
-const ALERT_HISTORY_KEY = 'alertHistory';
 export const getAlertHistory = (): Promise<AlertHistoryEntry[]> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            try {
-                const rawHistory = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '[]');
-                // Filter out any corrupt entries that might cause crashes
-                const validHistory = Array.isArray(rawHistory) ? rawHistory.filter((item: any) => 
-                    item && 
-                    item.id && 
-                    item.timestamp && 
-                    item.log && 
-                    item.log.message
-                ) : [];
-                
-                resolve(validHistory.sort((a: AlertHistoryEntry, b: AlertHistoryEntry) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-            } catch (error) {
-                console.error("Failed to fetch alert history:", error);
-                reject(error);
-            }
-        }, 200);
+    const response = fetch(`${API_BASE_URL}/alerts/history`, {
+        headers: getAuthHeaders(),
     });
+    return response.then(handleResponse);
+};
+
+export const getAlertEvents = (params: { type?: string; severity?: string; sent?: string; limit?: number } = {}): Promise<any[]> => {
+    const qs = new URLSearchParams();
+    if (params.type) qs.append('type', params.type);
+    if (params.severity) qs.append('severity', params.severity);
+    if (params.sent) qs.append('sent', params.sent);
+    if (params.limit) qs.append('limit', String(params.limit));
+
+    const response = fetch(`${API_BASE_URL}/alerts/events?${qs.toString()}`, {
+        headers: getAuthHeaders(),
+    });
+    return response.then(handleResponse);
+};
+
+export const generateAlertProposal = (alertId: string): Promise<any> => {
+    const response = fetch(`${API_BASE_URL}/alerts/events/${encodeURIComponent(alertId)}/proposal`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+    });
+    return response.then(handleResponse);
 };
 
 export const logAlertToHistory = (log: LogEntry): void => {
-    const history: AlertHistoryEntry[] = JSON.parse(localStorage.getItem(ALERT_HISTORY_KEY) || '[]');
-    const newEntry: AlertHistoryEntry = {
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        log: log,
-    };
-    const updatedHistory = [newEntry, ...history];
-    // Keep the list from growing indefinitely
-    if (updatedHistory.length > 200) {
-        updatedHistory.length = 200;
-    }
-    localStorage.setItem(ALERT_HISTORY_KEY, JSON.stringify(updatedHistory));
+    void log;
 };
 
 

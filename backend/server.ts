@@ -2,9 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import http from 'http';
 import { connectDb } from './database';
 import process from 'process';
 import { startLogGeneration } from './logGenerationService';
+import { initializeWebSocket } from './websocket';
+import { startLogRetention } from './logRetentionService';
 
 // Load environment variables
 // 1. Try default location (current directory / backend)
@@ -29,6 +32,9 @@ import savedSearchRouter from './savedSearch.routes';
 import paymentRouter from './payment.routes';
 import databaseRouter from './database.routes';
 import incidentRouter from './incident.routes'; // Import the new incident router
+import connectorRoutes from './connector.routes';
+import alertsRouter from './alerts.routes';
+import pipelineRouter from './pipeline.routes';
 
 const app: express.Express = express();
 const PORT = parseInt(process.env.PORT || '4000');
@@ -53,7 +59,7 @@ app.use(cors({
             // For now, in production debugging, let's be permissive if the exact match fails
             // but log it so we know.
             console.log('CORS Origin Check:', origin, 'Allowed:', allowedOrigins);
-            // callback(new Error('Not allowed by CORS')); // Strict mode
+            // callback(new Error('Not allowed by CORS'));
             callback(null, true); // Permissive mode for troubleshooting
         }
     },
@@ -96,6 +102,10 @@ const sanitizeInput = (req: express.Request, res: express.Response, next: expres
 app.use(sanitizeInput);
 
 
+import webhookRouter from './webhook.routes';
+
+// ... (existing imports)
+
 // API Routes
 app.use('/api/auth', authRouter);
 app.use('/api/organization', organizationRouter);
@@ -107,27 +117,56 @@ app.use('/api/searches', savedSearchRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/database', databaseRouter);
 app.use('/api/incidents', incidentRouter); // Register the new incident router
+app.use('/api/connectors', connectorRoutes);
+app.use('/api/alerts', alertsRouter);
+app.use('/api/logs/pipelines', pipelineRouter);
+app.use('/api/webhooks', webhookRouter); // Register ESP Webhooks
 
 // Public Ingestion Route
 app.use('/api/ingest', ingestionRouter);
 
+
+// Create HTTP server for WebSocket support
+const httpServer = http.createServer(app);
 
 // Start server
 const startServer = async () => {
     try {
         await connectDb();
         console.log('Database connected successfully.');
+
+        // Initialize WebSocket server for real-time streaming
+        initializeWebSocket(httpServer);
+        console.log('WebSocket server initialized for real-time streaming.');
         
         // Start the background log generation service
         startLogGeneration();
 
-        app.listen(PORT, () => {
+        // Start log retention cleanup service
+        startLogRetention();
+
+        httpServer.listen(PORT, () => {
             console.log(`Backend server is running on http://localhost:${PORT}`);
+            console.log(`WebSocket available at ws://localhost:${PORT}`);
         });
     } catch (e) {
         console.error('Failed to start server:', e);
         process.exit(1);
     }
 };
+
+// Graceful shutdown
+const gracefulShutdown = async (signal: string) => {
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+    const { stopLogRetention } = await import('./logRetentionService');
+    stopLogRetention();
+    httpServer.close(() => {
+        console.log('HTTP server closed.');
+        process.exit(0);
+    });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 startServer();

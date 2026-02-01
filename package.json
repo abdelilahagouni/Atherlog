@@ -26,6 +26,7 @@
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",
     "recharts": "^3.2.1",
+    "socket.io-client": "^4.8.3",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "twilio": "^5.10.2"

@@ -20,13 +20,12 @@ import LandingPage from './components/LandingPage';
 import { Icon } from './components/ui/Icon';
 import PricingPage from './components/PricingPage';
 import AboutPage from './components/AboutPage';
+import { soundNotificationService } from './services/soundNotificationService';
 
 // Lazy load components for code splitting
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const LiveAnomalies = lazy(() => import('./components/LiveAnomalies'));
-const GlobalSearch = lazy(() => import('./components/GlobalSearch'));
-const SocialRecon = lazy(() => import('./components/SocialRecon'));
-const HashCracker = lazy(() => import('./components/HashCracker'));
+const LogExplorer = lazy(() => import('./components/LogExplorer'));
 const AlertHistory = lazy(() => import('./components/AlertHistory'));
 const VisualLogParser = lazy(() => import('./components/VisualLogParser'));
 const LiveObjectDetector = lazy(() => import('./components/LiveObjectDetector'));
@@ -51,6 +50,9 @@ const DeploymentHistory = lazy(() => import('./components/DeploymentHistory'));
 const ProactiveInsights = lazy(() => import('./components/ProactiveInsights'));
 const DatasetLaboratory = lazy(() => import('./components/DatasetLaboratory'));
 const EnterpriseConnectors = lazy(() => import('./components/EnterpriseConnectors'));
+const AlertCenterPlus = lazy(() => import('./components/AlertCenterPlus'));
+const LiveTail = lazy(() => import('./components/LiveTail'));
+const PipelineManager = lazy(() => import('./components/PipelineManager'));
 
 const SuspenseFallback: React.FC = () => (
   <div className="flex items-center justify-center h-full w-full">
@@ -86,10 +88,10 @@ const App: React.FC = () => {
                               <Routes>
                                 <Route path="/dashboard" element={<Dashboard />} />
                                 <Route path="/live-anomalies" element={<LiveAnomalies />} />
-                                <Route path="/global-search" element={<GlobalSearch />} />
-                                <Route path="/social-recon" element={<SocialRecon />} />
-                                <Route path="/hash-cracker" element={<HashCracker />} />
+                                <Route path="/log-explorer" element={<LogExplorer />} />
+                                <Route path="/live-tail" element={<LiveTail />} />
                                 <Route path="/alert-history" element={<AlertHistory />} />
+                                <Route path="/alert-center" element={<AlertCenterPlus />} />
                                 <Route path="/visual-log-parser" element={<VisualLogParser />} />
                                 <Route path="/live-object-detector" element={<LiveObjectDetector />} />
                                 <Route path="/pattern-recognition" element={<PatternRecognition />} />
@@ -100,6 +102,7 @@ const App: React.FC = () => {
                                 <Route path="/notifications" element={<Notifications />} />
                                 <Route path="/incidents" element={<IncidentCenter />} />
                                 <Route path="/incidents/:id" element={<IncidentDetail />} />
+                                <Route path="/log-pipelines" element={<PipelineManager />} />
                                 <Route path="/dataset-lab" element={<DatasetLaboratory />} />
                                 <Route 
                                   path="/settings" 

@@ -145,7 +145,87 @@ export const connectDb = async () => {
         );
     `);
 
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS connector_configs (
+            "id" TEXT PRIMARY KEY,
+            "organizationId" TEXT NOT NULL,
+            "connectorId" TEXT NOT NULL,
+            "enabled" BOOLEAN NOT NULL DEFAULT FALSE,
+            "status" TEXT NOT NULL DEFAULT 'inactive',
+            "config" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "lastSync" TIMESTAMPTZ,
+            "lastError" TEXT,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE,
+            UNIQUE ("organizationId", "connectorId")
+        );
+    `);
 
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS alert_events (
+            "id" TEXT PRIMARY KEY,
+            "organizationId" TEXT NOT NULL,
+            "type" TEXT NOT NULL,
+            "severity" TEXT NOT NULL,
+            "source" TEXT,
+            "logId" TEXT,
+            "payload" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
+        );
+    `);
+
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS alert_cooldowns (
+            "id" TEXT PRIMARY KEY,
+            "organizationId" TEXT NOT NULL,
+            "type" TEXT NOT NULL,
+            "source" TEXT,
+            "lastSentAt" TIMESTAMPTZ NOT NULL,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE,
+            UNIQUE ("organizationId", "type", "source")
+        );
+    `);
+
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS log_pipelines (
+            "id" TEXT PRIMARY KEY,
+            "organizationId" TEXT NOT NULL,
+            "name" TEXT NOT NULL,
+            "description" TEXT,
+            "enabled" BOOLEAN DEFAULT TRUE,
+            "order" INTEGER DEFAULT 0,
+            "rules" JSONB NOT NULL DEFAULT '[]'::jsonb,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
+        );
+    `);
+
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS email_events (
+            "id" TEXT PRIMARY KEY,
+            "organizationId" TEXT NOT NULL,
+            "email" TEXT NOT NULL,
+            "event" TEXT NOT NULL, -- sent, delivered, bounce, complaint, click, open
+            "reason" TEXT,
+            "timestamp" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
+        );
+    `);
+
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS email_suppressions (
+            "email" TEXT PRIMARY KEY,
+            "organizationId" TEXT NOT NULL,
+            "reason" TEXT NOT NULL, -- bounce, complaint, manually_unsubscribed, spam_trap
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
+        );
+    `);
     // Add indexes for performance
     await db.exec('CREATE INDEX IF NOT EXISTS idx_users_username ON users("username");');
     await db.exec('CREATE INDEX IF NOT EXISTS idx_users_email ON users("email");');
@@ -171,7 +251,10 @@ export const connectDb = async () => {
 
     await db.exec('CREATE INDEX IF NOT EXISTS idx_api_keys_organizationId ON api_keys("organizationId");');
     await db.exec('CREATE INDEX IF NOT EXISTS idx_saved_searches_organizationId ON saved_searches("organizationId");');
-    
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_connector_configs_org_connector ON connector_configs("organizationId", "connectorId");');
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_alert_events_org_created ON alert_events("organizationId", "createdAt" DESC);');
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_alert_cooldowns_org_type_source ON alert_cooldowns("organizationId", "type", "source");');
+
     const row = await db.get<{ count: string }>('SELECT COUNT(*) as count FROM users');
     if (row && parseInt(row.count, 10) === 0) {
         console.log('No users found, creating superadmin...');

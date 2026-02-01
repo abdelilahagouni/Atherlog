@@ -1,6 +1,7 @@
 import { LogEntry, NotificationContact } from '../types';
 import { handleResponse } from './authService';
 import { getNotificationContacts } from './logService';
+import { soundNotificationService } from './soundNotificationService';
 
 const API_BASE_URL = '/api';
 
@@ -35,6 +36,10 @@ export const reportFatalError = async (log: LogEntry): Promise<void> => {
         console.error("Authentication required to report fatal error.");
         return;
     }
+    
+    // Play WhatsApp-like fatal error sound
+    await soundNotificationService.playSound('fatal');
+    
      const response = await fetch(`${API_BASE_URL}/notifications/fatal-error`, {
         method: 'POST',
         headers: { 
@@ -66,6 +71,9 @@ export const sendFatalErrorNotifications = async (log: LogEntry): Promise<string
             return []; // Return empty array if no contacts
         }
 
+        // Play WhatsApp-like fatal error sound
+        await soundNotificationService.playSound('fatal');
+
         const shortMessage = log.message.length > 40 ? `${log.message.substring(0, 40)}...` : log.message;
 
         contacts.forEach(contact => {
@@ -79,5 +87,40 @@ export const sendFatalErrorNotifications = async (log: LogEntry): Promise<string
     } catch (error) {
         console.error("Failed to simulate sending fatal error notifications:", error);
         return [`Error simulating notifications: ${(error as Error).message}`];
+    }
+};
+
+/**
+ * Triggers sound notification for critical errors
+ */
+export const playCriticalErrorSound = async (): Promise<void> => {
+    await soundNotificationService.playSound('critical');
+};
+
+/**
+ * Triggers sound notification for warning errors
+ */
+export const playWarningSound = async (): Promise<void> => {
+    await soundNotificationService.playSound('warning');
+};
+
+/**
+ * Determines error level and plays appropriate sound
+ */
+export const playErrorSound = async (level: 'FATAL' | 'ERROR' | 'WARN' | 'WARNING'): Promise<void> => {
+    switch (level) {
+        case 'FATAL':
+            await soundNotificationService.playSound('fatal');
+            break;
+        case 'ERROR':
+            await soundNotificationService.playSound('critical');
+            break;
+        case 'WARN':
+        case 'WARNING':
+            await soundNotificationService.playSound('warning');
+            break;
+        default:
+            // No sound for info/debug levels
+            break;
     }
 };

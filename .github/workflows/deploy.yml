@@ -1,0 +1,53 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "🚀 Starting deployment..."
+            cd /var/www/aetherlog
+            
+            # Stash any local changes
+            git stash
+            
+            # Pull latest changes
+            git pull origin main
+            
+            echo "📦 Installing frontend dependencies..."
+            npm install --legacy-peer-deps
+            
+            echo "🔨 Building frontend..."
+            npm run build
+            
+            echo "📦 Installing backend dependencies..."
+            cd backend
+            npm install
+            
+            echo "🐍 Updating Python service..."
+            cd ../python-service
+            source venv/bin/activate
+            pip install -r requirements.txt --quiet
+            deactivate
+            
+            echo "🔄 Restarting services..."
+            pm2 restart all
+            
+            echo "✅ Deployment complete!"
+            echo "📊 Service status:"
+            pm2 status

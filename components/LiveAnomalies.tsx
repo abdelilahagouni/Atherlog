@@ -11,6 +11,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import RootCauseAnalysisModal from './RootCauseAnalysisModal';
 import AiPlaybookModal from './AiPlaybookModal';
 import { AiChoiceDropdown } from './ui/AiChoiceDropdown';
+import { soundNotificationService } from '../services/soundNotificationService';
 
 type AiProvider = 'gemini' | 'openai' | 'python';
 
@@ -121,6 +122,19 @@ const LiveAnomalies: React.FC = () => {
   React.useEffect(() => {
     if (!isPaused && logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+    }
+  }, [logs, isPaused]);
+
+  // Sound notification effect for new logs (WhatsApp-style)
+  React.useEffect(() => {
+    if (!isPaused && logs.length > 0) {
+      const latestLog = logs[logs.length - 1];
+      // Play WhatsApp-style sounds for high-severity logs
+      if (latestLog.level === LogLevel.FATAL) {
+        soundNotificationService.playSound('fatal');
+      } else if (latestLog.level === LogLevel.ERROR) {
+        soundNotificationService.playSound('critical');
+      }
     }
   }, [logs, isPaused]);
 
@@ -298,13 +312,23 @@ const LiveAnomalies: React.FC = () => {
       <div className="flex-1 flex flex-col bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-black/20">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Log Stream</h3>
-          <button
-            onClick={() => setIsPaused(!isPaused)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200`}
-          >
-            <Icon name={isPaused ? 'play' : 'pause'} className="w-4 h-4" />
-            {isPaused ? 'Resume' : 'Pause'}
-          </button>
+          <div className="flex gap-2">
+            <button
+                onClick={() => soundNotificationService.testSound('fatal')}
+                className="px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300"
+                title="Test Fatal Error Sound"
+            >
+                <Icon name="volume-2" className="w-4 h-4" />
+                Test Sound
+            </button>
+            <button
+                onClick={() => setIsPaused(!isPaused)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200`}
+            >
+                <Icon name={isPaused ? 'play' : 'pause'} className="w-4 h-4" />
+                {isPaused ? 'Resume' : 'Pause'}
+            </button>
+          </div>
         </div>
         <div ref={logContainerRef} className="flex-1 p-4 overflow-y-auto font-mono text-sm space-y-2">
           {isStreamLoading && logs.length === 0 && (
