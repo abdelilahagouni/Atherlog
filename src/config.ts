@@ -24,9 +24,9 @@ const devConfig: Config = {
 
 // Production config (from environment variables or defaults)
 const prodConfig: Config = {
-  apiUrl: import.meta.env.VITE_API_URL || 'https://aetherlog-backend.up.railway.app',
-  wsUrl: import.meta.env.VITE_WS_URL || 'wss://aetherlog-backend.up.railway.app',
-  pythonUrl: import.meta.env.VITE_PYTHON_URL || 'https://aetherlog-python.up.railway.app'
+  apiUrl: import.meta.env.VITE_API_URL || 'https://aetherlog-backend-production.up.railway.app',
+  wsUrl: import.meta.env.VITE_WS_URL || 'wss://aetherlog-backend-production.up.railway.app',
+  pythonUrl: import.meta.env.VITE_PYTHON_URL || 'https://aetherlog-python-production.up.railway.app'
 };
 
 const config: Config = isProd ? prodConfig : devConfig;
