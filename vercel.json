@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR-RAILWAY-URL.up.railway.app/api/:path*"
+      "destination": "https://aetherlog-backend-production.up.railway.app/api/:path*"
     }
   ],
   "headers": [
