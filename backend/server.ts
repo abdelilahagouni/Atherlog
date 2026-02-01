@@ -145,9 +145,9 @@ const startServer = async () => {
         // Start log retention cleanup service
         startLogRetention();
 
-        httpServer.listen(PORT, () => {
-            console.log(`Backend server is running on http://localhost:${PORT}`);
-            console.log(`WebSocket available at ws://localhost:${PORT}`);
+        httpServer.listen(PORT, '0.0.0.0', () => {
+            console.log(`Backend server is running on port ${PORT}`);
+            console.log(`WebSocket available on the same port`);
         });
     } catch (e) {
         console.error('Failed to start server:', e);
