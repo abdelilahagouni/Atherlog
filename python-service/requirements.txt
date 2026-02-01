@@ -1,12 +1,8 @@
 flask==3.0.0
-# tensorflow-cpu==2.15.0 (Commented out to save memory on Render Free Tier)
 numpy==1.26.2
 gunicorn==21.2.0
 scikit-learn==1.6.0
 pandas==2.1.4
 scipy==1.11.4
-transformers==4.36.2
-torch==2.1.2
-datasets==2.16.1
-tf-keras
-accelerate>=0.26.0
+# (Heavy DL libraries removed for lightweight production deployment)
+
