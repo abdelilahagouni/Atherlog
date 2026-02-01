@@ -1,7 +1,7 @@
 // Service Worker for PWA offline support
-const CACHE_NAME = 'aetherlog-v2';
-const RUNTIME_CACHE = 'aetherlog-runtime-v2';
-const IMAGE_CACHE = 'aetherlog-images-v2';
+const CACHE_NAME = 'aetherlog-v3';
+const RUNTIME_CACHE = 'aetherlog-runtime-v3';
+const IMAGE_CACHE = 'aetherlog-images-v3';
 
 const urlsToCache = [
   '/',
