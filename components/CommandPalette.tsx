@@ -31,6 +31,7 @@ const CommandPalette: React.FC = () => {
 
   const commands: Command[] = React.useMemo(() => [
     { id: 'nav-dashboard', type: 'navigation', title: 'Go to Dashboard', icon: 'dashboard', action: () => navigate('/dashboard'), keywords: 'home main' },
+    { id: 'nav-visual-analytics', type: 'navigation', title: 'Go to Visual Analytics', icon: 'sparkles', action: () => navigate('/visual-analytics'), keywords: 'ai insights charts' },
     { id: 'nav-anomalies', type: 'navigation', title: 'Go to Live Anomalies', icon: 'live', action: () => navigate('/live-anomalies'), keywords: 'logs stream' },
     { id: 'nav-history', type: 'navigation', title: 'Go to Alert History', icon: 'history', action: () => navigate('/alert-history') },
     { id: 'nav-parser', type: 'navigation', title: 'Go to Visual Parser', icon: 'visual-parser', action: () => navigate('/visual-log-parser'), keywords: 'image ocr' },

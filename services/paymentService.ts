@@ -2,7 +2,9 @@
 import { SubscriptionPlan } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = '/api/payment';
+import { API_BASE_URL as BASE_API_URL } from '../utils/config';
+
+const API_BASE_URL = `${BASE_API_URL}/payment`;
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('jwt_token');

@@ -1,19 +1,13 @@
-
 import * as React from 'react';
 import { lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import { SettingsProvider } from './contexts/SettingsContext';
-import { AuthProvider } from './contexts/AuthContext';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
 import ProtectedRoute from './components/ProtectedRoute';
-import { ToastProvider } from './contexts/ToastContext';
 import ForgotPassword from './components/ForgotPassword';
 import { Role } from './types';
 import ResetPassword from './components/ResetPassword';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { CommandPaletteProvider } from './contexts/CommandPaletteContext';
 import EmailVerificationPage from './components/EmailVerificationPage';
 import ResendVerificationPage from './components/ResendVerificationPage';
 import LandingPage from './components/LandingPage';
@@ -53,6 +47,7 @@ const EnterpriseConnectors = lazy(() => import('./components/EnterpriseConnector
 const AlertCenterPlus = lazy(() => import('./components/AlertCenterPlus'));
 const LiveTail = lazy(() => import('./components/LiveTail'));
 const PipelineManager = lazy(() => import('./components/PipelineManager'));
+const VisualAnalytics = lazy(() => import('./components/VisualAnalytics'));
 
 const SuspenseFallback: React.FC = () => (
   <div className="flex items-center justify-center h-full w-full">
@@ -63,14 +58,8 @@ const SuspenseFallback: React.FC = () => (
 
 const App: React.FC = () => {
   return (
-      <ThemeProvider>
-      <ToastProvider>
-        <AuthProvider>
-          <CommandPaletteProvider>
-            <SettingsProvider>
-                <HashRouter>
-                  <Routes>
-                    <Route path="/" element={<LandingPage />} />
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
                     <Route path="/pricing" element={<PricingPage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/login" element={<Login />} />
@@ -87,6 +76,7 @@ const App: React.FC = () => {
                             <Suspense fallback={<SuspenseFallback />}>
                               <Routes>
                                 <Route path="/dashboard" element={<Dashboard />} />
+                                <Route path="/visual-analytics" element={<VisualAnalytics />} />
                                 <Route path="/live-anomalies" element={<LiveAnomalies />} />
                                 <Route path="/log-explorer" element={<LogExplorer />} />
                                 <Route path="/live-tail" element={<LiveTail />} />
@@ -192,13 +182,7 @@ const App: React.FC = () => {
                         </ProtectedRoute>
                       }
                     />
-                  </Routes>
-                </HashRouter>
-            </SettingsProvider>
-          </CommandPaletteProvider>
-        </AuthProvider>
-      </ToastProvider>
-    </ThemeProvider>
+      </Routes>
   );
 };
 

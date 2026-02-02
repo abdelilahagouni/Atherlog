@@ -1,6 +1,6 @@
 import { Role, User, Organization } from '../types';
 
-const API_BASE_URL = '/api';
+import { API_BASE_URL } from '../utils/config';
 
 export const handleResponse = async (response: Response) => {
     const text = await response.text();

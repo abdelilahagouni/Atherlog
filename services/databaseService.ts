@@ -1,7 +1,9 @@
 import { QueryResult } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = '/api/database';
+import { API_BASE_URL as CENTRAL_API_BASE_URL } from '../utils/config';
+
+const API_BASE_URL = `${CENTRAL_API_BASE_URL}/database`;
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('jwt_token');

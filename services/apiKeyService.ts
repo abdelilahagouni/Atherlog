@@ -1,7 +1,9 @@
 import { ApiKey } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = '/api/keys';
+import { API_BASE_URL } from '../utils/config';
+
+const API_KEYS_ENDPOINT = `${API_BASE_URL}/keys`;
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('jwt_token');
@@ -13,14 +15,14 @@ const getAuthHeaders = () => {
 };
 
 export const getApiKeys = async (): Promise<ApiKey[]> => {
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(API_KEYS_ENDPOINT, {
         headers: getAuthHeaders(),
     });
     return handleResponse(response);
 };
 
 export const createApiKey = async (name: string): Promise<{ rawKey: string }> => {
-    const response = await fetch(API_BASE_URL, {
+    const response = await fetch(API_KEYS_ENDPOINT, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ name }),
@@ -29,7 +31,7 @@ export const createApiKey = async (name: string): Promise<{ rawKey: string }> =>
 };
 
 export const deleteApiKey = async (keyId: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/${keyId}`, {
+    const response = await fetch(`${API_KEYS_ENDPOINT}/${keyId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
     });

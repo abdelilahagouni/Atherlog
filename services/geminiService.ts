@@ -1,7 +1,8 @@
 import { LogEntry, GeneratedFilters, ChatMessage, RootCauseAnalysisResponse, FlowchartResponse, DetectedObjectInfo, LogPattern, AiPlaybook, AiDiscovery } from '../types';
 import { handleResponse } from './authService';
 
-const API_BASE_URL = '/api/ai';
+import { API_BASE_URL as ROOT_URL } from '../utils/config';
+const API_BASE_URL = `${ROOT_URL}/ai`;
 
 type ApiStatusValue = 'ok' | 'invalid_key' | 'not_configured' | 'quota_exceeded';
 

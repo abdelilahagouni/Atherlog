@@ -3,7 +3,7 @@ import { handleResponse } from './authService';
 import { getNotificationContacts } from './logService';
 import { soundNotificationService } from './soundNotificationService';
 
-const API_BASE_URL = '/api';
+import { API_BASE_URL } from '../utils/config';
 
 /**
  * Sends a request to the backend to trigger a simulated test notification.

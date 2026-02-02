@@ -73,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setMobileOpen }) => {
   const canAccessAdminPages = currentUser?.role === Role.OWNER || currentUser?.role === Role.SUPER_ADMIN || currentUser?.role === Role.ADMIN || currentUser?.role === Role.ANALYST;
   const isSuperAdmin = currentUser?.role === Role.SUPER_ADMIN;
 
-  const analysisPaths = ["/dashboard", "/live-anomalies", "/log-explorer", "/live-tail", "/alert-history", "/pattern-recognition", "/learned-insights", "/incidents", "/dataset-lab"];
+  const analysisPaths = ["/dashboard", "/visual-analytics", "/live-anomalies", "/log-explorer", "/live-tail", "/alert-history", "/pattern-recognition", "/learned-insights", "/incidents", "/dataset-lab"];
   const aiToolkitPaths = ["/ai-chat", "/visual-log-parser", "/live-object-detector"];
   const infraPaths = ["/container-insights"];
   const configPaths = ["/alerting", "/notifications", "/log-pipelines", "/proactive-insights", "/enterprise-connectors", "/settings", "/data-sources", "/audit-logs", "/billing", "/saas-subscription", "/roles-permissions", "/deployment-history", "/super-admin-panel"];
@@ -112,6 +112,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setMobileOpen }) => {
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 custom-scrollbar">
           <CollapsibleSection title="Analysis" icon="dashboard" paths={analysisPaths}>
               <NavLink to="/dashboard" className={navLinkClasses}>Dashboard</NavLink>
+              <NavLink to="/visual-analytics" className={navLinkClasses}>
+                <div className="flex items-center">
+                    <Icon name="sparkles" className="w-3.5 h-3.5 mr-2 text-[var(--accent-color-gold)]" />
+                    Visual Analytics
+                </div>
+              </NavLink>
               <NavLink to="/live-anomalies" className={navLinkClasses}>Live Anomalies</NavLink>
               <NavLink to="/live-tail" className={navLinkClasses}>Live Tail</NavLink>
               <NavLink to="/dataset-lab" className={navLinkClasses}>Dataset Lab</NavLink>
