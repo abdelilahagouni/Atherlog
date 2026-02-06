@@ -75,10 +75,9 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
             {error.code && <p className="text-red-300/60 text-[10px] mt-2 font-mono">Error Code: {error.code}</p>}
             {error.hint && <p className="text-gray-400 text-[10px] mt-1 italic">{error.hint}</p>}
         </div>
-        <p className="text-gray-500 text-xs">This usually happens when the AI service is under heavy load or spinning up on Render Free Tier.</p>
-        <div className="flex flex-col space-y-2">
+        <p className="text-gray-500 text-xs">This usually happens when the AI service is under heavy load or spinning up on Render Free Tier.</p>        <div className="flex flex-col space-y-2">
             <a 
-                href={`${API_BASE_URL}/api/ai/check-python`} 
+                href={`${API_BASE_URL}/ai/check-python`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-400 text-[10px] hover:underline"
@@ -227,6 +226,68 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
             </div>
             <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full font-bold">BETA</span>
         </div>
+        
+        {/* Loghub Dataset Loader */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-xl border border-emerald-500/20">
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                    <Icon name="database" className="w-5 h-5 text-emerald-400" />
+                    <span className="text-sm font-bold text-emerald-300">Research Datasets (Loghub)</span>
+                </div>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">NEW</span>
+            </div>
+            <p className="text-xs text-gray-400 mb-3">Load industry-standard log datasets for benchmarking your anomaly detection models.</p>
+            <div className="flex flex-wrap gap-2">
+                <button
+                    onClick={async () => {
+                        const statusEl = document.getElementById('loghub-status');
+                        if (statusEl) statusEl.innerHTML = '<span class="text-blue-400 animate-pulse">Loading HDFS dataset...</span>';                        try {
+                            const res = await fetch(`${API_BASE_URL}/ai/load-dataset`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
+                                body: JSON.stringify({ dataset_id: 'hdfs', max_samples: 2000 })
+                            });
+                            const data = await res.json();
+                            if (res.ok && statusEl) {
+                                statusEl.innerHTML = `<span class="text-green-400">✓ Loaded ${data.count} HDFS logs! Ready for training.</span>`;
+                            } else if (statusEl) {
+                                statusEl.innerHTML = `<span class="text-red-400">Error: ${data.error || 'Failed to load'}</span>`;
+                            }
+                        } catch (e: any) {
+                            if (statusEl) statusEl.innerHTML = `<span class="text-red-400">Network error: ${e.message}</span>`;
+                        }
+                    }}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                >
+                    Load HDFS (Hadoop)
+                </button>
+                <button
+                    onClick={async () => {
+                        const statusEl = document.getElementById('loghub-status');
+                        if (statusEl) statusEl.innerHTML = '<span class="text-blue-400 animate-pulse">Loading BGL dataset...</span>';                        try {
+                            const res = await fetch(`${API_BASE_URL}/ai/load-dataset`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
+                                body: JSON.stringify({ dataset_id: 'bgl', max_samples: 2000 })
+                            });
+                            const data = await res.json();
+                            if (res.ok && statusEl) {
+                                statusEl.innerHTML = `<span class="text-green-400">✓ Loaded ${data.count} BGL logs! Ready for training.</span>`;
+                            } else if (statusEl) {
+                                statusEl.innerHTML = `<span class="text-red-400">Error: ${data.error || 'Failed to load'}</span>`;
+                            }
+                        } catch (e: any) {
+                            if (statusEl) statusEl.innerHTML = `<span class="text-red-400">Network error: ${e.message}</span>`;
+                        }
+                    }}
+                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-xs font-semibold transition-colors"
+                >
+                    Load BGL (BlueGene/L)
+                </button>
+            </div>
+            <div id="loghub-status" className="mt-2 text-xs text-gray-500">Select a dataset to begin.</div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-4">
                 <div>
@@ -235,20 +296,24 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
                 </div>
                 <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Dataset</label>
-                    <input type="text" defaultValue="imdb" id="hf-dataset-name" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="e.g. imdb or custom" />
+                    <select id="hf-dataset-name" className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-purple-500 outline-none">
+                        <option value="custom">Custom (Your Org Logs)</option>
+                        <option value="hdfs">Loghub HDFS</option>
+                        <option value="bgl">Loghub BGL</option>
+                        <option value="imdb">IMDB (Demo)</option>
+                    </select>
                 </div>
                 <button 
                     onClick={async () => {
                         const btn = document.getElementById('train-btn') as HTMLButtonElement;
                         const status = document.getElementById('train-status') as HTMLDivElement;
                         const modelName = (document.getElementById('hf-model-name') as HTMLInputElement).value;
-                        const datasetName = (document.getElementById('hf-dataset-name') as HTMLInputElement).value;
+                        const datasetName = (document.getElementById('hf-dataset-name') as HTMLSelectElement).value;
                         
                         if(btn) { btn.disabled = true; btn.innerText = 'Training...'; }
                         if(status) { status.innerText = 'Initializing training job...'; status.className = 'text-sm text-blue-400 animate-pulse'; }
-                        
-                        try {
-                            const res = await fetch(`${API_BASE_URL}/api/ai/train`, {
+                          try {
+                            const res = await fetch(`${API_BASE_URL}/ai/train`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
                                 body: JSON.stringify({ 
@@ -312,10 +377,8 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
                         
                         if(resultDiv) {
                             resultDiv.innerHTML = '<span class="animate-pulse text-gray-400">Analyzing...</span>';
-                        }
-
-                        try {
-                            const res = await fetch(`${API_BASE_URL}/api/ai/predict_hf`, {
+                        }                        try {
+                            const res = await fetch(`${API_BASE_URL}/ai/predict_hf`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
                                 body: JSON.stringify({ text: input })
@@ -430,9 +493,8 @@ const AiDashboard: React.FC<AiDashboardProps> = ({ logs }) => {
                         
                         if(btn) { btn.disabled = true; btn.innerText = 'Training...'; }
                         if(status) { status.innerText = 'Training model...'; status.className = 'md:col-span-2 bg-black/20 rounded-xl p-4 font-mono text-xs text-blue-400 overflow-y-auto h-48 border border-gray-800 animate-pulse'; }
-                        
-                        try {
-                            const res = await fetch(`${API_BASE_URL}/api/ai/train-dataset`, {
+                          try {
+                            const res = await fetch(`${API_BASE_URL}/ai/train-dataset`, {
                                 method: 'POST',
                                 headers: { 
                                     'Content-Type': 'application/json',

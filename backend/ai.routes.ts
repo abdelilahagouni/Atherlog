@@ -1098,4 +1098,49 @@ router.post('/classify', protect, async (req: express.Request, res: express.Resp
     }
 });
 
+// POST /api/ai/load-dataset - Load a research dataset (Loghub HDFS/BGL)
+router.post('/load-dataset', protect, async (req: express.Request, res: express.Response) => {
+    const { dataset_id, max_samples } = req.body;
+    const pythonServiceUrl = getPythonServiceUrl();
+    
+    try {
+        const response = await fetch(`${pythonServiceUrl}/datasets/load`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dataset_id: dataset_id || 'hdfs', max_samples: max_samples || 2000 })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ error: errorText });
+        }
+
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        console.error("[LOAD-DATASET] Error:", error);
+        res.status(503).json({ error: "Dataset loading service unavailable" });
+    }
+});
+
+// GET /api/ai/available-datasets - List available research datasets
+router.get('/available-datasets', protect, async (req: express.Request, res: express.Response) => {
+    const pythonServiceUrl = getPythonServiceUrl();
+    
+    try {
+        const response = await fetch(`${pythonServiceUrl}/datasets/available`);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ error: errorText });
+        }
+
+        const data = await response.json();
+        res.json(data);
+    } catch (error: any) {
+        console.error("[AVAILABLE-DATASETS] Error:", error);
+        res.status(503).json({ error: "Dataset service unavailable" });
+    }
+});
+
 export default router;

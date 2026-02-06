@@ -215,9 +215,7 @@ export const connectDb = async () => {
             "timestamp" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
         );
-    `);
-
-    await db.exec(`
+    `);    await db.exec(`
         CREATE TABLE IF NOT EXISTS email_suppressions (
             "email" TEXT PRIMARY KEY,
             "organizationId" TEXT NOT NULL,
@@ -226,6 +224,37 @@ export const connectDb = async () => {
             FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
         );
     `);
+
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS incidents (
+            "id" TEXT PRIMARY KEY,
+            "organizationId" TEXT NOT NULL,
+            "title" TEXT NOT NULL,
+            "status" TEXT NOT NULL DEFAULT 'INVESTIGATING',
+            "severity" INTEGER NOT NULL DEFAULT 3,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            "resolvedAt" TIMESTAMPTZ,
+            "triggeringLog" JSONB,
+            "rcaResult" JSONB,
+            "playbook" JSONB,
+            FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
+        );
+    `);
+
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS incident_activity (
+            "id" TEXT PRIMARY KEY,
+            "incidentId" TEXT NOT NULL,
+            "timestamp" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            "userId" TEXT NOT NULL,
+            "username" TEXT NOT NULL,
+            "note" TEXT NOT NULL,
+            FOREIGN KEY ("incidentId") REFERENCES incidents("id") ON DELETE CASCADE
+        );
+    `);
+
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_incidents_org ON incidents("organizationId", "createdAt" DESC);');
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_incident_activity_incident ON incident_activity("incidentId", "timestamp" ASC);');
     // Add indexes for performance
     await db.exec('CREATE INDEX IF NOT EXISTS idx_users_username ON users("username");');
     await db.exec('CREATE INDEX IF NOT EXISTS idx_users_email ON users("email");');

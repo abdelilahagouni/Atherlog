@@ -1,8 +1,9 @@
 flask==3.0.0
-numpy==1.26.2
+numpy>=1.26.0
 gunicorn==21.2.0
-scikit-learn==1.6.0
-pandas==2.1.4
-scipy==1.11.4
-# (Heavy DL libraries removed for lightweight production deployment)
+scikit-learn>=1.4.0
+pandas>=2.2.0
+scipy>=1.12.0
+sentence-transformers>=2.2.0
+shap>=0.44.0
 
