@@ -41,29 +41,57 @@ const transformSql = (sql: string) => {
 export const connectDb = async () => {
     if (pool) return;
 
-    try {
-        console.log('Connecting to PostgreSQL database...');
-        const connectionConfig = process.env.DATABASE_URL
-            ? { 
-                connectionString: process.env.DATABASE_URL,
-                ssl: { rejectUnauthorized: false } // Required for Render/Cloud DBs
-              }
-            : {
-                host: process.env.POSTGRES_HOST || 'localhost',
-                port: parseInt(process.env.POSTGRES_PORT || '5434'),
-                user: process.env.POSTGRES_USER || 'admin',
-                password: process.env.POSTGRES_PASSWORD || 'password123',
-                database: process.env.POSTGRES_DB || 'ailoganalyzer',
-            };
+    const MAX_RETRIES = 10;
+    const BASE_DELAY_MS = 2000; // 2 seconds
 
-        pool = new Pool(connectionConfig);
+    const connectionConfig = process.env.DATABASE_URL
+        ? { 
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false } // Required for Render/Cloud DBs
+          }
+        : {
+            host: process.env.POSTGRES_HOST || 'localhost',
+            port: parseInt(process.env.POSTGRES_PORT || '5434'),
+            user: process.env.POSTGRES_USER || 'admin',
+            password: process.env.POSTGRES_PASSWORD || 'password123',
+            database: process.env.POSTGRES_DB || 'ailoganalyzer',
+        };
 
-        // Test the connection
-        await pool.query('SELECT NOW()');
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            console.log(`Connecting to PostgreSQL (attempt ${attempt}/${MAX_RETRIES})...`);
+            pool = new Pool(connectionConfig);
 
-    } catch (err) {
-        console.error('Failed to connect to PostgreSQL. Please ensure the database is running and environment variables are set correctly.', err);
-        exit(1);
+            // Test the connection
+            await pool.query('SELECT NOW()');
+            console.log('PostgreSQL connected successfully.');
+            break; // success — exit the retry loop
+
+        } catch (err: any) {
+            // Clean up the failed pool so a fresh one is created on retry
+            if (pool) {
+                try { await pool.end(); } catch (_) { /* ignore */ }
+                pool = undefined as any;
+            }
+
+            const code = err?.code || '';
+            const isRecoverable = ['57P03', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT'].includes(code)
+                || (err?.message && /recovery mode|starting up|not ready/i.test(err.message));
+
+            if (attempt === MAX_RETRIES || !isRecoverable) {
+                console.error(`Fatal: Could not connect to PostgreSQL after ${attempt} attempt(s).`, err);
+                // In production, let the process crash so the orchestrator can restart it
+                // after a cooldown, rather than exiting instantly in a tight loop.
+                if (isRecoverable) {
+                    console.error('Database appears to still be recovering. Exiting — orchestrator will restart.');
+                }
+                exit(1);
+            }
+
+            const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt - 1), 30000); // cap at 30s
+            console.warn(`DB connection failed (${code || 'unknown'}). Retrying in ${delay / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     }
     
     const db = getDb();
