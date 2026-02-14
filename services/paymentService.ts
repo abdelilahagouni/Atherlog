@@ -1,4 +1,3 @@
-
 import { SubscriptionPlan } from '../types';
 import { handleResponse } from './authService';
 
@@ -17,11 +16,25 @@ const getAuthHeaders = () => {
     };
 };
 
-export const createCheckoutSession = async (planName: SubscriptionPlan): Promise<{ message: string }> => {
+export interface CheckoutResult {
+    mode: 'stripe' | 'simulated';
+    message: string;
+    sessionId?: string;
+    url?: string;
+}
+
+export const createCheckoutSession = async (planName: SubscriptionPlan): Promise<CheckoutResult> => {
     const response = await fetch(`${API_BASE_URL}/create-session`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ planName }),
+    });
+    return handleResponse(response);
+};
+
+export const getPaymentStatus = async (): Promise<{ stripe_configured: boolean; mode: string; message: string }> => {
+    const response = await fetch(`${API_BASE_URL}/status`, {
+        headers: getAuthHeaders(),
     });
     return handleResponse(response);
 };

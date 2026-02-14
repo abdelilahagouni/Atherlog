@@ -3,6 +3,36 @@ node_modules
 .pnp
 .pnp.js
 
+# Logs & Debug Output
+*.log
+*.log.*
+*.txt
+!README.txt
+!LICENSE.txt
+
+# Temp/Debug Scripts
+_*.js
+_*.cjs
+_*.ts
+check_*.js
+check_*.cjs
+test_*.js
+test_*.cjs
+test_*.py
+verify_*.js
+verify_*.cjs
+verify_*.py
+generate_*.js
+generate_*.cjs
+trigger_*.py
+send_test_*.cjs
+test-scripts.json
+titanic_sample.csv
+backend/create*.js
+backend/inspect*.js
+backend/test*.js
+backend/verify*.js
+
 # Testing
 coverage
 test-results

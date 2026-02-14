@@ -163,7 +163,7 @@ const EnterpriseAlerting: React.FC = () => {
     React.useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/organization/settings`, {
+                const response = await fetch(`${API_BASE_URL}/organization/settings`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
                 });
                 if (response.ok) {
@@ -181,7 +181,7 @@ const EnterpriseAlerting: React.FC = () => {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/organization/settings`, {
+            const response = await fetch(`${API_BASE_URL}/organization/settings`, {
                 method: 'PATCH',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -209,7 +209,7 @@ const EnterpriseAlerting: React.FC = () => {
         if (!webhookUrl) return;
         setIsTestingWebhook(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/notifications/test-webhook`, {
+            const response = await fetch(`${API_BASE_URL}/notifications/test-webhook`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ const EnterpriseAlerting: React.FC = () => {
         if (!slackUrl) return;
         setIsTestingSlack(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/api/notifications/test-slack`, {
+            const response = await fetch(`${API_BASE_URL}/notifications/test-slack`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -322,7 +322,7 @@ const Settings: React.FC = () => {
   React.useEffect(() => {
     const fetchThreshold = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/organization/settings`, {
+            const response = await fetch(`${API_BASE_URL}/organization/settings`, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
             });
             if (response.ok) {
@@ -347,7 +347,7 @@ const Settings: React.FC = () => {
   const handleThresholdChangeEnd = async () => {
     setIsSavingThreshold(true);
     try {
-        const response = await fetch(`${API_BASE_URL}/api/organization/settings`, {
+        const response = await fetch(`${API_BASE_URL}/organization/settings`, {
             method: 'PATCH',
             headers: { 
                 'Content-Type': 'application/json',

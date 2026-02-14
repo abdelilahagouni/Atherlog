@@ -28,7 +28,7 @@ const EnterpriseConnectors: React.FC = () => {
 
     const fetchConnectors = React.useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/api/connectors`, {
+            const res = await fetch(`${API_BASE_URL}/connectors`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!res.ok) throw new Error('Failed to fetch connectors');
@@ -50,7 +50,7 @@ const EnterpriseConnectors: React.FC = () => {
             if (!selectedConnector) return;
             setLoadingConfig(true);
             try {
-                const res = await fetch(`${API_BASE_URL}/api/connectors/${selectedConnector.id}/config`, {
+                const res = await fetch(`${API_BASE_URL}/connectors/${selectedConnector.id}/config`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) throw new Error('Failed to load configuration');
@@ -70,7 +70,7 @@ const EnterpriseConnectors: React.FC = () => {
     const handleSaveConfig = async () => {
         if (!selectedConnector) return;
         try {
-            const res = await fetch(`${API_BASE_URL}/api/connectors/${selectedConnector.id}/config`, {
+            const res = await fetch(`${API_BASE_URL}/connectors/${selectedConnector.id}/config`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ const EnterpriseConnectors: React.FC = () => {
         if (!selectedConnector) return;
         setTestingConnection(true);
         try {
-            const res = await fetch(`${API_BASE_URL}/api/connectors/${selectedConnector.id}/test`, {
+            const res = await fetch(`${API_BASE_URL}/connectors/${selectedConnector.id}/test`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ const EnterpriseConnectors: React.FC = () => {
     const handleToggle = async (connector: Connector) => {
         try {
             const newStatus = connector.status === 'active' ? false : true;
-            const res = await fetch(`${API_BASE_URL}/api/connectors/${connector.id}/toggle`, {
+            const res = await fetch(`${API_BASE_URL}/connectors/${connector.id}/toggle`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -266,9 +266,7 @@ const EnterpriseConnectors: React.FC = () => {
                                                 />
                                             </div>
                                         </>
-                                    )}
-
-                                    {selectedConnector.id === 'slack' && (
+                                    )}                                    {selectedConnector.id === 'slack' && (
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Webhook URL</label>
                                             <input 
@@ -282,8 +280,50 @@ const EnterpriseConnectors: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {/* Generic fallback for others */}
-                                    {!['aws', 'slack'].includes(selectedConnector.id) && (
+                                    {selectedConnector.id === 'pagerduty' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Integration / Routing Key</label>
+                                            <input 
+                                                type="password" 
+                                                className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2"
+                                                placeholder="32-character integration key..."
+                                                value={config.routingKey || ''}
+                                                onChange={e => setConfig({...config, routingKey: e.target.value})}
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Find this in PagerDuty → Service → Integrations → Events API v2.</p>
+                                        </div>
+                                    )}
+
+                                    {selectedConnector.id === 'datadog' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+                                                <input 
+                                                    type="password" 
+                                                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2"
+                                                    placeholder="Datadog API key..."
+                                                    value={config.apiKey || ''}
+                                                    onChange={e => setConfig({...config, apiKey: e.target.value})}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site (optional)</label>
+                                                <select 
+                                                    className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2"
+                                                    value={config.site || 'datadoghq.com'}
+                                                    onChange={e => setConfig({...config, site: e.target.value})}
+                                                >
+                                                    <option value="datadoghq.com">US (datadoghq.com)</option>
+                                                    <option value="datadoghq.eu">EU (datadoghq.eu)</option>
+                                                    <option value="us3.datadoghq.com">US3 (us3.datadoghq.com)</option>
+                                                    <option value="us5.datadoghq.com">US5 (us5.datadoghq.com)</option>
+                                                </select>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Generic fallback for Azure/GCP */}
+                                    {!['aws', 'slack', 'pagerduty', 'datadog'].includes(selectedConnector.id) && (
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key / Connection String</label>
                                             <input 

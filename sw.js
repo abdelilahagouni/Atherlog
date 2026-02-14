@@ -1,9 +1,8 @@
-const CACHE_NAME = 'aetherlog-v1';
+const CACHE_NAME = 'aetherlog-v2';
 const urlsToCache = [
   '/',
   '/index.html',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+  '/manifest.json'
 ];
 
 self.addEventListener('install', event => {
@@ -12,8 +11,7 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Opened cache');
-        const requests = urlsToCache.map(url => new Request(url, { mode: 'cors' }));
-        return cache.addAll(requests);
+        return cache.addAll(urlsToCache);
       })
   );
 });

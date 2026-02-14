@@ -11,7 +11,7 @@ const CodeSnippet: React.FC<{ apiKey: string }> = ({ apiKey }) => {
     const [selected, setSelected] = React.useState<'cURL' | 'NodeJS'>('cURL');
     
     const snippets = {
-        cURL: `curl -X POST ${API_BASE_URL}/api/ingest \\
+        cURL: `curl -X POST ${API_BASE_URL}/ingest \\
 -H "Content-Type: application/json" \\
 -H "X-API-KEY: ${apiKey}" \\
 -d '{
@@ -28,7 +28,7 @@ const logData = JSON.stringify({
 const options = {
   hostname: 'localhost',
   port: 4000,
-  path: '${API_BASE_URL}/api/ingest',
+  path: '${API_BASE_URL}/ingest',
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',

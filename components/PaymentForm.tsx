@@ -1,10 +1,9 @@
-
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SubscriptionPlan } from '../types';
 import { Icon } from './ui/Icon';
 import { useToast } from '../hooks/useToast';
-import { createCheckoutSession } from '../services/paymentService';
+import { createCheckoutSession, CheckoutResult } from '../services/paymentService';
 import { useAuth } from '../contexts/AuthContext';
 
 interface PaymentFormProps {
@@ -25,13 +24,19 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planName }) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
         try {
-            await createCheckoutSession(planName);
+            const result: CheckoutResult = await createCheckoutSession(planName);
+
+            if (result.mode === 'stripe' && result.url) {
+                // Real Stripe Checkout — redirect to Stripe-hosted page
+                showToast('Redirecting to Stripe Checkout...', 'info');
+                window.location.href = result.url;
+                return; // Don't reset loading — we're navigating away
+            }
+
+            // Simulated payment — plan was already upgraded on the backend
             await refetchContext();
-            showToast(`Successfully upgraded to the ${planName} plan!`, 'success');
+            showToast(result.message || `Successfully upgraded to the ${planName} plan!`, 'success');
             navigate('/dashboard');
         } catch (err: any) {
             showToast(err.message || 'Payment failed. Please try again.', 'error');
@@ -78,12 +83,13 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ planName }) => {
             </div>
 
             <p className="text-xs text-gray-500 dark:text-gray-400 pt-2">
-                This is a simulated payment form. No real transaction will occur.
+                <Icon name="shield" className="w-3 h-3 inline mr-1" />
+                Payments are securely processed. When Stripe is configured, you'll be redirected to a secure checkout page.
             </p>
 
             <button type="submit" disabled={isLoading} className="w-full mt-4 py-3 px-4 rounded-lg font-semibold text-white transition-colors flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
                 {isLoading && <Icon name="loader" className="w-5 h-5 animate-spin" />}
-                {isLoading ? 'Processing Payment...' : `Pay & Upgrade to ${planName}`}
+                {isLoading ? 'Processing...' : `Pay & Upgrade to ${planName}`}
             </button>
         </form>
     );

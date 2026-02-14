@@ -1,0 +1,307 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Report - Using AI for Automated Classification of Cybersecurity Threats from System Logs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Crimson Text', 'Georgia', 'Times New Roman', serif; color: #1a1a1a; background: #f5f5f5; line-height: 1.85; font-size: 16px; }
+        .document { max-width: 820px; margin: 0 auto; background: #fff; box-shadow: 0 2px 40px rgba(0,0,0,0.06); }
+        .cover { padding: 60px 72px 50px; text-align: center; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; border-bottom: 1px solid #e8e8e8; }
+        .cover .university { font-family: 'Source Sans Pro', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #1a1a1a; margin-bottom: 6px; }
+        .cover .department { font-family: 'Source Sans Pro', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: #555; margin-bottom: 50px; }
+        .cover .report-type { font-family: 'Source Sans Pro', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 5px; text-transform: uppercase; color: #b22234; margin-bottom: 30px; }
+        .cover .title { font-family: 'Crimson Text', serif; font-size: 34px; font-weight: 700; line-height: 1.3; color: #1a1a1a; margin-bottom: 16px; max-width: 580px; margin-left: auto; margin-right: auto; }
+        .cover .subtitle { font-family: 'Crimson Text', serif; font-size: 17px; font-style: italic; color: #777; margin-bottom: 50px; max-width: 500px; margin-left: auto; margin-right: auto; }
+        .cover .divider { width: 60px; height: 3px; background: #b22234; margin: 0 auto 50px; }
+        .cover .info-table { width: 460px; margin: 0 auto; border-collapse: collapse; font-size: 15px; }
+        .cover .info-table td { padding: 10px 16px; border-bottom: 1px solid #eee; }
+        .cover .info-table tr:last-child td { border-bottom: none; }
+        .cover .info-table td:first-child { font-weight: 700; text-align: right; width: 160px; color: #333; }
+        .cover .info-table td:last-child { text-align: left; color: #444; }
+        .cover .date { font-family: 'Source Sans Pro', sans-serif; font-size: 13px; color: #999; margin-top: 40px; letter-spacing: 1px; }
+        .content { padding: 56px 72px 60px; }
+        h2 { font-family: 'Source Sans Pro', sans-serif; font-size: 20px; font-weight: 700; color: #1a1a1a; margin-top: 42px; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1.5px solid #ddd; }
+        h2:first-child { margin-top: 0; }
+        h3 { font-family: 'Source Sans Pro', sans-serif; font-size: 16px; font-weight: 700; color: #333; margin-top: 26px; margin-bottom: 10px; }
+        p { margin-bottom: 14px; text-align: justify; hyphens: auto; }
+        ul, ol { margin: 10px 0 16px 28px; }
+        li { margin-bottom: 6px; }
+        strong { font-weight: 700; }
+        em { font-style: italic; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0 22px; font-size: 14px; }
+        thead th { font-family: 'Source Sans Pro', sans-serif; background: #f7f7f7; padding: 10px 14px; text-align: left; font-weight: 700; font-size: 13px; color: #333; border-bottom: 2px solid #ccc; }
+        tbody td { padding: 9px 14px; border-bottom: 1px solid #eee; color: #444; vertical-align: top; }
+        tbody tr:hover { background: #fafafa; }
+        .timeline { margin: 20px 0 24px; position: relative; padding-left: 28px; }
+        .timeline::before { content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 2px; background: #ddd; }
+        .timeline-item { position: relative; margin-bottom: 22px; }
+        .timeline-item::before { content: ''; position: absolute; left: -24px; top: 7px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #b22234; background: #fff; }
+        .timeline-item.done::before { background: #b22234; }
+        .timeline-item.current::before { background: #fff; box-shadow: 0 0 0 3px rgba(178,34,52,0.25); }
+        .timeline-phase { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 700; color: #1a1a1a; }
+        .timeline-date { font-family: 'Source Sans Pro', sans-serif; font-size: 12px; color: #999; }
+        .timeline-desc { font-size: 15px; color: #555; margin-top: 3px; }
+        .signatures { display: flex; justify-content: space-between; margin-top: 64px; padding-top: 40px; border-top: 1px solid #ddd; }
+        .sig-block { text-align: center; width: 240px; }
+        .sig-line { border-bottom: 1px solid #333; margin-bottom: 8px; height: 50px; }
+        .sig-name { font-weight: 700; font-size: 15px; color: #1a1a1a; }
+        .sig-role { font-size: 13px; color: #777; }
+        .page-break { border-top: 1px solid #e8e8e8; margin: 0; padding: 0; }
+        .references { font-size: 14px; }
+        .references p { margin-bottom: 8px; padding-left: 32px; text-indent: -32px; }
+        @media print { body { background: #fff; font-size: 14px; } .document { box-shadow: none; max-width: 100%; } .cover { min-height: auto; padding: 40px 56px; page-break-after: always; } .content { padding: 40px 56px; } h2 { break-after: avoid; } table { break-inside: avoid; } .timeline { break-inside: avoid; } .signatures { break-inside: avoid; } }
+    </style>
+</head>
+<body>
+    <div class="document">
+        <div class="cover">
+            <div class="university">Karab&#252;k University</div>
+            <div class="department">Department of Computer Engineering</div>
+            <div style="height: 20px;"></div>
+            <div class="report-type">Progress Report</div>
+            <div class="title">Using Artificial Intelligence for Automated Classification of Cybersecurity Threats from System Logs</div>
+            <div class="subtitle">An AI-powered log analysis system for real-time threat detection and classification</div>
+            <div class="divider"></div>
+            <table class="info-table">
+                <tr><td>Student:</td><td>Abdelilah Agouni</td></tr>
+                <tr><td>Student No:</td><td>2010205587</td></tr>
+                <tr><td>Supervisor:</td><td>Prof. Funda Demir</td></tr>
+                <tr><td>Department:</td><td>Computer Engineering</td></tr>
+                <tr><td>Academic Year:</td><td>2025 &#8211; 2026</td></tr>
+            </table>
+            <div class="date">February 2026</div>
+        </div>
+        <div class="page-break"></div>
+        <div class="content">
+            <h2>Abstract</h2>
+            <p>In today's digital landscape, system logs serve as a primary data source for monitoring the health and security of computing infrastructure. However, the growing volume and complexity of log data have made manual analysis both impractical and error-prone. This project presents AetherLog, a web-based platform designed to address this gap by combining centralized log management with artificial intelligence techniques for automated threat detection and classification. The platform currently employs an Isolation Forest algorithm for unsupervised anomaly detection and Sentence Transformer embeddings for semantic log search. Moving forward, we plan to integrate a supervised classification module built on a fine-tuned transformer architecture to automatically categorize detected anomalies into specific cybersecurity threat types such as brute-force attacks, privilege escalation, and data exfiltration. This report summarizes the work completed so far, describes the current status of the project, and outlines the remaining phases through thesis completion.</p>
+
+            <h2>1. Introduction</h2>
+            <p>Every organization running digital services produces system logs &#8212; timestamped records of events generated by servers, applications, databases, firewalls, and network devices. These logs contain valuable information about what is happening inside a system at any given moment. When something goes wrong &#8212; a service crashes, a user's credentials are compromised, or an attacker tries to gain unauthorized access &#8212; the evidence almost always appears in the logs before it becomes visible anywhere else.</p>
+            <p>The difficulty is that modern systems generate enormous quantities of log data. Even a moderately sized company can produce millions of log entries per day. Expecting a human security analyst to review all of this is not realistic. Traditional solutions rely on static rules and keyword-based filters, but these only catch threats that someone has already thought to look for. Novel attacks, subtle configuration errors, and slow-moving intrusions can easily slip through.</p>
+            <p>This is where artificial intelligence becomes relevant. Machine learning models can be trained to understand what normal system behavior looks like, and they can then flag entries that deviate from that baseline. Going a step further, supervised classification models can be trained to recognize specific categories of threats, turning a raw anomaly alert into an actionable piece of threat intelligence.</p>
+            <p>The idea for this project came out of discussions with my supervisor, Prof. Demir, about how to combine my interests in software engineering and cybersecurity into a practical graduation project. She suggested focusing on AI-based classification of threats from log data, and I felt this was a topic where I could build something that was both technically challenging and genuinely useful. The result is AetherLog &#8212; a platform that I have been designing and building over the past several months, and which I will continue developing through the remainder of this academic year.</p>
+
+            <h3>1.1 Problem Statement</h3>
+            <p>Most existing log management tools are fundamentally reactive: they require someone to define detection rules in advance, and they only find what they have been explicitly told to look for. There is a real need for systems that can proactively scan log streams, identify unusual patterns without relying on predefined rules, and classify detected threats into meaningful categories &#8212; all within seconds of the log entry being generated.</p>
+
+            <h3>1.2 Objectives</h3>
+            <p>The specific objectives of this project are as follows:</p>
+            <ol>
+                <li>To design and build a multi-tenant web platform for centralized log collection, storage, and visualization.</li>
+                <li>To implement an unsupervised anomaly detection pipeline capable of identifying unusual log entries without labeled training data.</li>
+                <li>To develop a supervised classification model that categorizes detected anomalies into cybersecurity threat types.</li>
+                <li>To evaluate the system's detection and classification performance using established benchmark datasets and standard evaluation metrics.</li>
+                <li>To provide explainability for AI predictions, so that security analysts can understand the reasoning behind each alert.</li>
+            </ol>
+
+            <h3>1.3 Scope and Limitations</h3>
+            <p>The project covers the entire technology stack: a React-based web frontend for data visualization and user interaction, a Node.js backend for business logic and API management, a PostgreSQL database for persistent storage, and a Python-based microservice for machine learning. The system supports multi-tenancy (multiple organizations sharing the platform with isolated data), role-based access control, real-time alerting through multiple channels, and integration with third-party tools.</p>
+            <p>It is worth noting that the platform is intended as a research prototype and graduation project, not a commercial product ready for production deployment at scale. While I have incorporated security best practices and production-grade patterns where possible, aspects like high-availability clustering, distributed tracing, and formal penetration testing are outside the current scope.</p>
+
+            <h2>2. Background and Related Work</h2>
+            <p>Research on log-based anomaly detection has grown significantly over the past decade, progressing from statistical methods to increasingly sophisticated machine learning approaches.</p>
+            <p>One of the foundational algorithms in this space is the <strong>Isolation Forest</strong>, introduced by Liu, Ting, and Zhou in 2008. The core insight of the algorithm is elegant: anomalies, by definition, are data points that are &#8220;few and different.&#8221; Because of this, they can be isolated from the rest of the data with fewer random partitions than normal points require. The algorithm builds an ensemble of random trees and measures how quickly each data point becomes isolated &#8212; points that are isolated early are scored as more anomalous. I selected this algorithm as the baseline detector for AetherLog because it performs well on high-dimensional data, does not require labeled examples, and is computationally efficient.</p>
+            <p>On the deep learning side, Du et al. introduced <strong>DeepLog</strong> in 2017, which treats log event sequences as a natural language problem and uses LSTM recurrent networks to predict the next expected log event. When the actual log deviates significantly from the prediction, it is flagged as an anomaly. Zhang et al. later proposed <strong>LogRobust</strong>, which uses attention mechanisms to handle the inherent instability of log data (log formats change frequently as developers update their code). These approaches showed that neural networks can capture sequential patterns in logs that simpler statistical methods miss.</p>
+            <p>More recently, transformer-based models have been applied to log analysis tasks. Pre-trained language models like BERT and its lighter variant DistilBERT have shown strong performance in text classification benchmarks, and several research groups have explored their use for log classification. The advantage of transformers is that they can understand the semantic content of a log message, not just its structural features.</p>
+            <p>For evaluation, the <strong>Loghub</strong> dataset collection assembled by He et al. has become a widely used benchmark. It provides log data from 16 different systems, including HDFS (Hadoop), BGL (Blue Gene/L), OpenStack, and Thunderbird, each with varying types and volumes of annotated anomalies. I have integrated the HDFS and BGL datasets into AetherLog for training and evaluation.</p>
+            <p>Finally, the question of <strong>explainability</strong> is increasingly important in security applications. Lundberg and Lee's SHAP framework provides a theoretically grounded method for explaining individual predictions by computing the contribution of each feature using Shapley values from cooperative game theory. I use SHAP to explain why specific log entries are flagged, which helps analysts trust the system's outputs rather than treating it as an opaque black box.</p>
+
+            <h2>3. System Architecture and Implementation</h2>
+            <p>I designed AetherLog as a microservices-based system with four clearly separated components. This architecture was chosen primarily for practical reasons: it allows the Python ML service to use the scientific computing ecosystem (NumPy, scikit-learn, PyTorch) without affecting the Node.js backend, and it makes it possible to develop and test each component independently.</p>
+
+            <h3>3.1 System Components</h3>
+            <ul>
+                <li><strong>Frontend</strong> &#8212; Built with React 19 and bundled by Vite. The interface consists of 86 components organized across 40 routes, including dashboards, a log explorer with full-text search, real-time log streaming via WebSocket, anomaly visualization charts, an incident management center, alert configuration panels, and an AI interaction interface. Routes are lazy-loaded to keep the initial bundle small.</li>
+                <li><strong>Backend API</strong> &#8212; A Node.js server written in TypeScript using the Express framework. It handles authentication and authorization, log ingestion via REST API, alert processing with a custom job queue, payment management through Stripe, and all communication between the frontend and other services. The API is organized into 15 route modules exposing 77 endpoints.</li>
+                <li><strong>Database</strong> &#8212; PostgreSQL 15 with the TimescaleDB extension for time-series query optimization. The schema contains 14 tables. Logs are stored with tsvector-indexed full-text search capability. All tenant-specific data is scoped by an organization identifier to enforce data isolation.</li>
+                <li><strong>Machine Learning Service</strong> &#8212; A Python Flask application that handles model training, anomaly scoring, semantic search, and prediction explainability. It communicates with the backend through internal REST calls and is deployed as a separate Docker container.</li>
+            </ul>
+            <p>The entire system is containerized with Docker Compose, which defines three services (backend, Python ML service, and PostgreSQL database) and allows the full environment to be started with a single command.</p>
+
+            <h3>3.2 Authentication and Security</h3>
+            <p>User authentication is handled through username and password, with passwords hashed using bcrypt (10 salt rounds). Successful authentication produces a signed JWT token that is included in subsequent requests. The system implements four roles &#8212; Viewer, Member, Admin, and Super Admin &#8212; each with progressively broader permissions.</p>
+            <p>Additional security measures include HTTP security headers via Helmet.js, rate limiting on authentication endpoints (20 attempts per 15-minute window per IP address), XSS input sanitization on all user-supplied text, and SHA-256 hashing of API keys (only a prefix is stored for display purposes). Stripe webhook endpoints use signature verification to prevent forged payment events.</p>
+
+            <h3>3.3 Alert and Notification Pipeline</h3>
+            <p>When the anomaly score of an incoming log exceeds the organization's configured threshold, the alert pipeline is triggered. It uses a concurrent job queue with exponential backoff retry logic and a circuit breaker pattern to handle delivery failures gracefully. Alerts can be delivered through email (SMTP), Slack (webhook), SMS (Twilio), generic HTTP webhooks, and in-app real-time notifications via Socket.IO. A cooldown mechanism prevents the same type of alert from being sent repeatedly within a configurable time window, reducing alert fatigue.</p>
+
+            <h2>4. AI and Machine Learning Pipeline</h2>
+            <p>The machine learning component is the part of this project that I have spent the most time thinking about and refining. It represents the core technical contribution of the work.</p>
+
+            <h3>4.1 Feature Extraction</h3>
+            <p>Before any log message can be analyzed by a machine learning model, it needs to be converted from raw text into a numerical representation. I extract five features from each log message: message length, punctuation density (ratio of punctuation characters to total characters), digit ratio, uppercase character ratio, and Shannon entropy (a measure of randomness or information content). These features were chosen because they capture structural properties of log messages that tend to change when something abnormal occurs. For instance, stack traces and error dumps typically have higher entropy and more special characters than routine status messages.</p>
+
+            <h3>4.2 Unsupervised Anomaly Detection</h3>
+            <p>The Isolation Forest model is trained on the extracted feature vectors using scikit-learn's implementation. Training parameters &#8212; contamination rate, number of estimators, and maximum features &#8212; are configurable through the API. During inference, each log entry receives an anomaly score; entries that fall below the threshold are flagged as potential anomalies. The model is serialized after training so that it persists across service restarts.</p>
+
+            <h3>4.3 Semantic Search</h3>
+            <p>Standard keyword search has a well-known limitation: it cannot match semantically similar but lexically different expressions. Searching for &#8220;authentication failure&#8221; will not find logs that say &#8220;login rejected&#8221; or &#8220;invalid credentials.&#8221; To address this, I integrated the all-MiniLM-L6-v2 model from the Sentence Transformers library, which encodes text into 384-dimensional dense vectors. Both the search query and stored log messages are encoded into this shared vector space, and results are ranked by cosine similarity. This allows analysts to search by meaning rather than by exact wording.</p>
+
+            <h3>4.4 Explainability</h3>
+            <p>For each anomaly detection, the system can generate a SHAP explanation showing how much each feature contributed to the anomaly score. For example, an explanation might indicate that high Shannon entropy accounted for 40% of the anomaly score, while an unusual digit ratio accounted for 25%. This transparency is particularly important in a security context, where analysts need to quickly assess whether an alert warrants investigation or can be safely dismissed.</p>
+
+            <h3>4.5 Planned: Supervised Threat Classification</h3>
+            <p>The next major phase of the project &#8212; and the primary academic contribution I intend to present in the thesis &#8212; is the development of a supervised classification model. The plan, discussed and refined with Prof. Demir, is to fine-tune a pre-trained transformer (most likely DistilBERT, chosen for its balance between accuracy and inference speed) on labeled log datasets. The model will classify log entries into the following categories:</p>
+            <ul>
+                <li><strong>Normal</strong> &#8212; routine operational messages requiring no action</li>
+                <li><strong>Brute-Force Attack</strong> &#8212; repeated failed authentication attempts</li>
+                <li><strong>Data Exfiltration</strong> &#8212; unusual data transfer patterns or unexpected outbound connections</li>
+                <li><strong>Denial of Service</strong> &#8212; indicators of resource exhaustion or connection flooding</li>
+                <li><strong>Privilege Escalation</strong> &#8212; unauthorized changes in access levels</li>
+                <li><strong>Configuration Error</strong> &#8212; misconfigurations that may create security vulnerabilities</li>
+            </ul>
+            <p>This two-stage approach &#8212; first detect anomalies with Isolation Forest, then classify the anomalies with the transformer &#8212; is designed to combine the strengths of both unsupervised and supervised methods. The unsupervised stage handles the high-volume filtering (most logs are normal), and the supervised stage provides fine-grained threat categorization for the flagged entries.</p>
+
+            <h2>5. Current Status</h2>
+            <p>As of mid-February 2026, the project has completed its first three phases and is entering the fourth. Below is a detailed breakdown.</p>
+
+            <h3>5.1 Completed Work</h3>
+            <ul>
+                <li>Designed and implemented the full web platform: 86 React components across 40 routes, 77 backend API endpoints across 15 modules, 14 PostgreSQL tables with 15 indexes and full-text search.</li>
+                <li>Built multi-tenant architecture with organization-scoped data isolation and four-tier role-based access control.</li>
+                <li>Implemented real-time log streaming using WebSocket (Socket.IO) and an automatic log generation service for testing and demonstration.</li>
+                <li>Developed and deployed the Isolation Forest anomaly detection model as a Python microservice with configurable training parameters.</li>
+                <li>Integrated semantic log search using Sentence Transformers (all-MiniLM-L6-v2, 384-dimensional embeddings).</li>
+                <li>Added SHAP-based prediction explainability for anomaly detections.</li>
+                <li>Loaded and integrated two Loghub research datasets (HDFS and BGL) for model training and evaluation.</li>
+                <li>Built a multi-channel alert pipeline supporting email, Slack, SMS, webhooks, and in-app notifications with cooldown logic and circuit breaker resilience.</li>
+                <li>Integrated six enterprise connectors: Slack, PagerDuty, Datadog, AWS CloudWatch, Azure Monitor, and GCP Cloud Logging.</li>
+                <li>Implemented Stripe Checkout integration for subscription billing (Free, Pro, Enterprise tiers) with webhook-based plan activation.</li>
+                <li>Applied security hardening: Helmet headers, rate limiting, XSS sanitization, bcrypt hashing, SHA-256 API key storage.</li>
+                <li>Built an incident management system with database persistence, activity timeline tracking, and AI-generated root cause analysis.</li>
+                <li>Set up Docker Compose for the complete development environment.</li>
+            </ul>
+
+            <h3>5.2 Current Work</h3>
+            <ul>
+                <li>Running baseline benchmarks of the Isolation Forest model on HDFS and BGL datasets to establish precision, recall, and F1-score.</li>
+                <li>Researching labeling strategies for the supervised classification dataset.</li>
+                <li>Evaluating transformer architectures (DistilBERT, RoBERTa) for the classification task.</li>
+            </ul>
+
+            <h3>5.3 Remaining Work</h3>
+            <ul>
+                <li>Implement, train, and tune the supervised threat classification model.</li>
+                <li>Conduct comparative experiments: Isolation Forest alone, transformer classifier alone, and the combined two-stage pipeline.</li>
+                <li>Document all evaluation results with standard metrics.</li>
+                <li>Write the thesis (literature review, methodology, experiments, results, discussion, conclusion).</li>
+                <li>Prepare and rehearse the thesis defense presentation with live demo.</li>
+            </ul>
+
+            <h2>6. Datasets and Evaluation Strategy</h2>
+
+            <h3>6.1 Datasets</h3>
+            <p>For training and evaluation, I am using the following data sources:</p>
+            <ul>
+                <li><strong>Loghub HDFS</strong> &#8212; over 11 million log messages from a Hadoop file system deployment, with block-level anomaly labels. This is arguably the most widely used benchmark in log anomaly detection research.</li>
+                <li><strong>Loghub BGL</strong> &#8212; approximately 4.7 million log messages from a Blue Gene/L supercomputer, with alert and non-alert labels. This dataset contains a diverse mix of hardware and software failure patterns.</li>
+                <li><strong>Platform-generated logs</strong> &#8212; AetherLog's built-in log generation service produces synthetic but structurally realistic log data that can be used for integration testing and quick iteration.</li>
+            </ul>
+            <p>I am also considering adding OpenStack and Thunderbird logs from the Loghub collection for additional evaluation breadth, particularly for the classification task where having diverse log formats may help the model generalize better.</p>
+
+            <h3>6.2 Evaluation Metrics</h3>
+            <table>
+                <thead>
+                    <tr><th>Metric</th><th>Description</th><th>Target</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Precision</td><td>Proportion of flagged entries that are true threats (low false alarm rate)</td><td>&gt; 0.85</td></tr>
+                    <tr><td>Recall</td><td>Proportion of actual threats that are successfully detected</td><td>&gt; 0.90</td></tr>
+                    <tr><td>F1-Score</td><td>Harmonic mean of precision and recall</td><td>&gt; 0.87</td></tr>
+                    <tr><td>AUC-ROC</td><td>Area under the receiver operating characteristic curve</td><td>&gt; 0.92</td></tr>
+                    <tr><td>Latency</td><td>End-to-end time from log ingestion to alert delivery</td><td>&lt; 5 sec</td></tr>
+                </tbody>
+            </table>
+
+            <h2>7. Project Roadmap</h2>
+            <p>The following timeline shows the seven planned phases of the project, with the first three completed and the fourth currently underway.</p>
+            <div class="timeline">
+                <div class="timeline-item done">
+                    <div class="timeline-phase">Phase 1: Platform Development</div>
+                    <div class="timeline-date">September &#8211; November 2025</div>
+                    <div class="timeline-desc">Designed and built the full-stack web platform: frontend, backend, database schema, authentication system, multi-tenancy, real-time log streaming, and Docker containerization.</div>
+                </div>
+                <div class="timeline-item done">
+                    <div class="timeline-phase">Phase 2: Anomaly Detection Pipeline</div>
+                    <div class="timeline-date">December 2025 &#8211; January 2026</div>
+                    <div class="timeline-desc">Implemented the Isolation Forest anomaly detection model, semantic search using Sentence Transformers, SHAP-based explainability, and Loghub dataset integration for training.</div>
+                </div>
+                <div class="timeline-item done">
+                    <div class="timeline-phase">Phase 3: Enterprise Features and Hardening</div>
+                    <div class="timeline-date">January &#8211; February 2026</div>
+                    <div class="timeline-desc">Added Stripe payment integration, enterprise connectors (Slack, PagerDuty, Datadog, cloud providers), security hardening measures, and the incident management module.</div>
+                </div>
+                <div class="timeline-item current">
+                    <div class="timeline-phase">Phase 4: Baseline Evaluation</div>
+                    <div class="timeline-date">February &#8211; March 2026</div>
+                    <div class="timeline-desc">Benchmarking the Isolation Forest model on HDFS and BGL datasets. Measuring precision, recall, F1-score, and establishing baseline performance numbers.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-phase">Phase 5: Supervised Threat Classification</div>
+                    <div class="timeline-date">March &#8211; April 2026</div>
+                    <div class="timeline-desc">Fine-tuning a transformer model on labeled log data for multi-class threat classification. Running side-by-side comparison experiments against the unsupervised baseline.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-phase">Phase 6: Thesis Writing</div>
+                    <div class="timeline-date">April &#8211; May 2026</div>
+                    <div class="timeline-desc">Writing the formal thesis document: literature review, methodology, experimental setup, results tables and figures, discussion of findings, and conclusion.</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-phase">Phase 7: Defense Preparation</div>
+                    <div class="timeline-date">May &#8211; June 2026</div>
+                    <div class="timeline-desc">Preparing the defense presentation, rehearsing the live platform demonstration, and preparing responses to expected committee questions.</div>
+                </div>
+            </div>
+
+            <h2>8. Expected Outcomes</h2>
+            <p>By the conclusion of this project, the following outcomes are anticipated:</p>
+            <ol>
+                <li><strong>A functional platform</strong> &#8212; a complete, deployable web application that ingests system logs, detects anomalies in near real-time, classifies detected threats by category, and delivers alerts through multiple channels.</li>
+                <li><strong>Quantitative performance results</strong> &#8212; precision, recall, F1-score, and AUC-ROC values measured against established benchmark datasets, giving a clear and reproducible picture of how the models perform.</li>
+                <li><strong>A comparative analysis</strong> &#8212; a side-by-side evaluation of unsupervised anomaly detection versus supervised classification, documenting the trade-offs between the two approaches and the advantages of combining them.</li>
+                <li><strong>Explainable AI outputs</strong> &#8212; through SHAP integration, each flagged log entry is accompanied by a feature-level explanation, making the system's reasoning transparent and auditable.</li>
+                <li><strong>Practical contribution</strong> &#8212; while the individual ML techniques are not novel, their integration into a single cohesive platform that handles everything from log ingestion to threat classification to alert delivery represents a practical engineering contribution.</li>
+            </ol>
+
+            <h2>9. Challenges and Reflections</h2>
+            <p>This project has been the largest and most complex software system I have built to date, and it has taught me a great deal &#8212; not all of it pleasant. I want to mention a few of the challenges I encountered, partly because they affected the development timeline and partly because I think they are relevant context for understanding the current state of the work.</p>
+            <p>The most time-consuming issue was integration complexity. Having four services that need to communicate reliably &#8212; each with its own configuration, dependencies, and failure modes &#8212; introduced a class of bugs that I had not encountered in simpler projects. For example, I spent several hours tracking down a routing bug where the frontend was prepending "/api" to URLs that the backend had already prefixed with "/api", resulting in broken requests across five different files. The bug was trivial once found, but finding it required tracing the request path through three layers of configuration.</p>
+            <p>On the machine learning side, working with unlabeled data was both the main strength and the main limitation of the Isolation Forest approach. It can be deployed immediately on any new dataset without labeling effort, but without labels, there is no straightforward way to know how well it is actually performing until you obtain a separate evaluation set. Integrating the Loghub datasets solved this problem for benchmarking, but adapting them to work smoothly within the platform's pipeline took more effort than I had budgeted.</p>
+            <p>I also underestimated the effort required for security-related work. Adding rate limiting, security headers, and input sanitization after the main features were already in place required touching many files and testing many edge cases. In hindsight, these should have been part of the initial architecture rather than added later.</p>
+
+            <h2>10. Conclusion</h2>
+            <p>The AetherLog project has progressed through its first three phases on schedule. The platform infrastructure is operational, the anomaly detection pipeline is functional, and the foundation for supervised threat classification has been established. The work completed so far &#8212; spanning frontend development, backend engineering, database design, ML pipeline implementation, and security hardening &#8212; represents a substantial engineering effort that I believe meets the expectations for a graduation project in computer engineering.</p>
+            <p>The critical work ahead lies in Phase 5: building and evaluating the supervised classification model. This is where the project transitions from engineering to research &#8212; the results of these experiments will form the core of the thesis and determine the academic contribution of the work. I am confident that the platform infrastructure built so far provides a solid foundation for this next stage.</p>
+            <p>I look forward to discussing the classification model architecture, the labeling strategy for the training dataset, and the evaluation methodology in the next meeting with Prof. Demir.</p>
+
+            <h2>References</h2>
+            <div class="references">
+                <p>[1] F. T. Liu, K. M. Ting, and Z.-H. Zhou, &#8220;Isolation Forest,&#8221; in <em>Proc. IEEE International Conference on Data Mining (ICDM)</em>, Pisa, Italy, 2008, pp. 413&#8211;422.</p>
+                <p>[2] M. Du, F. Li, G. Zheng, and V. Srikumar, &#8220;DeepLog: Anomaly Detection and Diagnosis from System Logs through Deep Learning,&#8221; in <em>Proc. ACM Conference on Computer and Communications Security (CCS)</em>, Dallas, TX, 2017, pp. 1285&#8211;1298.</p>
+                <p>[3] X. Zhang et al., &#8220;Robust Log-Based Anomaly Detection on Unstable Log Data,&#8221; in <em>Proc. ACM Joint European Software Engineering Conference (ESEC/FSE)</em>, Tallinn, Estonia, 2019, pp. 807&#8211;817.</p>
+                <p>[4] S. He, J. Zhu, P. He, and M. R. Lyu, &#8220;Loghub: A Large Collection of System Log Datasets towards Automated Log Analytics,&#8221; <em>arXiv preprint</em>, arXiv:2008.06319, 2020.</p>
+                <p>[5] S. M. Lundberg and S.-I. Lee, &#8220;A Unified Approach to Interpreting Model Predictions,&#8221; in <em>Advances in Neural Information Processing Systems (NeurIPS)</em>, Long Beach, CA, 2017, pp. 4765&#8211;4774.</p>
+                <p>[6] V. Sanh, L. Debut, J. Chaumond, and T. Wolf, &#8220;DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter,&#8221; <em>arXiv preprint</em>, arXiv:1910.01108, 2019.</p>
+                <p>[7] N. Reimers and I. Gurevych, &#8220;Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks,&#8221; in <em>Proc. Conference on Empirical Methods in Natural Language Processing (EMNLP)</em>, Hong Kong, 2019.</p>
+            </div>
+
+            <div class="signatures">
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div class="sig-name">Abdelilah Agouni</div>
+                    <div class="sig-role">Student &#8212; 2010205587</div>
+                </div>
+                <div class="sig-block">
+                    <div class="sig-line"></div>
+                    <div class="sig-name">Prof. Funda Demir</div>
+                    <div class="sig-role">Supervisor</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

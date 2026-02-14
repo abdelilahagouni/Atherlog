@@ -42,46 +42,79 @@ const PORT = parseInt(process.env.PORT || '4000');
 // Middleware
 // CORS Configuration
 const allowedOrigins = [
+    'http://localhost:3000',
     'http://localhost:5173', 
-    'http://localhost:4173', 
-    process.env.FRONTEND_URL // Add the production frontend URL
+    'http://localhost:4173',
+    'https://atherlog.vercel.app',
+    'https://aetherlog.vercel.app',
+    process.env.FRONTEND_URL // Add any additional production frontend URL from env
 ].filter(Boolean) as string[];
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        // Allow requests with no origin (like mobile apps, curl, or server-to-server)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.indexOf(origin) !== -1 || !process.env.FRONTEND_URL) {
-            // If origin is in the list, or if FRONTEND_URL is not set (dev mode), allow it
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else if (origin.endsWith('.vercel.app') || origin.endsWith('.up.railway.app')) {
+            // Allow Vercel preview deployments and Railway internal calls
+            callback(null, true);
+        } else if (!process.env.FRONTEND_URL) {
+            // Dev mode — no FRONTEND_URL set, allow all origins
             callback(null, true);
         } else {
-            // For now, in production debugging, let's be permissive if the exact match fails
-            // but log it so we know.
-            console.log('CORS Origin Check:', origin, 'Allowed:', allowedOrigins);
-            // callback(new Error('Not allowed by CORS'));
-            callback(null, true); // Permissive mode for troubleshooting
+            console.warn('CORS blocked origin:', origin, '| Allowed:', allowedOrigins);
+            callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
 }));
-app.use(express.json({ limit: '10mb' })); // Parse JSON bodies, increase limit for images
+// Parse JSON bodies — but skip for Stripe webhook which needs raw body for signature verification
+app.use((req, res, next) => {
+    if (req.originalUrl === '/api/payment/webhook') {
+        next(); // Skip JSON parsing — Stripe webhook handler uses express.raw()
+    } else {
+        express.json({ limit: '10mb' })(req, res, next);
+    }
+});
 
 // --- Security Middleware ---
 import rateLimit from 'express-rate-limit';
 import xss from 'xss';
+import helmet from 'helmet';
 
-// 1. Rate Limiting
+// 0. Security Headers (Helmet)
+app.use(helmet({
+    contentSecurityPolicy: false, // Disabled for dev — enable in production
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+
+// 1. General Rate Limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // Limit each IP to 1000 requests per windowMs (increased for dashboard usage)
+    max: 1000, // Limit each IP to 1000 requests per windowMs
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
 });
-app.use('/api', limiter); // Apply to all API routes
+app.use('/api', limiter);
 
-// 2. Input Sanitization Middleware
+// 2. Strict Auth Rate Limiting (prevent brute force login)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20, // Max 20 login/signup attempts per 15 min
+    message: { message: 'Too many authentication attempts. Please wait 15 minutes before trying again.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/signup', authLimiter);
+
+// 3. Input Sanitization Middleware
 const sanitizeInput = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.body) {
         for (const key in req.body) {

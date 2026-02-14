@@ -1,10 +1,11 @@
 /**
  * Production Configuration
  * 
- * For Vercel deployment, set these environment variables:
- * - VITE_API_URL: Your Railway backend URL
- * - VITE_WS_URL: Your Railway WebSocket URL (same as API but wss://)
- * - VITE_PYTHON_URL: Your Python service URL (optional)
+ * For Vercel deployment, set these environment variables in Vercel Dashboard:
+ * - VITE_WS_URL: Your Railway WebSocket URL (e.g., wss://aetherlog-backend-production.up.railway.app)
+ * 
+ * DO NOT set VITE_API_URL — the Vercel rewrite in vercel.json proxies /api/* to Railway,
+ * which avoids CORS issues entirely. The browser only talks to your Vercel domain.
  */
 
 const isProd = import.meta.env.PROD;
@@ -22,11 +23,14 @@ const devConfig: Config = {
   pythonUrl: 'http://localhost:5001'
 };
 
-// Production config (from environment variables or defaults)
+// Production config
+// HTTP API: Use relative /api path so Vercel rewrites proxy to Railway (no CORS).
+// WebSocket: Must connect directly to Railway — Vercel can't proxy WebSocket.
+const prodApiUrl = import.meta.env.VITE_API_URL || '/api';
 const prodConfig: Config = {
-  apiUrl: import.meta.env.VITE_API_URL || 'https://aetherlog-backend-production.up.railway.app',
+  apiUrl: (prodApiUrl.startsWith('http') && !prodApiUrl.endsWith('/api')) ? `${prodApiUrl}/api` : prodApiUrl,
   wsUrl: import.meta.env.VITE_WS_URL || 'wss://aetherlog-backend-production.up.railway.app',
-  pythonUrl: import.meta.env.VITE_PYTHON_URL || 'https://aetherlog-python-production.up.railway.app'
+  pythonUrl: import.meta.env.VITE_PYTHON_URL || '/python'
 };
 
 const config: Config = isProd ? prodConfig : devConfig;

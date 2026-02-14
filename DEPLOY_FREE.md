@@ -109,12 +109,15 @@ const prodConfig: Config = {
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
 
-### 3.4 Add Environment Variables (Optional)
-If you want to configure API URL via env vars instead of hardcoding:
+### 3.4 Add Environment Variables in Vercel
+In the Vercel project settings → Environment Variables, add:
 
 ```env
-VITE_API_URL=https://YOUR-RAILWAY-URL.up.railway.app
+VITE_WS_URL=wss://YOUR-RAILWAY-URL.up.railway.app
 ```
+
+> ⚠️ **Do NOT set `VITE_API_URL`!** The `vercel.json` rewrite proxies `/api/*` to Railway,
+> which avoids CORS issues. Setting `VITE_API_URL` would cause direct cross-origin requests.
 
 ### 3.5 Deploy!
 Click **"Deploy"** - Vercel will build and deploy your frontend.

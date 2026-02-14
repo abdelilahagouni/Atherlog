@@ -246,7 +246,7 @@ const DatasetLaboratory: React.FC = () => {
             message: row[3]
         }));
         
-        const response = await fetch(`${API_BASE_URL}/api/ai/execute-python`, {
+        const response = await fetch(`${API_BASE_URL}/ai/execute-python`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',

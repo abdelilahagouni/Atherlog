@@ -31,7 +31,7 @@ const PricingPage: React.FC = () => {
                 <div className="container mx-auto flex justify-between items-center">
                     <Link to="/" className="flex items-center gap-2">
                         <div className="p-1.5 bg-gray-200 dark:bg-gray-700 rounded-md"><Icon name="logo" className="w-6 h-6" /></div>
-                        <span className="font-bold text-xl text-gray-900 dark:text-gray-100">AI Log Analyzer</span>
+                        <span className="font-bold text-xl text-gray-900 dark:text-gray-100">Aether<span className="text-[var(--accent-color-gold)]">Log</span></span>
                     </Link>
                     <div className="flex items-center gap-4">
                         <Link to="/login" className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white">Login</Link>

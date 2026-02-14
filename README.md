@@ -1,7 +1,8 @@
 # AetherLog - Full Stack Setup Guide
 
-[![Build and Test](https://github.com/<OWNER>/<REPO>/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/<OWNER>/<REPO>/actions/workflows/build-and-test.yml)
-> **Note:** To activate the status badge above, replace `<OWNER>` and `<REPO>` with your GitHub username and repository name.
+[![Build and Test](https://github.com/abdelilahagouni/Atherlog/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/abdelilahagouni/Atherlog/actions/workflows/build-and-test.yml)
+[![Deploy](https://img.shields.io/badge/deploy-Railway%20%2B%20Vercel-blue)](https://atherlog.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 This guide provides instructions for setting up and running the complete AetherLog application on your local machine.
 

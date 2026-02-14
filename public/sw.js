@@ -5,9 +5,10 @@ const IMAGE_CACHE = 'aetherlog-images-v3';
 
 const urlsToCache = [
   '/',
-  '/index.css',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.svg',
+  '/icon-512.svg'
 ];
 
 // Install event - cache essential resources

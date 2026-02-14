@@ -140,11 +140,11 @@ const LandingPage: React.FC = () => {
                         This application was proudly developed by <strong>Abdelilah Agouni</strong>, a passionate student developer with a love for creating robust, user-friendly full-stack applications. This project showcases skills in modern web technologies, AI integration, and UX design.
                     </p>
                     <div className="flex justify-center gap-6">
-                        <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                        <a href="https://github.com/abdelilah-agouni" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                             <Icon name="github" className="w-6 h-6"/>
                             <span>GitHub</span>
                         </a>
-                        <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                        <a href="https://linkedin.com/in/abdelilah-agouni" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
                             <Icon name="linkedin" className="w-6 h-6"/>
                             <span>LinkedIn</span>
                         </a>
