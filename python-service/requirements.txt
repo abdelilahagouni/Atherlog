@@ -1,9 +1,12 @@
 flask==3.0.0
-numpy>=1.26.0
 gunicorn==21.2.0
+numpy>=1.26.0
 scikit-learn>=1.4.0
 pandas>=2.2.0
 scipy>=1.12.0
-sentence-transformers>=2.2.0
 shap>=0.44.0
+# torch CPU-only is installed separately in Dockerfile via --extra-index-url
+transformers>=4.36.0
+sentence-transformers>=2.2.0
+datasets>=2.16.0
 

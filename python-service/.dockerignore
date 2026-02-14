@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+logs/
+results/
+models/hf_model/
+models/*.pkl
+*.egg-info/
+.git/
+.env
+.venv/
+venv/
+node_modules/
+*.md
