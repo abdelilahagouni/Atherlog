@@ -158,33 +158,47 @@ app.use('/api/webhooks', webhookRouter); // Register ESP Webhooks
 // Public Ingestion Route
 app.use('/api/ingest', ingestionRouter);
 
+// Health endpoint — responds even before DB is ready so Railway knows the process is alive
+let dbReady = false;
+app.get('/api/health', (_req, res) => {
+    res.status(dbReady ? 200 : 503).json({
+        status: dbReady ? 'ok' : 'starting',
+        db: dbReady ? 'connected' : 'connecting',
+        uptime: process.uptime(),
+    });
+});
 
 // Create HTTP server for WebSocket support
 const httpServer = http.createServer(app);
 
 // Start server
+// IMPORTANT: Start listening FIRST so Railway sees a healthy port binding,
+// then connect to the database in the background with retries.
 const startServer = async () => {
+    // Initialize WebSocket server for real-time streaming
+    initializeWebSocket(httpServer);
+    console.log('WebSocket server initialized for real-time streaming.');
+
+    httpServer.listen(PORT, '0.0.0.0', () => {
+        console.log(`Backend server is running on port ${PORT}`);
+        console.log(`WebSocket available on the same port`);
+    });
+
+    // Connect to database (with retry logic inside connectDb)
     try {
         await connectDb();
+        dbReady = true;
         console.log('Database connected successfully.');
 
-        // Initialize WebSocket server for real-time streaming
-        initializeWebSocket(httpServer);
-        console.log('WebSocket server initialized for real-time streaming.');
-        
         // Start the background log generation service
         startLogGeneration();
 
         // Start log retention cleanup service
         startLogRetention();
-
-        httpServer.listen(PORT, '0.0.0.0', () => {
-            console.log(`Backend server is running on port ${PORT}`);
-            console.log(`WebSocket available on the same port`);
-        });
     } catch (e) {
-        console.error('Failed to start server:', e);
-        process.exit(1);
+        console.error('Failed to connect to database after retries:', e);
+        // Don't exit — the server stays up and /api/health reports 503.
+        // Railway won't kill a listening process, and the admin can check logs.
     }
 };
 

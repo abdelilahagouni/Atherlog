@@ -3,7 +3,6 @@
 
 import { Pool } from 'pg';
 import * as crypto from 'crypto';
-import { exit } from 'process';
 import bcrypt from 'bcryptjs';
 import { PlanDetails, Role, SubscriptionPlan, User, Organization } from './types';
 
@@ -76,16 +75,12 @@ export const connectDb = async () => {
 
             const code = err?.code || '';
             const isRecoverable = ['57P03', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT'].includes(code)
-                || (err?.message && /recovery mode|starting up|not ready/i.test(err.message));
-
-            if (attempt === MAX_RETRIES || !isRecoverable) {
+                || (err?.message && /recovery mode|starting up|not ready/i.test(err.message));            if (attempt === MAX_RETRIES || !isRecoverable) {
                 console.error(`Fatal: Could not connect to PostgreSQL after ${attempt} attempt(s).`, err);
-                // In production, let the process crash so the orchestrator can restart it
-                // after a cooldown, rather than exiting instantly in a tight loop.
                 if (isRecoverable) {
-                    console.error('Database appears to still be recovering. Exiting — orchestrator will restart.');
+                    console.error('Database appears to still be recovering.');
                 }
-                exit(1);
+                throw new Error(`Database connection failed after ${attempt} attempt(s): ${err.message}`);
             }
 
             const delay = Math.min(BASE_DELAY_MS * Math.pow(2, attempt - 1), 30000); // cap at 30s
