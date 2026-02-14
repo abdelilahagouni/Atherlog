@@ -39,6 +39,10 @@ import pipelineRouter from './pipeline.routes';
 const app: express.Express = express();
 const PORT = parseInt(process.env.PORT || '4000');
 
+// Trust proxy — required for Railway/Render/Vercel reverse proxies
+// so express-rate-limit and req.ip work correctly behind load balancers
+app.set('trust proxy', 1);
+
 // Middleware
 // CORS Configuration
 const allowedOrigins = [
@@ -100,6 +104,7 @@ const limiter = rateLimit({
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { xForwardedForHeader: false, trustProxy: false },
 });
 app.use('/api', limiter);
 
@@ -110,6 +115,7 @@ const authLimiter = rateLimit({
     message: { message: 'Too many authentication attempts. Please wait 15 minutes before trying again.' },
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { xForwardedForHeader: false, trustProxy: false },
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/signup', authLimiter);
