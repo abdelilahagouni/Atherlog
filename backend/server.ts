@@ -145,6 +145,26 @@ import webhookRouter from './webhook.routes';
 
 // ... (existing imports)
 
+// Health endpoint — responds even before DB is ready so Railway knows the process is alive
+let dbReady = false;
+app.get('/api/health', (_req, res) => {
+    res.status(dbReady ? 200 : 503).json({
+        status: dbReady ? 'ok' : 'starting',
+        db: dbReady ? 'connected' : 'connecting',
+        uptime: process.uptime(),
+    });
+});
+
+// Gate all API routes (except health) — return 503 while DB is connecting
+// This prevents getDb() from throwing and crashing the process
+app.use('/api', (req, res, next) => {
+    if (dbReady || req.path === '/health') return next();
+    res.status(503).json({
+        message: 'Server is starting up. Please try again in a few seconds.',
+        status: 'starting',
+    });
+});
+
 // API Routes
 app.use('/api/auth', authRouter);
 app.use('/api/organization', organizationRouter);
@@ -155,24 +175,14 @@ app.use('/api/keys', apiKeyRouter);
 app.use('/api/searches', savedSearchRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/database', databaseRouter);
-app.use('/api/incidents', incidentRouter); // Register the new incident router
+app.use('/api/incidents', incidentRouter);
 app.use('/api/connectors', connectorRoutes);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/logs/pipelines', pipelineRouter);
-app.use('/api/webhooks', webhookRouter); // Register ESP Webhooks
+app.use('/api/webhooks', webhookRouter);
 
 // Public Ingestion Route
 app.use('/api/ingest', ingestionRouter);
-
-// Health endpoint — responds even before DB is ready so Railway knows the process is alive
-let dbReady = false;
-app.get('/api/health', (_req, res) => {
-    res.status(dbReady ? 200 : 503).json({
-        status: dbReady ? 'ok' : 'starting',
-        db: dbReady ? 'connected' : 'connecting',
-        uptime: process.uptime(),
-    });
-});
 
 // Create HTTP server for WebSocket support
 const httpServer = http.createServer(app);
