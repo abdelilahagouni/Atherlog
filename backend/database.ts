@@ -54,7 +54,15 @@ export const connectDb = async () => {
             user: process.env.POSTGRES_USER || 'admin',
             password: process.env.POSTGRES_PASSWORD || 'password123',
             database: process.env.POSTGRES_DB || 'ailoganalyzer',
-        };
+        };    // Debug: log which DB host we're connecting to (mask credentials)
+    if (process.env.DATABASE_URL) {
+        try {
+            const u = new URL(process.env.DATABASE_URL);
+            console.log(`DATABASE_URL target → host=${u.hostname}  port=${u.port}  db=${u.pathname.slice(1)}`);
+        } catch { console.log('DATABASE_URL is set but could not be parsed as a URL'); }
+    } else {
+        console.log(`Using individual env vars → host=${process.env.POSTGRES_HOST || 'localhost'}`);
+    }
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
