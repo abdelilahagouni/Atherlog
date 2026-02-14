@@ -26,7 +26,12 @@ const devConfig: Config = {
 // Production config
 // HTTP API: Use relative /api path so Vercel rewrites proxy to Railway (no CORS).
 // WebSocket: Must connect directly to Railway — Vercel can't proxy WebSocket.
-const prodApiUrl = import.meta.env.VITE_API_URL || '/api';
+const rawProdApiUrl = import.meta.env.VITE_API_URL || '/api';
+// SAFETY: If VITE_API_URL points directly at Railway/Render, override to /api
+// so the Vercel rewrite proxy handles it (avoids CORS entirely).
+const prodApiUrl = (rawProdApiUrl.startsWith('http') && /\.(railway\.app|onrender\.com|herokuapp\.com)/.test(rawProdApiUrl))
+  ? '/api'
+  : rawProdApiUrl;
 const prodConfig: Config = {
   apiUrl: (prodApiUrl.startsWith('http') && !prodApiUrl.endsWith('/api')) ? `${prodApiUrl}/api` : prodApiUrl,
   wsUrl: import.meta.env.VITE_WS_URL || 'wss://aetherlog-backend-production.up.railway.app',
