@@ -1,0 +1,6 @@
+Date of run: March 6, 2026
+Dataset: BGL held-out test set, n=10,000, random_state=42
+Model: IF Stage 1 + DistilBERT Stage 2 (loaded from models/hf_model)
+TN=8003, FP=9, FN=33, TP=1955
+Anomaly F1=0.990, AUC=0.953, Latency=2.87ms/log
+Stage 1 AUC=0.9532 (independent reconstruction, seed=42)
