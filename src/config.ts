@@ -19,8 +19,8 @@ interface Config {
 // Development config (local)
 const devConfig: Config = {
   apiUrl: '/api',
-  wsUrl: `ws://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:4000`,
-  pythonUrl: 'http://localhost:5001'
+  wsUrl: 'ws://127.0.0.1:4000',
+  pythonUrl: 'http://127.0.0.1:5001'
 };
 
 // Production config

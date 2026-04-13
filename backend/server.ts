@@ -2,24 +2,22 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import process from 'process';
+
+// Load environment variables IMMEDIATELY before any other internal imports
+dotenv.config();
+
+// If API keys are missing, try loading from the project root directory
+if (!process.env.API_KEY && !process.env.OPENAI_API_KEY) {
+    const scriptDir = __dirname;
+    dotenv.config({ path: path.join(scriptDir, '../.env') });
+}
+
 import http from 'http';
 import { connectDb } from './database';
-import process from 'process';
 import { startLogGeneration } from './logGenerationService';
 import { initializeWebSocket } from './websocket';
 import { startLogRetention } from './logRetentionService';
-
-// Load environment variables
-// 1. Try default location (current directory / backend)
-dotenv.config();
-
-// 2. If API keys are missing, try loading from the project root directory
-// This helps if the user created the .env file in the main folder instead of /backend
-if (!process.env.API_KEY && !process.env.OPENAI_API_KEY) {
-    console.log("API Keys not found in backend/.env, checking project root for .env...");
-    const scriptDir = path.dirname(process.argv[1]);
-    dotenv.config({ path: path.join(scriptDir, '../.env') });
-}
 
 import authRouter from './auth.routes';
 import organizationRouter from './organization.routes';
@@ -35,6 +33,7 @@ import incidentRouter from './incident.routes'; // Import the new incident route
 import connectorRoutes from './connector.routes';
 import alertsRouter from './alerts.routes';
 import pipelineRouter from './pipeline.routes';
+import runbookRouter from './runbook.routes';
 
 const app: express.Express = express();
 const PORT = parseInt(process.env.PORT || '4000');
@@ -91,8 +90,34 @@ import xss from 'xss';
 import helmet from 'helmet';
 
 // 0. Security Headers (Helmet)
+const isProduction = !!process.env.FRONTEND_URL;
+const cspDirectives = isProduction
+    ? {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Vite builds need inline
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+            fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+            connectSrc: [
+                "'self'",
+                'https://*.railway.app',
+                'https://*.onrender.com',
+                'https://*.vercel.app',
+                'wss://*.railway.app',
+                'wss://*.onrender.com',
+                process.env.FRONTEND_URL as string,
+            ],
+            frameSrc: ["'none'"],
+            objectSrc: ["'none'"],
+            frameAncestors: ["'none'"], // Prevents clickjacking
+            upgradeInsecureRequests: [],
+        },
+    }
+    : false; // CSP disabled in local dev to avoid blocking Vite HMR
+
 app.use(helmet({
-    contentSecurityPolicy: false, // Disabled for dev — enable in production
+    contentSecurityPolicy: cspDirectives,
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
@@ -180,6 +205,7 @@ app.use('/api/connectors', connectorRoutes);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/logs/pipelines', pipelineRouter);
 app.use('/api/webhooks', webhookRouter);
+app.use('/api/runbooks', runbookRouter);
 
 // Public Ingestion Route
 app.use('/api/ingest', ingestionRouter);

@@ -10,6 +10,7 @@ export interface LogStreamEvent {
     message: string;
     source: string;
     anomalyScore?: number;
+    threatCategory?: string;
 }
 
 export interface AlertStreamEvent {
@@ -46,11 +47,13 @@ class WebSocketService {
 
             this.socket = io(wsUrl, {
                 auth: { token },
-                transports: ['websocket', 'polling'],
+                transports: ['polling', 'websocket'],
                 reconnection: true,
                 reconnectionDelay: 1000,
                 reconnectionDelayMax: 5000,
-                reconnectionAttempts: this.maxReconnectAttempts
+                reconnectionAttempts: this.maxReconnectAttempts,
+                timeout: 10000,
+                forceNew: true
             });
 
             this.socket.on('connect', () => {
@@ -79,6 +82,7 @@ class WebSocketService {
             });
 
             this.socket.on('alert:new', (alert: AlertStreamEvent) => {
+                console.log(`[WebSocket] Received alert:new event (id: ${alert.id})`);
                 this.emit('alert:new', alert);
             });
 
@@ -103,7 +107,6 @@ class WebSocketService {
             this.socket.disconnect();
             this.socket = null;
         }
-        this.listeners.clear();
     }
 
     /**

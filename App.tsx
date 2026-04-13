@@ -18,6 +18,7 @@ import { soundNotificationService } from './services/soundNotificationService';
 
 // Lazy load components for code splitting
 const Dashboard = lazy(() => import('./components/Dashboard'));
+const CustomDashboard = lazy(() => import('./components/CustomDashboard'));
 const LiveAnomalies = lazy(() => import('./components/LiveAnomalies'));
 const LogExplorer = lazy(() => import('./components/LogExplorer'));
 const AlertHistory = lazy(() => import('./components/AlertHistory'));
@@ -48,6 +49,8 @@ const AlertCenterPlus = lazy(() => import('./components/AlertCenterPlus'));
 const LiveTail = lazy(() => import('./components/LiveTail'));
 const PipelineManager = lazy(() => import('./components/PipelineManager'));
 const VisualAnalytics = lazy(() => import('./components/VisualAnalytics'));
+const Collaboration = lazy(() => import('./components/Collaboration'));
+const Runbooks = lazy(() => import('./components/Runbooks'));
 
 const SuspenseFallback: React.FC = () => (
   <div className="flex items-center justify-center h-full w-full">
@@ -76,6 +79,7 @@ const App: React.FC = () => {
                             <Suspense fallback={<SuspenseFallback />}>
                               <Routes>
                                 <Route path="/dashboard" element={<Dashboard />} />
+                                <Route path="/custom-dashboard" element={<CustomDashboard />} />
                                 <Route path="/visual-analytics" element={<VisualAnalytics />} />
                                 <Route path="/live-anomalies" element={<LiveAnomalies />} />
                                 <Route path="/log-explorer" element={<LogExplorer />} />
@@ -141,6 +145,22 @@ const App: React.FC = () => {
                                   element={
                                     <ProtectedRoute roles={[Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.ANALYST]}>
                                       <SaaSSubscription />
+                                    </ProtectedRoute>
+                                  } 
+                                />
+                                <Route 
+                                  path="/collaboration" 
+                                  element={
+                                    <ProtectedRoute roles={[Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.ANALYST]}>
+                                      <Collaboration />
+                                    </ProtectedRoute>
+                                  } 
+                                />
+                                <Route 
+                                  path="/runbooks" 
+                                  element={
+                                    <ProtectedRoute roles={[Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.ANALYST]}>
+                                      <Runbooks />
                                     </ProtectedRoute>
                                   } 
                                 />

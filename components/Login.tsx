@@ -22,6 +22,10 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
+    // Force dark mode for the premium login experience
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+
     const savedUsername = localStorage.getItem(SAVED_USERNAME_KEY);
     if (savedUsername) {
       setUsername(savedUsername);
@@ -74,7 +78,7 @@ const Login: React.FC = () => {
   };
 
   if (isAuthLoading) {
-    return <div className="flex items-center justify-center h-screen"><Icon name="loader" className="w-12 h-12 animate-spin text-blue-500" /></div>;
+    return <div className="flex items-center justify-center h-screen bg-black"><Icon name="loader" className="w-12 h-12 animate-spin text-blue-500" /></div>;
   }
 
   if (currentUser) {
@@ -83,8 +87,17 @@ const Login: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="container mx-auto">
+      <div 
+        className="min-h-screen flex items-center justify-center p-4 text-white overflow-hidden relative"
+        style={{ background: 'radial-gradient(circle at top left, #1a1a1a, #000000)' }}
+      >
+        {/* Abstract background elements for premium feel */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] animate-float"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px] animate-float" style={{ animationDelay: '2s' }}></div>
+        </div>
+        
+        <div className="container mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left side: Hero Text */}
             <div className="text-center lg:text-left text-white">
@@ -94,7 +107,7 @@ const Login: React.FC = () => {
                 </div>
                 <h1 className="text-3xl font-bold animate-heartbeat">Aether<span className="text-[var(--accent-color-gold)]">Log</span></h1>
               </div>
-              <h2 className="text-5xl md:text-6xl font-bold mb-4 animate-slide-up-fade-in">
+              <h2 className="text-5xl md:text-6xl font-bold mb-4 animate-slide-up-fade-in drop-shadow-lg">
                   Turn Log Data into Actionable Insight.
               </h2>
               <p className="text-lg text-gray-300 max-w-xl mx-auto lg:mx-0 animate-slide-up-fade-in" style={{ animationDelay: '200ms' }}>

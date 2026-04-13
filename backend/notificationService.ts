@@ -156,27 +156,126 @@ export const sendWebhook = async (url: string, payload: any): Promise<void> => {
 };
 
 /**
- * Sends a formatted Slack alert
+ * Sends a formatted Slack alert using Block Kit for richer display
  */
 export const sendSlackAlert = async (webhookUrl: string, alertData: { title: string; message: string; severity: string; source: string }) => {
-    const color = alertData.severity === 'CRITICAL' ? '#ff0000' : alertData.severity === 'ERROR' ? '#ff9900' : '#36a64f';
+    const isCritical = alertData.severity === 'CRITICAL' || alertData.severity === 'FATAL';
+    const color = isCritical ? '#ff0000' : alertData.severity === 'ERROR' ? '#ff9900' : '#36a64f';
+    const emoji = isCritical ? '🔥' : alertData.severity === 'ERROR' ? '🚨' : '⚠️';
     
+    // Rich block kit payload
     const payload = {
-        attachments: [
+        text: `${emoji} AetherLog Alert: ${alertData.title}`,
+        blocks: [
             {
-                fallback: `AetherLog Alert: ${alertData.title}`,
-                color: color,
-                title: `🚨 ${alertData.title}`,
-                text: alertData.message,
+                type: 'header',
+                text: { type: 'plain_text', text: `${emoji} ${alertData.title}`, emoji: true }
+            },
+            {
+                type: 'section',
                 fields: [
-                    { title: "Severity", value: alertData.severity, short: true },
-                    { title: "Source", value: alertData.source, short: true }
-                ],
-                footer: "AetherLog AI Monitoring",
-                ts: Math.floor(Date.now() / 1000)
+                    { type: 'mrkdwn', text: `*Severity*\n${alertData.severity}` },
+                    { type: 'mrkdwn', text: `*Source*\n${alertData.source}` }
+                ]
+            },
+            {
+                type: 'section',
+                text: { type: 'mrkdwn', text: `*Message:*\n\`\`\`${alertData.message}\`\`\`` }
+            },
+            { type: 'divider' },
+            {
+                type: 'context',
+                elements: [
+                    { type: 'mrkdwn', text: `AetherLog AI Observability • ${new Date().toISOString()}` }
+                ]
             }
         ]
     };
 
     return sendWebhook(webhookUrl, payload);
+};
+
+/**
+ * Sends a formatted Microsoft Teams alert using Adaptive Cards
+ */
+export const sendTeamsAlert = async (webhookUrl: string, alertData: { title: string; message: string; severity: string; source: string }) => {
+    const isCritical = alertData.severity === 'CRITICAL' || alertData.severity === 'FATAL';
+    const color = isCritical ? 'FF0000' : 'FF9900';
+    
+    // Adaptive Card payload format for Teams generic webhook
+    const payload = {
+        '@type': 'MessageCard',
+        '@context': 'http://schema.org/extensions',
+        'themeColor': color,
+        'summary': `AetherLog Alert: ${alertData.title}`,
+        'sections': [{
+            'activityTitle': `🚨 **${alertData.title}**`,
+            'activitySubtitle': 'AetherLog AI Notification',
+            'facts': [
+                { 'name': 'Severity:', 'value': alertData.severity },
+                { 'name': 'Source:', 'value': alertData.source }
+            ],
+            'markdown': true
+        }],
+        'text': `**Message:**\n\n${alertData.message}`
+    };
+
+    return sendWebhook(webhookUrl, payload);
+};
+
+/**
+ * Sends a FATAL log alert to a Telegram chat via bot.
+ * Requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env
+ */
+export const sendTelegramFatalAlert = async (log: {
+    id: string;
+    message: string;
+    source: string;
+    organizationId: string;
+    timestamp: string;
+    level: string;
+    anomalyScore?: number;
+}): Promise<void> => {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (!botToken || !chatId) {
+        console.warn('[Telegram] Bot not configured. Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env');
+        return;
+    }
+
+    const time = new Date(log.timestamp).toLocaleString('en-GB', { timeZone: 'UTC' });
+    const anomalyPct = log.anomalyScore !== undefined ? `${Math.round(log.anomalyScore * 100)}%` : 'N/A';
+
+    const text = [
+        `🚨 *FATAL ALERT — AetherLog*`,
+        ``,
+        `⏰ *Time:* ${time} UTC`,
+        `📦 *Source:* \`${log.source}\``,
+        `🔥 *Anomaly Score:* ${anomalyPct}`,
+        ``,
+        `💬 *Message:*`,
+        `\`\`\``,
+        log.message,
+        `\`\`\``,
+    ].join('\n');
+
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: chatId,
+            text,
+            parse_mode: 'Markdown',
+        }),
+    } as any);
+
+    if (!response.ok) {
+        const err = await response.text();
+        console.error('[Telegram] Failed to send alert:', err);
+        throw new Error(`Telegram API error: ${err}`);
+    }
+
+    console.log(`[Telegram] FATAL alert sent for log ${log.id}`);
 };

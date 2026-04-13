@@ -5,6 +5,7 @@ import { getDb } from './database';
 import { LogEntry } from './types';
 import * as crypto from 'crypto';
 import { emitLog } from './websocket';
+import fetch from 'node-fetch';
 
 const router = express.Router();
 
@@ -19,15 +20,11 @@ const authenticateApiKey = async (req: express.Request, res: express.Response, n
     const keyPrefix = providedKey.substring(0, 8);
     const db = getDb();
 
-    console.log(`[Ingest] Auth attempt. Prefix: ${keyPrefix}`);
-
     try {
         const potentialKeys = await db.all<{ keyHash: string, organizationId: string }>(
             'SELECT "keyHash", "organizationId" FROM api_keys WHERE "keyPrefix" = ?',
             [keyPrefix]
         );
-
-        console.log(`[Ingest] Found ${potentialKeys.length} matching prefixes`);
 
         if (potentialKeys.length === 0) {
             return res.status(401).json({ message: 'Invalid API key (prefix mismatch).' });
@@ -56,6 +53,7 @@ const authenticateApiKey = async (req: express.Request, res: express.Response, n
 // POST /api/ingest
 // Public-facing endpoint for external services to send logs
 router.post('/', authenticateApiKey, async (req: express.Request, res: express.Response) => {
+    console.log('[Ingest] Received ingestion request');
     const organizationId = (req as any).organizationId;
     const logData = req.body;
 
@@ -87,9 +85,40 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
 
         const id = crypto.randomUUID();
         const timestamp = new Date().toISOString();
+
+        // Real-time AI Enrichment via Python Service
+        let enrichedAnomalyScore = processedLog.anomalyScore || 0.1;
+        let enrichedThreatCategory = 'Informational';
+
+        try {
+            const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:5001';
+            console.log(`[Ingest] Calling Python AI at ${pythonServiceUrl}/urgency...`);
+            // Use a 2-second timeout to prevent slow AI service from blocking ingestion
+            const aiController = new AbortController();
+            const aiTimeout = setTimeout(() => aiController.abort(), 2000);
+            const aiResponse = await fetch(`${pythonServiceUrl}/urgency`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ log: processedLog }),
+                signal: aiController.signal as any
+            });
+            clearTimeout(aiTimeout);
+
+            if (aiResponse.ok) {
+                const aiData = await aiResponse.json() as { urgency: string, score: number };
+                enrichedThreatCategory = aiData.urgency;
+                enrichedAnomalyScore = aiData.score;
+                console.log(`[Ingest] AI Enriched: ${enrichedThreatCategory} (Score: ${enrichedAnomalyScore})`);
+            } else {
+                console.error(`[Ingest] AI Service returned ${aiResponse.status}: ${aiResponse.statusText}`);
+            }
+        } catch (aiError: any) {
+            console.error('[Ingest] AI Enrichment connection failed:', aiError.message);
+        }
+
         await db.run(
-            'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore") VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id, processedLog.organizationId, timestamp, processedLog.level, processedLog.message, processedLog.source, processedLog.anomalyScore]
+            'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore", "threatCategory") VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, processedLog.organizationId, timestamp, processedLog.level, processedLog.message, processedLog.source, enrichedAnomalyScore, enrichedThreatCategory]
         );
         
         // Trigger alerting check
@@ -101,7 +130,8 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
             level: processedLog.level,
             message: processedLog.message,
             source: processedLog.source,
-            anomalyScore: processedLog.anomalyScore
+            anomalyScore: enrichedAnomalyScore,
+            threatCategory: enrichedThreatCategory
         }).catch((e: any) => console.error('Alerting check failed:', e));
 
         // Emit log to WebSocket for real-time streaming (Live Tail)
@@ -112,7 +142,8 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
             level: processedLog.level,
             message: processedLog.message,
             source: processedLog.source,
-            anomalyScore: processedLog.anomalyScore
+            anomalyScore: enrichedAnomalyScore,
+            threatCategory: enrichedThreatCategory
         });
 
         res.status(202).json({ message: 'Log received.' });

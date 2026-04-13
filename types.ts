@@ -56,10 +56,12 @@ export interface LogEntry {
   message: string;
   source: string;
   anomalyScore?: number;
+  threatCategory?: string;
 }
 
 export interface Anomaly extends LogEntry {
   anomalyScore: number;
+  threatCategory?: string;
 }
 
 export interface LogSummary {

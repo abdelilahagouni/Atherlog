@@ -72,3 +72,32 @@ backend/*.log
 # IDEs
 .vscode
 .idea
+
+# Academic & Experimental
+*.png
+*.docx
+*.html
+*.pdf
+*.jpg
+*.tar.gz
+python-service/*.py
+python-service/*.json
+!python-service/app.py
+!python-service/main.py
+finalize_*.py
+make_reference.py
+perfect_convert_math.py
+reset_pass.cjs
+auto_review.py
+convert_*.py
+convert_*.js
+replace_svgs_base64.py
+revise_paper.py
+send_paper_telegram.js
+send_to_telegram.py
+trigger_telegram.js
+finalize_and_sync.ps1
+tmp_train/
+data/
+backend/database.sqlite
+~$*.docx

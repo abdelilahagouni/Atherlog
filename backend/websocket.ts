@@ -25,6 +25,7 @@ export interface LogStreamEvent {
     message: string;
     source: string;
     anomalyScore?: number;
+    threatCategory?: string;
 }
 
 export interface AlertStreamEvent {
@@ -142,14 +143,13 @@ export const initializeWebSocket = (httpServer: HttpServer): Server => {
 export const emitLog = (log: LogStreamEvent): void => {
     if (!io) return;
 
-    // Emit to all clients in the organization
-    io.to(`org:${log.organizationId}`).emit('log:new', log);
-
-    // Emit to source-specific subscribers
-    io.to(`org:${log.organizationId}:source:${log.source}`).emit('log:new', log);
-
-    // Emit to level-specific subscribers
-    io.to(`org:${log.organizationId}:level:${log.level}`).emit('log:new', log);
+    // Chain all target rooms into a single emit to prevent
+    // clients subscribed to multiple rooms from receiving duplicates.
+    io
+        .to(`org:${log.organizationId}`)
+        .to(`org:${log.organizationId}:source:${log.source}`)
+        .to(`org:${log.organizationId}:level:${log.level}`)
+        .emit('log:new', log);
 };
 
 /**

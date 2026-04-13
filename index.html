@@ -16,10 +16,12 @@
     <title>AetherLog</title>
     <script>
       // On page load or when changing themes, best to add inline in `head` to avoid FOUC
-      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark')
+      // Default to dark mode for the premium AetherLog experience
+      if (localStorage.theme === 'dark' || !('theme' in localStorage)) {
+        document.documentElement.classList.add('dark');
+        if (!('theme' in localStorage)) localStorage.theme = 'dark';
       } else {
-        document.documentElement.classList.remove('dark')
+        document.documentElement.classList.remove('dark');
       }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>

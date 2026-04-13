@@ -9,7 +9,16 @@ import { sendVerificationEmail } from './notificationService';
 import * as crypto from 'crypto';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-that-should-be-in-an-env-file'; // In production, use environment variables
+
+// Guard: warn loudly if JWT_SECRET is missing so no deployment ships with the insecure default
+if (!process.env.JWT_SECRET) {
+    console.warn('\n' + '!'.repeat(70));
+    console.warn('⚠️  [SECURITY WARNING] JWT_SECRET environment variable is NOT set.');
+    console.warn('    Using an insecure hardcoded fallback. Tokens can be forged!');
+    console.warn('    Set JWT_SECRET in your .env or deployment environment ASAP.');
+    console.warn('!'.repeat(70) + '\n');
+}
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-that-should-be-in-an-env-file';
 
 // Middleware to protect routes
 export const protect = (req: express.Request, res: express.Response, next: express.NextFunction) => {

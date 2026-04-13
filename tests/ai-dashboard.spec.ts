@@ -16,29 +16,33 @@ test.describe('AI Dashboard', () => {
   });
 
   test('should display model training section', async ({ page }) => {
-    await expect(page.locator('text=Model Training Laboratory')).toBeVisible();
-    await expect(page.locator('select#model-name')).toBeVisible();
-    await expect(page.locator('select#dataset-name')).toBeVisible();
+    // Check if model training section exists
+    await expect(page.locator('h3:text("Model Training Laboratory")')).toBeVisible();
+    
+    // Select model type (Text input in new UI)
+    const modelInput = page.locator('input#hf-model-name');
+    await expect(modelInput).toBeVisible();
+    await expect(modelInput).toHaveValue('distilbert-base-uncased');
+    
+    // Select dataset
+    await page.selectOption('select#hf-dataset-name', 'imdb');
   });
 
   test('should display model playground', async ({ page }) => {
     await expect(page.locator('text=Model Playground')).toBeVisible();
-    await expect(page.locator('textarea#playground-text')).toBeVisible();
+    await expect(page.locator('textarea#predict-input')).toBeVisible();
   });
 
   test('should test classification', async ({ page }) => {
-    // Enter test text
-    await page.fill('textarea#playground-text', 'Database connection failed');
+    // Type in playground
+    await page.fill('textarea#predict-input', 'Database connection failed due to timeout');
     
-    // Click test classification button
-    await page.click('button:has-text("Test Classification")');
+    // Click predict
+    await page.click('button:text("Analyze Text")');
     
-    // Wait for result
-    await page.waitForTimeout(2000);
-    
-    // Check result appears
-    const result = page.locator('#playground-result');
-    await expect(result).toContainText(/CRITICAL|NORMAL/);
+    // Check result
+    await expect(page.locator('#predict-result')).toBeVisible();
+    await expect(page.locator('#predict-result')).toContainText('NEGATIVE'); // Error log should be negative sentiment/anomaly.
   });
 
   test('should display Kaggle dataset section', async ({ page }) => {

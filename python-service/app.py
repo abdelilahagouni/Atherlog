@@ -1,6 +1,9 @@
 import os
+import sys
+import json
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
+
 
 # Lazy loading flags
 HAS_TRANSFORMERS = False
@@ -1155,7 +1158,89 @@ def classify_log():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ─── Publication Experiments Endpoint ────────────────────────────────────────
+@app.route('/run-experiments', methods=['POST'])
+def run_experiments_endpoint():
+    """
+    Run any subset of the 5 publication experiments.
+    Body: { "experiments": [1,2,3,4,5], "sample_size": 200 }
+    Returns all metrics as JSON.
+    """
+    try:
+        import sys, os
+        service_dir = os.path.dirname(os.path.abspath(__file__))
+        if service_dir not in sys.path:
+            sys.path.insert(0, service_dir)
+
+        from run_experiments import (
+            load_dataset,
+            experiment_1, experiment_2, experiment_3,
+            experiment_4, experiment_5,
+            write_results,
+        )
+
+        data        = request.json or {}
+        exp_ids     = data.get('experiments', [1, 2, 3, 4, 5])
+        sample_size = int(data.get('sample_size', 200))
+
+        print(f"[EXPERIMENTS] Running experiments {exp_ids} with {sample_size} samples")
+
+        texts_bgl,  labels_bgl  = load_dataset('bgl',  sample_size)
+        texts_hdfs, labels_hdfs = load_dataset('hdfs', sample_size)
+
+        all_results = []
+
+        if 1 in exp_ids:
+            print("[EXPERIMENTS] Running Exp 1: Isolation Forest Baseline...")
+            all_results.append(experiment_1(texts_bgl, labels_bgl, texts_hdfs, labels_hdfs))
+
+        if 2 in exp_ids:
+            print("[EXPERIMENTS] Running Exp 2: NLP-Only (DistilBERT)...")
+            all_results.append(experiment_2(texts_bgl, labels_bgl, sample_size))
+
+        if 3 in exp_ids:
+            print("[EXPERIMENTS] Running Exp 3: Proposed IF→DistilBERT Pipeline...")
+            all_results.append(experiment_3(texts_bgl, labels_bgl, sample_size))
+
+        if 4 in exp_ids:
+            print("[EXPERIMENTS] Running Exp 4: Model Comparison...")
+            all_results.append(experiment_4(texts_bgl, labels_bgl, min(sample_size, 150)))
+
+        if 5 in exp_ids:
+            print("[EXPERIMENTS] Running Exp 5: Generalization BGL→HDFS...")
+            all_results.append(experiment_5(texts_bgl, labels_bgl,
+                                            texts_hdfs, labels_hdfs, sample_size))
+
+        paths = write_results(all_results)
+        print(f"[EXPERIMENTS] Done — results saved to {paths['json']}")
+
+        return jsonify({
+            'status':  'complete',
+            'results': all_results,
+            'files':   paths,
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/experiments/results', methods=['GET'])
+def get_experiment_results():
+    """Return the most recently saved experiment results JSON."""
+    try:
+        results_path = os.path.join(os.path.dirname(__file__), 'results', 'experiment_results.json')
+        if not os.path.exists(results_path):
+            return jsonify({'error': 'No results yet — run experiments first'}), 404
+        with open(results_path) as f:
+            return jsonify(json.load(f))
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
+
     # Try to load model on startup
     try:
         if HAS_TRANSFORMERS:

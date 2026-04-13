@@ -8,7 +8,7 @@ import { bulkIngestLogs } from '../services/logService';
 import { DatasetMapping, LogLevel } from '../types';
 import { DEMO_DATASET, generateLargeDataset } from '../assets/demo_dataset';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { trainInternalModel, semanticSearch, clusterLogs, forecastVolume, getSystemHealth, getDependencyMap, getTimeline } from '../services/geminiService';
+import { trainInternalModel, semanticSearch, clusterLogs, forecastVolume, getSystemHealth, getDependencyMap, getTimeline, runPrediction } from '../services/geminiService';
 import AiDashboard from './AiDashboard';
 
 const DatasetLaboratory: React.FC = () => {
@@ -246,23 +246,7 @@ const DatasetLaboratory: React.FC = () => {
             message: row[3]
         }));
         
-        const response = await fetch(`${API_BASE_URL}/ai/execute-python`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` 
-            },
-            body: JSON.stringify({ 
-                script: 'anomaly_detection', 
-                input: { logs: logsToAnalyze } 
-            })
-        });
-
-        // The execute-python endpoint returns { output, result, serviceUrl }
-        // Our Python service /predict returns { analysis, model, framework }
-        if (!response.ok) throw new Error('AI Analysis failed');
-        
-        const data = await response.json();
+        const data = await runPrediction(logsToAnalyze);
         setAiResult(data.result);
         showToast('AI Analysis complete!', 'success');
     } catch (err: any) {

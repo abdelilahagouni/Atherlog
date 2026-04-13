@@ -1,6 +1,7 @@
 // components/LogExplorer.tsx
 import * as React from 'react';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { TableVirtuoso } from 'react-virtuoso';
 // FIX: Import GeneratedFilters to resolve type errors.
 import { LogEntry, LogLevel, LogFilter, SavedSearch, GeneratedFilters } from '../types';
 import { exploreLogs, getLogHistogram } from '../services/logService';
@@ -345,41 +346,56 @@ const LogExplorer: React.FC = () => {
 
         {/* Log Table */}
         <Card>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm mobile-card-view">
-                    <thead className="border-b border-gray-200 dark:border-gray-700">
-                        <tr>
-                            <th className="text-left p-2 w-8"></th>
-                            <th className="text-left p-2 w-48">Timestamp</th>
-                            <th className="text-left p-2 w-24">Level</th>
-                            <th className="text-left p-2 w-40">Source</th>
-                            <th className="text-left p-2">Message</th>
-                        </tr>
-                    </thead>
-                    <tbody className="font-mono text-xs">
-                        {loading ? (
-                            <tr><td colSpan={5} className="text-center p-8"><Icon name="loader" className="w-8 h-8 animate-spin mx-auto"/></td></tr>
-                        ) : logs.map(log => (
-                            <React.Fragment key={log.id}>
-                                <tr onClick={() => setExpandedLogId(log.id === expandedLogId ? null : log.id)} className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer">
-                                    <td className="p-3 text-center" data-label="Expand"><Icon name="chevron-down" className={`w-4 h-4 transition-transform ${log.id === expandedLogId ? 'rotate-180' : ''}`}/></td>
-                                    <td className="p-3 text-gray-500 dark:text-gray-400 whitespace-nowrap" data-label="Timestamp">{new Date(log.timestamp).toISOString()}</td>
-                                    <td className="p-3" data-label="Level"><LogLevelBadge level={log.level}/></td>
-                                    <td className="p-3 text-sky-600 dark:text-sky-400" data-label="Source">{log.source}</td>
-                                    <td className="p-3 text-gray-800 dark:text-gray-200 truncate max-w-lg" data-label="Message">{log.message}</td>
-                                </tr>
-                                {log.id === expandedLogId && (
-                                    <tr className="bg-gray-100 dark:bg-gray-800">
-                                        <td colSpan={5} className="p-4">
-                                            <LogEntryDetail log={log} onAddFilter={addFilter} />
-                                        </td>
-                                    </tr>
-                                )}
-                            </React.Fragment>
-                        ))}
-                         { !loading && logs.length === 0 && <tr><td colSpan={5} className="text-center p-8 text-gray-500">No logs found for the selected criteria.</td></tr>}
-                    </tbody>
-                </table>
+            <div className="overflow-x-auto h-[600px]">
+                {loading && logs.length === 0 ? (
+                    <div className="text-center p-8"><Icon name="loader" className="w-8 h-8 animate-spin mx-auto"/></div>
+                ) : !loading && logs.length === 0 ? (
+                    <div className="text-center p-8 text-gray-500">No logs found for the selected criteria.</div>
+                ) : (
+                    <TableVirtuoso
+                        data={logs}
+                        className="w-full text-sm mobile-card-view bg-white dark:bg-[#1C1C1E]"
+                        fixedHeaderContent={() => (
+                            <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                <th className="text-left p-2 w-8"></th>
+                                <th className="text-left p-2 w-48">Timestamp</th>
+                                <th className="text-left p-2 w-24">Level</th>
+                                <th className="text-left p-2 w-40">Source</th>
+                                <th className="text-left p-2">Message</th>
+                            </tr>
+                        )}
+                        components={{
+                            Table: (props: any) => <table {...props} className="w-full text-sm mobile-card-view border-collapse" />,
+                            TableBody: React.forwardRef((props: any, ref) => <tbody {...props} ref={ref as any} className="font-mono text-xs" />),
+                            TableRow: (props: any) => {
+                                const index = props?.['data-index'];
+                                const log = logs[index];
+                                const isExpanded = log?.id === expandedLogId;
+                                return (
+                                    <React.Fragment>
+                                        <tr {...props} className={`border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer ${props.className || ''}`} onClick={() => setExpandedLogId(log?.id === expandedLogId ? null : log?.id)} />
+                                        {isExpanded && log && (
+                                            <tr className="bg-gray-100 dark:bg-gray-800">
+                                                <td colSpan={5} className="p-4">
+                                                    <LogEntryDetail log={log} onAddFilter={addFilter} />
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            },
+                        }}
+                        itemContent={(index, log) => (
+                            <>
+                                <td className="p-3 text-center" data-label="Expand"><Icon name="chevron-down" className={`w-4 h-4 transition-transform ${log.id === expandedLogId ? 'rotate-180' : ''}`}/></td>
+                                <td className="p-3 text-gray-500 dark:text-gray-400 whitespace-nowrap" data-label="Timestamp">{new Date(log.timestamp).toISOString()}</td>
+                                <td className="p-3" data-label="Level"><LogLevelBadge level={log.level}/></td>
+                                <td className="p-3 text-sky-600 dark:text-sky-400" data-label="Source">{log.source}</td>
+                                <td className="p-3 text-gray-800 dark:text-gray-200 truncate max-w-lg" data-label="Message">{log.message}</td>
+                            </>
+                        )}
+                    />
+                )}
             </div>
              <div className="flex justify-between items-center mt-4 text-sm p-4">
                 <p>Showing page {pagination.page} of {pagination.totalPages} ({pagination.total.toLocaleString()} total logs)</p>

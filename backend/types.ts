@@ -56,10 +56,12 @@ export interface LogEntry {
   message: string;
   source: string;
   anomalyScore?: number;
+  threatCategory?: string;
 }
 
 export interface Anomaly extends LogEntry {
   anomalyScore: number;
+  threatCategory?: string;
 }
 
 export interface LogSummary {
@@ -104,6 +106,7 @@ export interface Organization {
     plan: PlanDetails;
     anomalyThreshold?: number;
     slackWebhookUrl?: string;
+    teamsWebhookUrl?: string;
     webhookUrl?: string;
 }
 
@@ -242,6 +245,17 @@ export interface AiDiscovery {
         source?: string;
         level?: LogLevel;
     };
+}
+
+export interface Runbook {
+    id: string;
+    organizationId: string;
+    name: string;
+    description: string;
+    triggerType: 'webhook' | 'script' | 'aws_lambda';
+    config: Record<string, any>; // url, method, headers, script_id, etc.
+    enabled: boolean;
+    createdAt: string;
 }
 
 export interface ActivityLogEntry {

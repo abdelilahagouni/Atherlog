@@ -33,13 +33,21 @@ export const addToSuppressionList = async (email: string, organizationId: string
 };
 
 export const logEmailEvent = async (email: string, organizationId: string, event: string, reason?: string) => {
+    // Skip audit logging for system-level emails not tied to a real org
+    if (!organizationId || organizationId === 'system') return;
+
     const db = getDb();
     const id = uuidv4();
-    
-    await db.run(
-        'INSERT INTO email_events (id, "organizationId", email, event, reason) VALUES ($1, $2, $3, $4, $5)',
-        [id, organizationId, email, event, reason || null]
-    );
+
+    try {
+        await db.run(
+            'INSERT INTO email_events (id, "organizationId", email, event, reason) VALUES ($1, $2, $3, $4, $5)',
+            [id, organizationId, email, event, reason || null]
+        );
+    } catch (err: any) {
+        // Non-fatal: don't let an audit-log failure block email delivery
+        console.warn(`[BounceService] Could not log email event (org: ${organizationId}): ${err?.message}`);
+    }
 };
 
 export const handleWebhookEvent = async (eventType: string, email: string, reason: string, organizationId: string) => {

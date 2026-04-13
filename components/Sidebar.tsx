@@ -73,10 +73,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setMobileOpen }) => {
   const canAccessAdminPages = currentUser?.role === Role.OWNER || currentUser?.role === Role.SUPER_ADMIN || currentUser?.role === Role.ADMIN || currentUser?.role === Role.ANALYST;
   const isSuperAdmin = currentUser?.role === Role.SUPER_ADMIN;
 
-  const analysisPaths = ["/dashboard", "/visual-analytics", "/live-anomalies", "/log-explorer", "/live-tail", "/alert-history", "/pattern-recognition", "/learned-insights", "/incidents", "/dataset-lab"];
+  const analysisPaths = ["/dashboard", "/custom-dashboard", "/visual-analytics", "/live-anomalies", "/log-explorer", "/live-tail", "/alert-history", "/pattern-recognition", "/learned-insights", "/incidents", "/dataset-lab"];
   const aiToolkitPaths = ["/ai-chat", "/visual-log-parser", "/live-object-detector"];
   const infraPaths = ["/container-insights"];
-  const configPaths = ["/alerting", "/notifications", "/log-pipelines", "/proactive-insights", "/enterprise-connectors", "/settings", "/data-sources", "/audit-logs", "/billing", "/saas-subscription", "/roles-permissions", "/deployment-history", "/super-admin-panel"];
+  const configPaths = ["/alerting", "/runbooks", "/collaboration", "/notifications", "/log-pipelines", "/proactive-insights", "/enterprise-connectors", "/settings", "/data-sources", "/audit-logs", "/billing", "/saas-subscription", "/roles-permissions", "/deployment-history", "/super-admin-panel"];
 
   return (
      <>
@@ -112,6 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setMobileOpen }) => {
         <nav className="flex-1 space-y-1 overflow-y-auto px-2 custom-scrollbar">
           <CollapsibleSection title="Analysis" icon="dashboard" paths={analysisPaths}>
               <NavLink to="/dashboard" className={navLinkClasses}>Dashboard</NavLink>
+              <NavLink to="/custom-dashboard" className={navLinkClasses}>Custom Dashboard</NavLink>
               <NavLink to="/visual-analytics" className={navLinkClasses}>
                 <div className="flex items-center">
                     <Icon name="sparkles" className="w-3.5 h-3.5 mr-2 text-[var(--accent-color-gold)]" />
@@ -141,6 +142,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, setMobileOpen }) => {
 
           <CollapsibleSection title="Configuration" icon="settings" paths={configPaths}>
               <NavLink to="/alerting" className={navLinkClasses}>Alerting Rules</NavLink>
+              <NavLink to="/runbooks" className={navLinkClasses}>Runbooks</NavLink>
+              <NavLink to="/collaboration" className={navLinkClasses}>ChatOps</NavLink>
               <NavLink to="/notifications" className={navLinkClasses}>Notifications</NavLink>
               <NavLink to="/log-pipelines" className={navLinkClasses}>Log Pipelines</NavLink>
               {canAccessAdminPages && (

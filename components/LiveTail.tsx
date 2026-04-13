@@ -1,6 +1,7 @@
 // LiveTail.tsx - Real-time log streaming component
 import * as React from 'react';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import { Card } from './ui/Card';
 import { Icon } from './ui/Icon';
 import { useAuth } from '../contexts/AuthContext';
@@ -40,9 +41,11 @@ const LiveTail: React.FC<LiveTailProps> = ({ maxLogs = 500 }) => {
     const [totalReceived, setTotalReceived] = useState(0);
     
     const containerRef = useRef<HTMLDivElement>(null);
-    const liveTailRef = useRef<HTMLDivElement>(null); // Added this ref as per instruction
     const logCountRef = useRef(0);
     const lastCountTime = useRef(Date.now());
+    // Buffer for incoming logs — flushed in batches via rAF to prevent per-log re-renders
+    const pendingLogsRef = useRef<LogStreamEvent[]>([]);
+    const rafIdRef = useRef<number | null>(null);
 
     // Connect to WebSocket
     useEffect(() => {
@@ -109,24 +112,33 @@ const LiveTail: React.FC<LiveTailProps> = ({ maxLogs = 500 }) => {
             .catch(err => console.error('[LiveTail] Retry failed:', err));
     };
 
-    // Listen for new logs
+    // Flusher: drains the pending buffer into React state in a single batched update
+    const flushPendingLogs = useCallback(() => {
+        rafIdRef.current = null;
+        if (pendingLogsRef.current.length === 0) return;
+        const batch = pendingLogsRef.current;
+        pendingLogsRef.current = [];
+        setLogs(prev => {
+            const merged = [...prev, ...batch];
+            return merged.length > maxLogs ? merged.slice(-maxLogs) : merged;
+        });
+        setTotalReceived(prev => prev + batch.length);
+    }, [maxLogs]);
+
+    // Listen for new logs — buffer them and schedule a single rAF flush
     useEffect(() => {
         const handleNewLog = (log: LogStreamEvent) => {
-            setLogs(prev => {
-                const newLogs = [...prev, log];
-                // Keep only the last maxLogs entries
-                if (newLogs.length > maxLogs) {
-                    return newLogs.slice(-maxLogs);
-                }
-                return newLogs;
-            });
-            
-            setTotalReceived(prev => prev + 1);
+            pendingLogsRef.current.push(log);
             logCountRef.current++;
-            
-            // Play sound for FATAL logs
+
+            // Play sound for FATAL logs immediately (not deferred)
             if (log.level === 'FATAL') {
                 soundNotificationService.playSound('fatal');
+            }
+
+            // Schedule a flush for next animation frame (batches rapid bursts)
+            if (rafIdRef.current === null) {
+                rafIdRef.current = requestAnimationFrame(flushPendingLogs);
             }
         };
 
@@ -134,8 +146,14 @@ const LiveTail: React.FC<LiveTailProps> = ({ maxLogs = 500 }) => {
 
         return () => {
             webSocketService.off('log:new', handleNewLog);
+            // Cancel any pending frame on cleanup
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+            }
+            pendingLogsRef.current = [];
         };
-    }, [maxLogs]);
+    }, [maxLogs, flushPendingLogs]);
 
     // Calculate logs per second
     useEffect(() => {
@@ -178,18 +196,20 @@ const LiveTail: React.FC<LiveTailProps> = ({ maxLogs = 500 }) => {
         setAutoScroll(scrollHeight - scrollTop - clientHeight < 50);
     }, []);
 
-    // Filter logs
-    const filteredLogs = logs.filter(log => {
-        const matchesText = !filter || 
-            log.message.toLowerCase().includes(filter.toLowerCase()) ||
-            log.source.toLowerCase().includes(filter.toLowerCase());
-        const matchesLevel = levelFilter === 'ALL' || log.level === levelFilter;
-        const matchesSource = !sourceFilter || log.source === sourceFilter;
-        return matchesText && matchesLevel && matchesSource;
-    });
+    // Filter logs — wrapped in useMemo so filtering only re-runs when deps change
+    const filteredLogs = useMemo(() => {
+        return logs.filter(log => {
+            const matchesText = !filter ||
+                log.message.toLowerCase().includes(filter.toLowerCase()) ||
+                log.source.toLowerCase().includes(filter.toLowerCase());
+            const matchesLevel = levelFilter === 'ALL' || log.level === levelFilter;
+            const matchesSource = !sourceFilter || log.source === sourceFilter;
+            return matchesText && matchesLevel && matchesSource;
+        });
+    }, [logs, filter, levelFilter, sourceFilter]);
 
-    // Get unique sources for filter dropdown
-    const sources = Array.from(new Set(logs.map(l => l.source)));
+    // Get unique sources for filter dropdown — memoized
+    const sources = useMemo(() => Array.from(new Set(logs.map(l => l.source))), [logs]);
 
     return (
         <div className="p-4 md:p-6 space-y-4">
@@ -321,8 +341,12 @@ const LiveTail: React.FC<LiveTailProps> = ({ maxLogs = 500 }) => {
                             </div>
                         </div>
                     ) : (
-                        <div className="divide-y divide-gray-800/50">
-                            {filteredLogs.map((log, index) => (
+                        <Virtuoso
+                            data={filteredLogs}
+                            initialTopMostItemIndex={filteredLogs.length > 0 ? filteredLogs.length - 1 : 0}
+                            followOutput={autoScroll ? "smooth" : false}
+                            className="h-full divide-y divide-gray-800/50"
+                            itemContent={(index, log) => (
                                 <div 
                                     key={log.id || index}
                                     className={`px-4 py-2 hover:bg-gray-900/50 transition-colors ${
@@ -344,6 +368,15 @@ const LiveTail: React.FC<LiveTailProps> = ({ maxLogs = 500 }) => {
                                         <span className="text-gray-300 break-all">
                                             {log.message}
                                         </span>
+                                        {log.threatCategory && (
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap ${
+                                                log.threatCategory === 'Critical' ? 'bg-red-500 text-white' : 
+                                                log.threatCategory === 'Actionable' ? 'bg-yellow-500 text-black' : 
+                                                'bg-blue-500 text-white'
+                                            }`}>
+                                                {log.threatCategory}
+                                            </span>
+                                        )}
                                         {log.anomalyScore && log.anomalyScore > 0.7 && (
                                             <span className="ml-auto px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded text-xs whitespace-nowrap">
                                                 ⚠️ Anomaly: {(log.anomalyScore * 100).toFixed(0)}%
@@ -351,8 +384,8 @@ const LiveTail: React.FC<LiveTailProps> = ({ maxLogs = 500 }) => {
                                         )}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                        />
                     )}
                 </div>
                 

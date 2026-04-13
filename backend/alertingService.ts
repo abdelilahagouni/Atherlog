@@ -1,7 +1,7 @@
 import { LogEntry, LogLevel, Role, User } from './types';
 import { getDb, getOrganizationWithDetails } from './database';
-import { sendEmail, sendSlackAlert, sendWebhook } from './notificationService';
-import { alertQueue } from './jobQueue';
+import { sendEmail, sendSlackAlert, sendTeamsAlert, sendWebhook, sendTelegramFatalAlert } from './notificationService';
+import { alertQueue, runbookQueue } from './jobQueue';
 import { fetchJsonWithRetry } from './resilience';
 
 type AlertType = 'fatal' | 'anomaly_high';
@@ -16,8 +16,24 @@ const getPythonServiceUrl = () => {
     return url.replace(/\/$/, '');
 };
 
+const ALERT_LIMIT_PER_HOUR = 5;
+
 const shouldSendAlert = async (organizationId: string, type: AlertType, source: string | null) => {
     const db = getDb();
+    
+    // 1. Check Hourly Limit (Max 5 alerts per hour)
+    const lastHour = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const hourlySent = await db.get<{ count: number }>(
+        'SELECT COUNT(*) as count FROM alert_events WHERE "organizationId" = ? AND "createdAt" >= ? AND (payload->>\'suppressed\')::boolean = false',
+        [organizationId, lastHour]
+    );
+
+    if (hourlySent && hourlySent.count >= ALERT_LIMIT_PER_HOUR) {
+        console.warn(`[Alerts] Hourly limit reached for org ${organizationId} (${hourlySent.count} alerts sent). Suppressing.`);
+        return false;
+    }
+
+    // 2. Check Cooldown (Original logic)
     const row = await db.get<{ lastSentAt: string }>(
         'SELECT "lastSentAt" FROM alert_cooldowns WHERE "organizationId" = ? AND "type" = ? AND "source" IS NOT DISTINCT FROM ?',
         [organizationId, type, source]
@@ -115,48 +131,79 @@ export const checkAndAlert = async (log: LogEntry) => {
     alertQueue.enqueue(`alert:${alertEventId}`, async () => {
         console.log(`🚨 Alert queued! Type: ${alertType}. Org: ${org.name}. Source: ${log.source}`);
 
-        const aiGuidanceHtml = await getAiGuidanceHtml(log);
-
-        // 1. Send Email to Admins (ONLY FOR FATAL ERRORS)
+        // 1. Send Telegram Alert (FATAL only) - Priority
         if (isFatal) {
-            const admins = await db.all<User>(
-                'SELECT * FROM users WHERE "organizationId" = ? AND "role" IN (?, ?, ?, ?)',
-                [org.id, Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.ANALYST]
-            );
-
-            const subject = `🚨 FATAL ERROR Detected in ${log.source}`;
-            const html = `
-                <h2>🚨 Fatal Error Detected</h2>
-                <p>A fatal error was detected in your system.</p>
-                <ul>
-                    <li><strong>Anomaly Score:</strong> ${score.toFixed(3)}</li>
-                    <li><strong>Source:</strong> ${log.source}</li>
-                    <li><strong>Level:</strong> ${log.level}</li>
-                    <li><strong>Timestamp:</strong> ${new Date(log.timestamp).toLocaleString()}</li>
-                </ul>
-                <p><strong>Message:</strong></p>
-                <pre style="background-color: #f0f0f0; padding: 10px; border-radius: 5px;">${log.message}</pre>
-                <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/#/incidents" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">View in Incident Center</a></p>
-                ${aiGuidanceHtml}
-            `;
-
-            for (const admin of admins) {
-                const email = admin.notificationEmail || admin.email;
-                await sendEmail({ to: email, subject, text: `FATAL Alert: ${log.message}`, html });
+            try {
+                await sendTelegramFatalAlert(log);
+            } catch (e: any) {
+                console.error('[Telegram] Alert failed (non-critical):', e.message);
             }
         }
 
-        // 2. Send Slack Alert
-        if (org.slackWebhookUrl) {
-            await sendSlackAlert(org.slackWebhookUrl, {
-                title: isFatal ? 'Fatal Error Detected' : 'High Anomaly Detected',
-                message: log.message,
-                severity: severity,
-                source: log.source
-            });
+        const aiGuidanceHtml = await getAiGuidanceHtml(log);
+
+        // 2. Send Email to Admins (ONLY FOR FATAL ERRORS)
+        if (isFatal) {
+            try {
+                const admins = await db.all<User>(
+                    'SELECT * FROM users WHERE "organizationId" = ? AND "role" IN (?, ?, ?, ?)',
+                    [org.id, Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.ANALYST]
+                );
+
+                const subject = `🚨 FATAL ERROR Detected in ${log.source}`;
+                const html = `
+                    <h2>🚨 Fatal Error Detected</h2>
+                    <p>A fatal error was detected in your system.</p>
+                    <ul>
+                        <li><strong>Anomaly Score:</strong> ${score.toFixed(3)}</li>
+                        <li><strong>Source:</strong> ${log.source}</li>
+                        <li><strong>Level:</strong> ${log.level}</li>
+                        <li><strong>Timestamp:</strong> ${new Date(log.timestamp).toLocaleString()}</li>
+                    </ul>
+                    <p><strong>Message:</strong></p>
+                    <pre style="background-color: #f0f0f0; padding: 10px; border-radius: 5px;">${log.message}</pre>
+                    <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/#/incidents" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">View in Incident Center</a></p>
+                    ${aiGuidanceHtml}
+                `;
+
+                for (const admin of admins) {
+                    const email = admin.notificationEmail || admin.email;
+                    await sendEmail({ to: email, subject, text: `FATAL Alert: ${log.message}`, html });
+                }
+            } catch (e: any) {
+                console.error('[Email] Alert failed (non-critical):', e.message);
+            }
         }
 
-        // 3. Send Generic Webhook
+        // 3. Send Slack Alert
+        if (org.slackWebhookUrl) {
+            try {
+                await sendSlackAlert(org.slackWebhookUrl, {
+                    title: isFatal ? 'Fatal Error Detected' : 'High Anomaly Detected',
+                    message: log.message,
+                    severity: severity,
+                    source: log.source
+                });
+            } catch (e: any) {
+                console.error('[Slack] Alert failed (non-critical):', e.message);
+            }
+        }
+
+        // 3.5 Send Teams Alert
+        if (org.teamsWebhookUrl) {
+            try {
+                await sendTeamsAlert(org.teamsWebhookUrl, {
+                    title: isFatal ? 'Fatal Error Detected' : 'High Anomaly Detected',
+                    message: log.message,
+                    severity: severity,
+                    source: log.source
+                });
+            } catch (e: any) {
+                console.error('[Teams] Alert failed (non-critical):', e.message);
+            }
+        }
+
+        // 4. Send Generic Webhook
         if (org.webhookUrl) {
             await sendWebhook(org.webhookUrl, {
                 event: isFatal ? 'fatal_detected' : 'anomaly_detected',
@@ -164,6 +211,27 @@ export const checkAndAlert = async (log: LogEntry) => {
                 threshold: threshold,
                 timestamp: new Date().toISOString()
             });
+        }
+
+        // 5. Match and trigger Automated Remediations (Runbooks)
+        const runbooks = await db.all<any>(
+            'SELECT * FROM runbooks WHERE "organizationId" = ? AND "enabled" = true',
+            [org.id]
+        );
+        
+        for (const r of runbooks) {
+            // In a real application, you might map specific alert types to specific runbooks
+            // Here, we trigger all enabled runbooks for demonstration of ChatOps remediation
+            runbookQueue.enqueue(`runbook:${r.id}:${log.id}`, async () => {
+                const config = typeof r.config === 'string' ? JSON.parse(r.config) : r.config;
+                if (r.triggerType === 'webhook' && config.url) {
+                    await sendWebhook(config.url, {
+                        runbookName: r.name,
+                        triggerEvent: isFatal ? 'FATAL_ERROR' : 'HIGH_ANOMALY',
+                        log: log
+                    });
+                }
+            }, { maxAttempts: 3, initialDelayMs: 250, backoffFactor: 2 });
         }
 
         await markAlertSent(org.id, alertType, log.source ?? null);

@@ -54,18 +54,11 @@ export const connectDb = async () => {
             user: process.env.POSTGRES_USER || 'admin',
             password: process.env.POSTGRES_PASSWORD || 'password123',
             database: process.env.POSTGRES_DB || 'ailoganalyzer',
-        };    // Debug: log which DB host we're connecting to (mask credentials)
-    if (process.env.DATABASE_URL) {
-        try {
-            const u = new URL(process.env.DATABASE_URL);
-            console.log(`DATABASE_URL target → host=${u.hostname}  port=${u.port}  db=${u.pathname.slice(1)}`);
-        } catch { console.log('DATABASE_URL is set but could not be parsed as a URL'); }
-    } else {
-        console.log(`Using individual env vars → host=${process.env.POSTGRES_HOST || 'localhost'}`);
-    }
+        };
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
+            console.log(`Connecting to PostgreSQL on ${connectionConfig.host || 'URL'} (port ${connectionConfig.port || 'default'}) (attempt ${attempt}/${MAX_RETRIES})...`);
             console.log(`Connecting to PostgreSQL (attempt ${attempt}/${MAX_RETRIES})...`);
             pool = new Pool(connectionConfig);
 
@@ -114,9 +107,16 @@ export const connectDb = async () => {
             "plan" TEXT NOT NULL,
             "anomalyThreshold" REAL DEFAULT 0.7,
             "slackWebhookUrl" TEXT,
+            "teamsWebhookUrl" TEXT,
             "webhookUrl" TEXT
         );
     `);
+
+    try {
+        await db.exec('ALTER TABLE organizations ADD COLUMN IF NOT EXISTS "teamsWebhookUrl" TEXT;');
+    } catch(e) {
+        // Ignore if exists in sqlite or pg error
+    }
 
     await db.exec(`
         CREATE TABLE IF NOT EXISTS users (
@@ -146,9 +146,12 @@ export const connectDb = async () => {
             "message" TEXT NOT NULL,
             "source" TEXT NOT NULL,
             "anomalyScore" REAL,
+            "threatCategory" TEXT,
             FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
         );
     `);
+
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "threatCategory" TEXT;');
 
     await db.exec(`
         CREATE TABLE IF NOT EXISTS api_keys (
@@ -284,6 +287,22 @@ export const connectDb = async () => {
         );
     `);
 
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS runbooks (
+            "id" TEXT PRIMARY KEY,
+            "organizationId" TEXT NOT NULL,
+            "name" TEXT NOT NULL,
+            "description" TEXT,
+            "triggerType" TEXT NOT NULL,
+            "config" JSONB NOT NULL DEFAULT '{}'::jsonb,
+            "enabled" BOOLEAN DEFAULT TRUE,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            FOREIGN KEY ("organizationId") REFERENCES organizations("id") ON DELETE CASCADE
+        );
+    `);
+
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_runbooks_org ON runbooks("organizationId", "createdAt" DESC);');
+
     await db.exec('CREATE INDEX IF NOT EXISTS idx_incidents_org ON incidents("organizationId", "createdAt" DESC);');
     await db.exec('CREATE INDEX IF NOT EXISTS idx_incident_activity_incident ON incident_activity("incidentId", "timestamp" ASC);');
     // Add indexes for performance
@@ -294,6 +313,8 @@ export const connectDb = async () => {
     await db.exec('CREATE INDEX IF NOT EXISTS idx_logs_organizationId_timestamp ON logs("organizationId", "timestamp" DESC);');
     await db.exec('CREATE INDEX IF NOT EXISTS idx_logs_level ON logs("level");');
     await db.exec('CREATE INDEX IF NOT EXISTS idx_logs_source ON logs("source");');
+    // Composite index for filtered Live Tail / Log Explorer queries (org + source + time)
+    await db.exec('CREATE INDEX IF NOT EXISTS idx_logs_org_source_timestamp ON logs("organizationId", "source", "timestamp" DESC);');
     // Full-text search index for Log Explorer
     await db.exec(`
         ALTER TABLE logs ADD COLUMN IF NOT EXISTS "message_tsv" tsvector;
@@ -346,6 +367,12 @@ export const connectDb = async () => {
             ]
         );
         console.log('Superadmin created.');
+        console.warn('\n' + '='.repeat(70));
+        console.warn('⚠️  [SECURITY WARNING] Default superadmin account created.');
+        console.warn('    Username : superadmin');
+        console.warn('    Password : superadmin  ← CHANGE THIS IMMEDIATELY');
+        console.warn('    Use the SuperAdmin Panel or PATCH /api/auth/me to update.');
+        console.warn('='.repeat(70) + '\n');
     }
 };
 
@@ -375,7 +402,7 @@ export const getDb = () => {
 
 export const getOrganizationWithDetails = async (orgId: string): Promise<Organization | null> => {
     const db = getDb();
-    const row = await db.get<{id: string; name: string; plan: string; anomalyThreshold: number; slackWebhookUrl: string; webhookUrl: string;}>('SELECT * FROM organizations WHERE "id" = ?', [orgId]);
+    const row = await db.get<{id: string; name: string; plan: string; anomalyThreshold: number; slackWebhookUrl: string; teamsWebhookUrl?: string; webhookUrl: string;}>('SELECT * FROM organizations WHERE "id" = ?', [orgId]);
     if (!row) return null;
     return {
         id: row.id,
@@ -383,6 +410,7 @@ export const getOrganizationWithDetails = async (orgId: string): Promise<Organiz
         plan: JSON.parse(row.plan),
         anomalyThreshold: row.anomalyThreshold,
         slackWebhookUrl: row.slackWebhookUrl,
+        teamsWebhookUrl: row.teamsWebhookUrl,
         webhookUrl: row.webhookUrl
     };
 }

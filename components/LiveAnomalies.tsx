@@ -350,7 +350,18 @@ const LiveAnomalies: React.FC = () => {
               className={`p-3 rounded-lg flex items-start flex-wrap gap-x-4 gap-y-2 ${rowStyle}`}
             >
               <div className="w-40 text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">{new Date(log.timestamp).toLocaleTimeString()}</div>
-              <div className="w-24 flex-shrink-0"><LogLevelBadge level={log.level} /></div>
+              <div className="w-24 flex-shrink-0 flex flex-col gap-1">
+                <LogLevelBadge level={log.level} />
+                {log.threatCategory && (
+                    <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase text-center ${
+                        log.threatCategory === 'Critical' ? 'bg-red-500 text-white' : 
+                        log.threatCategory === 'Actionable' ? 'bg-yellow-500 text-black' : 
+                        'bg-blue-500 text-white'
+                    }`}>
+                        {log.threatCategory}
+                    </div>
+                )}
+              </div>
               <div className="w-40 text-sky-600 dark:text-sky-400 flex-shrink-0">{log.source}</div>
               <div className="flex-1 text-gray-800 dark:text-gray-200 break-words min-w-[200px]">{log.message}</div>
               <div className="w-20 text-right font-semibold text-red-600 dark:text-red-400 flex-shrink-0">{(log.anomalyScore ?? 0).toFixed(2)}</div>

@@ -2,6 +2,7 @@ import express from 'express';
 import { getDb, getOrganizationWithDetails } from './database';
 import { User, Role } from './types';
 import { protect } from './auth.routes';
+import { sendSlackAlert, sendTeamsAlert } from './notificationService';
 
 const router = express.Router();
 
@@ -52,6 +53,7 @@ router.get('/settings', protect, async (req: express.Request, res: express.Respo
         res.status(200).json({
             anomalyThreshold: org.anomalyThreshold,
             slackWebhookUrl: org.slackWebhookUrl,
+            teamsWebhookUrl: org.teamsWebhookUrl,
             webhookUrl: org.webhookUrl
         });
     } catch (e: any) {
@@ -62,7 +64,7 @@ router.get('/settings', protect, async (req: express.Request, res: express.Respo
 // PATCH /api/organization/settings (Protected, Admin only)
 router.patch('/settings', protect, async (req: express.Request, res: express.Response) => {
     const authenticatedUser = (req as any).user as User;
-    const { anomalyThreshold, slackWebhookUrl, webhookUrl } = req.body;
+    const { anomalyThreshold, slackWebhookUrl, teamsWebhookUrl, webhookUrl } = req.body;
     
     if (authenticatedUser.role === Role.MEMBER) {
         return res.status(403).json({ message: 'Only admins can update organization settings' });
@@ -74,14 +76,51 @@ router.patch('/settings', protect, async (req: express.Request, res: express.Res
             `UPDATE organizations SET 
                 "anomalyThreshold" = COALESCE(?, "anomalyThreshold"),
                 "slackWebhookUrl" = COALESCE(?, "slackWebhookUrl"),
+                "teamsWebhookUrl" = COALESCE(?, "teamsWebhookUrl"),
                 "webhookUrl" = COALESCE(?, "webhookUrl")
              WHERE "id" = ?`,
-            [anomalyThreshold, slackWebhookUrl, webhookUrl, authenticatedUser.organizationId]
+            [anomalyThreshold, slackWebhookUrl, teamsWebhookUrl, webhookUrl, authenticatedUser.organizationId]
         );
         
         res.status(200).json({ message: 'Organization settings updated successfully' });
     } catch (e: any) {
         res.status(500).json({ message: e.message });
+    }
+});
+
+// POST /api/organizations/webhooks/test (Protected, Admin only)
+router.post('/webhooks/test', protect, async (req: express.Request, res: express.Response) => {
+    const authenticatedUser = (req as any).user as User;
+    const { type, url } = req.body;
+    
+    if (authenticatedUser.role === Role.MEMBER) {
+        return res.status(403).json({ message: 'Only admins can manage webhooks' });
+    }
+
+    if (!url) {
+        return res.status(400).json({ message: 'Webhook URL is required' });
+    }
+
+    try {
+        const testAlert = {
+            title: 'Test Notification from AetherLog',
+            message: 'This is a test message to confirm your webhook integration is working correctly. \n\nNo action is required.',
+            severity: 'INFO',
+            source: 'AetherLog ChatOps'
+        };
+
+        if (type === 'slack') {
+            await sendSlackAlert(url, testAlert);
+        } else if (type === 'teams') {
+            await sendTeamsAlert(url, testAlert);
+        } else {
+            return res.status(400).json({ message: 'Invalid webhook type' });
+        }
+        
+        res.status(200).json({ message: `${type} webhook test successful` });
+    } catch (e: any) {
+        console.error(`Webhook test failed for ${type}:`, e.message);
+        res.status(500).json({ message: `Webhook test failed: ${e.message}` });
     }
 });
 

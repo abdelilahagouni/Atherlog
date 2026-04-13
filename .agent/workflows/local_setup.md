@@ -48,7 +48,7 @@ cd python-service
 pip install -r requirements.txt
 pip install tf-keras 'accelerate>=0.26.0'
 # Run the service on port 5001
-python app_v2.py
+python app.py
 ```
 *Python service will start on http://localhost:5001*
 

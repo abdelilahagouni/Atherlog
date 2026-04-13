@@ -246,3 +246,105 @@ export const getTimeline = async (logs: LogEntry[]): Promise<{ time: string, cou
     });
     return handleResponse(response);
 };
+
+// --- Model Selection & Training Functions ---
+
+export const predictHf = async (text: string): Promise<{ label: string, score: number, class_id: number }> => {
+    const response = await fetch(`${API_BASE_URL}/predict_hf`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ text }),
+    });
+    return handleResponse(response);
+};
+
+export const trainDataset = async (
+    csv_data: string,
+    target_column: string,
+    feature_columns: string[],
+    model_type: string = 'random_forest'
+): Promise<{
+    accuracy: number, precision: number, recall: number, f1_score: number,
+    message: string, model_type: string, train_samples: number, test_samples: number
+}> => {
+    const response = await fetch(`${API_BASE_URL}/train-dataset`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ csv_data, target_column, feature_columns, model_type }),
+    });
+    return handleResponse(response);
+};
+
+export const classifyLog = async (text: string, model_type: string = 'huggingface'): Promise<{ label: string, score: number }> => {
+    const response = await fetch(`${API_BASE_URL}/classify`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ text, model_type }),
+    });
+    return handleResponse(response);
+};
+
+export const loadDataset = async (dataset_id: string = 'hdfs', max_samples: number = 2000): Promise<{ count: number, dataset_id: string }> => {
+    const response = await fetch(`${API_BASE_URL}/load-dataset`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ dataset_id, max_samples }),
+    });
+    return handleResponse(response);
+};
+
+export const getAvailableDatasets = async (): Promise<{ datasets: { id: string, name: string, description: string }[] }> => {
+    const response = await fetch(`${API_BASE_URL}/available-datasets`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+};
+
+export const runPrediction = async (logs: LogEntry[]): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/execute-python`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ script: 'anomaly_detection', input: { logs } }),
+    });
+    return handleResponse(response);
+};
+
+// ─── Publication Experiment Functions ──────────────────────────────────────
+
+export interface ExperimentMetrics {
+    precision: number;
+    recall: number;
+    f1: number;
+    auc: number;
+    latency_ms_per_log?: number;
+    inference_ms_per_log?: number;
+    reduction_pct?: number;
+    [key: string]: any;
+}
+
+export interface ExperimentResult {
+    experiment: number;
+    name: string;
+    results: ExperimentMetrics | Record<string, ExperimentMetrics>;
+    error?: string;
+}
+
+export const runExperiments = async (
+    experimentIds: number[] = [1, 2, 3, 4, 5],
+    sampleSize: number = 200
+): Promise<{ status: string; results: ExperimentResult[] }> => {
+    const response = await fetch(`${API_BASE_URL}/run-experiments`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ experiments: experimentIds, sample_size: sampleSize }),
+    });
+    return handleResponse(response);
+};
+
+export const getExperimentResults = async (): Promise<{ timestamp: string; experiments: ExperimentResult[] }> => {
+    const response = await fetch(`${API_BASE_URL}/experiments/results`, {
+        headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+};
+

@@ -77,3 +77,4 @@ export class JobQueue {
 }
 
 export const alertQueue = new JobQueue('alert-queue', parseInt(process.env.ALERT_QUEUE_CONCURRENCY || '2', 10));
+export const runbookQueue = new JobQueue('runbook-queue', parseInt(process.env.RUNBOOK_QUEUE_CONCURRENCY || '2', 10));
