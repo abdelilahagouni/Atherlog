@@ -1,6 +1,7 @@
 
 // FIX: Use explicit express types to resolve type conflicts.
 import express from 'express';
+import { getJwtSecret } from './config';
 import bcrypt from 'bcryptjs';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { getDb, getOrganizationWithDetails, PLAN_CONFIG } from './database';
@@ -10,15 +11,8 @@ import * as crypto from 'crypto';
 
 const router = express.Router();
 
-// Guard: warn loudly if JWT_SECRET is missing so no deployment ships with the insecure default
-if (!process.env.JWT_SECRET) {
-    console.warn('\n' + '!'.repeat(70));
-    console.warn('⚠️  [SECURITY WARNING] JWT_SECRET environment variable is NOT set.');
-    console.warn('    Using an insecure hardcoded fallback. Tokens can be forged!');
-    console.warn('    Set JWT_SECRET in your .env or deployment environment ASAP.');
-    console.warn('!'.repeat(70) + '\n');
-}
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-that-should-be-in-an-env-file';
+// JWT_SECRET is required (>= 32 characters); no fallback. Validated at startup in server.ts (config.ts).
+const JWT_SECRET = getJwtSecret();
 
 // Middleware to protect routes
 export const protect = (req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -1,4 +1,5 @@
 import express from 'express';
+import { getPostgresPassword } from './config';
 import { Pool } from 'pg';
 import { getDb } from './database';
 import { Role, User, QueryResult } from './types';
@@ -58,7 +59,7 @@ router.post('/execute', async (req: express.Request, res: express.Response) => {
             host: process.env.POSTGRES_HOST || 'localhost',
             port: parseInt(process.env.POSTGRES_PORT || '5434'),
             user: process.env.POSTGRES_USER || 'admin',
-            password: process.env.POSTGRES_PASSWORD || 'password123',
+            password: getPostgresPassword(),          // required, no fallback (config.ts)
             database: process.env.POSTGRES_DB || 'ailoganalyzer',
         });
         const result = await pool.query(sql);

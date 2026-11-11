@@ -2,6 +2,7 @@
 
 
 import { Pool } from 'pg';
+import { getPostgresPassword } from './config';
 import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { PlanDetails, Role, SubscriptionPlan, User, Organization } from './types';
@@ -52,7 +53,7 @@ export const connectDb = async () => {
             host: process.env.POSTGRES_HOST || 'localhost',
             port: parseInt(process.env.POSTGRES_PORT || '5434'),
             user: process.env.POSTGRES_USER || 'admin',
-            password: process.env.POSTGRES_PASSWORD || 'password123',
+            password: getPostgresPassword(),          // required, no fallback (config.ts)
             database: process.env.POSTGRES_DB || 'ailoganalyzer',
         };
 

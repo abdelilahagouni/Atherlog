@@ -1,5 +1,6 @@
 // Real-time WebSocket server for live log streaming
 import { Server as HttpServer } from 'http';
+import { getJwtSecret } from './config';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -12,7 +13,8 @@ if (!process.env.JWT_SECRET) {
     dotenv.config({ path: path.join(__dirname, '../.env') });
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-that-should-be-in-an-env-file';
+// JWT_SECRET is required (>= 32 characters); no fallback. Validated at startup in server.ts.
+const JWT_SECRET = getJwtSecret();
 
 let io: Server | null = null;
 
@@ -63,7 +65,6 @@ export const initializeWebSocket = (httpServer: HttpServer): Server => {
         console.log(`[WebSocket] Connection attempt from ${socket.id}`);
         const token = socket.handshake.auth?.token || socket.handshake.query?.token;
         
-        console.log(`[WebSocket] Secret used (first 5 chars): ${JWT_SECRET.substring(0, 5)}...`);
 
         if (!token) {
             console.error(`[WebSocket] Connection rejected: No token provided for ${socket.id}`);

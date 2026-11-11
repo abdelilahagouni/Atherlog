@@ -13,6 +13,10 @@ if (!process.env.API_KEY && !process.env.OPENAI_API_KEY) {
     dotenv.config({ path: path.join(scriptDir, '../.env') });
 }
 
+// Refuse to start without the required secrets (no hard-coded fallbacks). Runs before any route/service loads.
+import { validateRequiredSecretsOrExit } from './config';
+validateRequiredSecretsOrExit();
+
 import http from 'http';
 import { connectDb } from './database';
 import { startLogGeneration } from './logGenerationService';
