@@ -197,7 +197,15 @@
     <div id="root"></div>
     <div id="toast-root"></div>
     <script>
-      const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      // Dev hosts (this computer / local network): never use a service worker, and remove any old one
+      // plus its caches, so the browser always shows the current code (an old one kept serving old code).
+      const h = location.hostname;
+      const isLocalhost = h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || /^10\./.test(h) ||
+        /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) || h.endsWith('.local');
+      if (isLocalhost && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+        if (window.caches) caches.keys().then(ks => ks.forEach(k => caches.delete(k)));
+      }
       if (!isLocalhost && 'serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(registration => {

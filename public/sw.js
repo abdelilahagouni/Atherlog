@@ -1,124 +1,64 @@
-// Service Worker for PWA offline support
-const CACHE_NAME = 'aetherlog-v3';
-const RUNTIME_CACHE = 'aetherlog-runtime-v3';
-const IMAGE_CACHE = 'aetherlog-images-v3';
+// Service Worker (PWA offline support) - v4.
+//
+// Why v4: v3 served the app's code "cache first", so a browser that had it kept showing an OLD version of the app
+// after updates (new features missing in that browser). Browsers re-check this file on every visit, so this version
+// replaces v3 everywhere it is installed:
+//   - On this computer / the local network (dev server): it deletes all its caches, unregisters itself and reloads
+//     the open pages, so the browser always gets the current code from the dev server.
+//   - On a deployed site: NETWORK FIRST for everything (the server always wins); the cache is only used when offline.
+//     API responses are never cached (they contain account data).
+const VERSION = 'v4';
+const CACHE_NAME = `aetherlog-${VERSION}`;
 
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.svg',
-  '/icon-512.svg'
-];
+const host = self.location.hostname;
+const IS_DEV_HOST =
+  host === 'localhost' || host === '127.0.0.1' || host === '[::1]' ||
+  /^10\./.test(host) || /^192\.168\./.test(host) || /^172\.(1[6-9]|2\d|3[01])\./.test(host) || host.endsWith('.local');
 
-// Install event - cache essential resources
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE && cacheName !== IMAGE_CACHE) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    // Remove every old cache (v3 and earlier) - and on dev hosts, all caches.
+    const names = await caches.keys();
+    await Promise.all(names.filter((n) => IS_DEV_HOST || n !== CACHE_NAME).map((n) => caches.delete(n)));
+    if (IS_DEV_HOST) {
+      await self.registration.unregister();
+      const pages = await self.clients.matchAll({ type: 'window' });
+      pages.forEach((page) => page.navigate(page.url));   // reload once, now without any service worker
+      return;
+    }
+    await self.clients.claim();
+  })());
 });
 
-// Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
+  if (IS_DEV_HOST) return;                         // dev: never intercept, always the dev server
   const { request } = event;
+  if (request.method !== 'GET') return;
   const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;    // API: never cached
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // Handle API requests - network first
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Clone the response before caching
-          const responseToCache = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(request, responseToCache);
-          });
-          return response;
-        })
-        .catch(() => {
-          // Fallback to cache if network fails
-          return caches.match(request);
-        })
-    );
-    return;
-  }
-
-  // Handle images - cache first
-  if (request.destination === 'image') {
-    event.respondWith(
-      caches.open(IMAGE_CACHE).then((cache) => {
-        return cache.match(request).then((response) => {
-          return response || fetch(request).then((networkResponse) => {
-            cache.put(request, networkResponse.clone());
-            return networkResponse;
-          });
-        });
-      })
-    );
-    return;
-  }
-
-  // Default strategy - cache first, fallback to network
-  event.respondWith(
-    caches.match(request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        
-        return fetch(request).then((networkResponse) => {
-          // Cache successful responses
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, responseToCache);
-            });
-          }
-          return networkResponse;
-        });
-      })
-      .catch(() => {
-        // Return offline page if available
-        if (request.destination === 'document') {
-          return caches.match('/');
-        }
-      })
-  );
+  // Network first; keep a copy only as an offline fallback.
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(request);
+      if (response && response.status === 200) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      }
+      return response;
+    } catch (e) {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      if (request.mode === 'navigate') return (await caches.match('/')) || Response.error();
+      return Response.error();
+    }
+  })());
 });
-
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-logs') {
-    event.waitUntil(syncLogs());
-  }
-});
-
-async function syncLogs() {
-  // Implement background sync logic here
-  console.log('Background sync triggered');
-}
 
 // Push notification support
 self.addEventListener('push', (event) => {
@@ -127,22 +67,7 @@ self.addEventListener('push', (event) => {
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     vibrate: [200, 100, 200],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    }
+    data: { dateOfArrival: Date.now(), primaryKey: 1 }
   };
-
-  event.waitUntil(
-    self.registration.showNotification('AetherLog', options)
-  );
+  event.waitUntil(self.registration.showNotification('AetherLog', options));
 });
-
-// Notification click handler
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.openWindow('/')
-  );
-});
-
