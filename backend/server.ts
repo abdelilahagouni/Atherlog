@@ -177,6 +177,8 @@ app.get('/api/health', (_req, res) => {
         status: dbReady ? 'ok' : 'starting',
         db: dbReady ? 'connected' : 'connecting',
         uptime: process.uptime(),
+        testMode: process.env.TEST_MODE === 'true',
+        anomalyModel: process.env.ANOMALY_MODEL === 'cascade' ? 'cascade' : 'keyword-rule',
     });
 });
 
@@ -232,8 +234,14 @@ const startServer = async () => {
         dbReady = true;
         console.log('Database connected successfully.');
 
-        // Start the background log generation service
-        startLogGeneration();
+        if (process.env.TEST_MODE === 'true') console.log('TEST_MODE=true: all e-mail/SMS/webhook/Slack/Teams/Telegram notifications are blocked.');
+        // Start the background demo log generation service (synthetic demo logs).
+        // Set DISABLE_DEMO_LOGS=true in backend/.env to run with real ingested logs only.
+        if (process.env.DISABLE_DEMO_LOGS === 'true') {
+            console.log('Demo log generation DISABLED (DISABLE_DEMO_LOGS=true): only real ingested logs will appear.');
+        } else {
+            startLogGeneration();
+        }
 
         // Start log retention cleanup service
         startLogRetention();

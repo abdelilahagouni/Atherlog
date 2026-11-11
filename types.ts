@@ -55,12 +55,12 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
   source: string;
-  anomalyScore?: number;
+  anomalyScore?: number | null;   // null = not scored
   threatCategory?: string;
 }
 
 export interface Anomaly extends LogEntry {
-  anomalyScore: number;
+  anomalyScore: number | null;    // null = not scored
   threatCategory?: string;
 }
 

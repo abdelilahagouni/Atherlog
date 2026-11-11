@@ -364,7 +364,7 @@ const LiveAnomalies: React.FC = () => {
               </div>
               <div className="w-40 text-sky-600 dark:text-sky-400 flex-shrink-0">{log.source}</div>
               <div className="flex-1 text-gray-800 dark:text-gray-200 break-words min-w-[200px]">{log.message}</div>
-              <div className="w-20 text-right font-semibold text-red-600 dark:text-red-400 flex-shrink-0">{(log.anomalyScore ?? 0).toFixed(2)}</div>
+              <div className="w-20 text-right font-semibold text-red-600 dark:text-red-400 flex-shrink-0">{log.anomalyScore != null ? log.anomalyScore.toFixed(2) : 'not scored'}</div>
               <div className="flex items-center gap-2 ml-auto">
                 {isFatal && (
                     <AiChoiceDropdown

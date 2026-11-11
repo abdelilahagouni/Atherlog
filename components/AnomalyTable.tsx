@@ -36,7 +36,7 @@ export const AnomalyTable: React.FC<{ anomalies: Anomaly[] }> = ({ anomalies }) 
               <td className="px-6 py-4" data-label="Level"><LogLevelCell level={anomaly.level} /></td>
               <td className="px-6 py-4 font-mono" data-label="Source">{anomaly.source}</td>
               <td className="px-6 py-4 max-w-lg truncate" data-label="Message" title={anomaly.message}>{anomaly.message}</td>
-              <td className="px-6 py-4 text-right font-semibold text-red-600 dark:text-red-400" data-label="Score">{anomaly.anomalyScore.toFixed(2)}</td>
+              <td className="px-6 py-4 text-right font-semibold text-red-600 dark:text-red-400" data-label="Score">{anomaly.anomalyScore != null ? anomaly.anomalyScore.toFixed(2) : 'not scored'}</td>
             </tr>
           ))}
         </tbody>

@@ -1,0 +1,15 @@
+{
+  "sent": 50,
+  "http_accepted_202": 50,
+  "found_in_db": 50,
+  "real_anomalies": 25,
+  "real_normals": 25,
+  "tp": 25,
+  "fp": 4,
+  "fn": 0,
+  "tn": 21,
+  "app_recall": 1.0,
+  "app_precision": 0.8620689655172413,
+  "logs_in_test_org_total_and_non_real": "50|0",
+  "app_decision": "threatCategory == 'Critical' (score 0.9) from the python-service /urgency keyword rule"
+}

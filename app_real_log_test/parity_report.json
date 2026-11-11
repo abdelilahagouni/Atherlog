@@ -1,0 +1,38 @@
+{
+  "lines": 10000,
+  "tolerance": 0.0001,
+  "service": "cascade-bgl-seed42",
+  "model_hash": "e10beee3fba56f4c1d2317d3e146ecbd7981c035d18fedb42653643835fce965",
+  "checks": {
+    "A_p_lr_vs_lr_only": {
+      "max_abs_diff": 0.0,
+      "mean_abs_diff": 0.0,
+      "lines_over_tolerance": 0
+    },
+    "B_p_distilbert_vs_distilbert_only": {
+      "max_abs_diff": 6.556510925292969e-07,
+      "mean_abs_diff": 7.656635716557503e-10,
+      "lines_over_tolerance": 0
+    },
+    "C_combined_score_vs_v3": {
+      "max_abs_diff": 2.384185791015625e-07,
+      "mean_abs_diff": 2.186070196330547e-09,
+      "lines_over_tolerance": 0
+    },
+    "D_decision_vs_v3": {
+      "lines_different": 0,
+      "forwarded": 536
+    },
+    "E_app_text_rule": {
+      "lines_where_rebuilt_text_differs": 0,
+      "rule": "real BGL level sent to the app (only WARNING -> WARN, mapped back by the cascade)"
+    },
+    "F_privacy_masking_effect": {
+      "lines_changed_by_masking": 68,
+      "decisions_changed_by_masking": 0,
+      "scores_changed_over_tolerance": 65,
+      "note": "compares cascade output on masked vs unmasked text; the backend now scores BEFORE masking and stores only the masked text"
+    }
+  },
+  "passed": true
+}

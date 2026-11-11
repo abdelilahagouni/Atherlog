@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "commonjs",
+  "description": "Test helpers for the real-log app tests (CommonJS so ts-node can run mask_with_app.ts)"
+}

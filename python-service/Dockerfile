@@ -1,5 +1,5 @@
 # ---------- Stage 1: install deps ----------
-FROM python:3.9-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY requirements.txt .
 # Install CPU-only PyTorch FIRST (saves ~1.5 GB vs full CUDA torch).
 # The --extra-index-url ensures any transitive torch dep also resolves to CPU.
 RUN pip install --no-cache-dir \
-    torch --extra-index-url https://download.pytorch.org/whl/cpu
+    torch==2.6.0 --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Install remaining deps (torch already satisfied → no CUDA re-download)
 RUN pip install --no-cache-dir \
@@ -18,23 +18,25 @@ RUN pip install --no-cache-dir \
     -r requirements.txt --default-timeout=1000
 
 # Strip tests, caches, and CUDA stubs that sneak in via transformers
-RUN find /usr/local/lib/python3.9/site-packages \
+RUN find /usr/local/lib/python3.13/site-packages \
     \( -name "tests" -o -name "test" -o -name "__pycache__" \
        -o -name "*.pyc" -o -name "*.pyo" \
        -o -name "cupti*" -o -name "libnvrtc*" \) \
     -exec rm -rf {} + 2>/dev/null || true
 
 # ---------- Stage 2: slim runtime image ----------
-FROM python:3.9-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
 # Copy installed packages from builder
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy only application code (respects .dockerignore)
-COPY app.py .
+COPY app.py cascade.py ./
+# BGL cascade model (version-checked and hash-checked at startup)
+COPY models/cascade_bgl ./models/cascade_bgl
 
 # Create models dir for runtime model saving
 RUN mkdir -p /app/models

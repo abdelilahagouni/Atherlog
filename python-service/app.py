@@ -43,6 +43,11 @@ def get_tensorflow():
 
 app = Flask(__name__)
 
+# BGL cascade (TF-IDF + LR gate -> DistilBERT). Strict load: if models/cascade_bgl exists but cannot be
+# loaded or verified (missing file, hash or library-version mismatch), the service stops here with an error.
+import cascade as cascade_module
+CASCADE = cascade_module.load_if_present()
+
 # Global model state
 model = None
 feature_max = None
@@ -144,20 +149,12 @@ def load_loghub_dataset(name='hdfs', max_samples=2000):
                 'level': level,
                 'source': source,
                 'message': ' '.join(parts[3:])[:500],  # Truncate long messages
-                'anomalyScore': 0.0  # Will be set below
+                'anomalyScore': None  # not scored
             })
         
-        # Assign anomaly scores based on level (heuristic labeling)
-        # In production, you'd use the actual labels file
+        # No made-up scores: loaded dataset logs are NOT scored here (anomalyScore = None -> "not scored").
         for log in logs:
-            if log['level'] == 'FATAL':
-                log['anomalyScore'] = 0.9 + np.random.random() * 0.1
-            elif log['level'] == 'ERROR':
-                log['anomalyScore'] = 0.7 + np.random.random() * 0.2
-            elif log['level'] == 'WARN':
-                log['anomalyScore'] = 0.3 + np.random.random() * 0.3
-            else:
-                log['anomalyScore'] = np.random.random() * 0.2
+            log['anomalyScore'] = None
         
         _loghub_cache[name] = logs
         print(f"[Loghub] Loaded {len(logs)} logs from {name}")
@@ -353,9 +350,36 @@ def classify_urgency():
             urgency = "Actionable"
             score = 0.5
             
-        return jsonify({'urgency': urgency, 'score': score})
+        return jsonify({'urgency': urgency, 'score': score, 'stage': 'keyword_rule', 'model': 'keyword-rule',
+                        'threshold': None, 'model_hash': None, 'code_hash': cascade_module.CODE_HASH})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# --- BGL cascade scoring (paper variant V3, seed 42) ---
+@app.route('/cascade', methods=['POST'])
+def cascade_score():
+    """Body: {"log": {level, message, source}} or {"logs": [...]} (app logs), or {"texts": [...]} (raw BGL model
+    text, used by the parity test; "all_stages": true also runs DistilBERT on non-forwarded texts)."""
+    if CASCADE is None:
+        return jsonify({'error': 'cascade model not available'}), 503
+    data = request.json or {}
+    if 'texts' in data:
+        texts = [str(t) for t in data['texts']]
+    else:
+        logs = data.get('logs') or [data.get('log', {})]
+        texts = [CASCADE.app_text(l) for l in logs]
+    res = CASCADE.score(texts, all_stages=bool(data.get('all_stages')))
+    for r in res:
+        r['urgency'] = 'Critical' if r['anomaly'] else 'Informational'
+    return jsonify(res if ('logs' in data or 'texts' in data) else res[0])
+
+
+@app.route('/cascade/info', methods=['GET'])
+def cascade_info():
+    if CASCADE is None:
+        return jsonify({'available': False, 'note': 'cascade model folder not found'}), 200
+    return jsonify(CASCADE.info())
 
 # --- Pro Feature 4: Volume Forecasting (LSTM-lite) ---
 @app.route('/forecast', methods=['POST'])

@@ -1,0 +1,39 @@
+{
+  "lines": 1000,
+  "source": "BGL chronological test split, random 1,000 lines (seed 2026), real anomaly ratio",
+  "cascade_127": {
+    "metrics": {
+      "anomalies": 0,
+      "normals": 300,
+      "tp": 0,
+      "fp_false_alarms": 0,
+      "fn_missed": 0,
+      "tn": 300,
+      "recall": null,
+      "precision": null,
+      "f1": 0.0,
+      "false_alarm_rate": 0.0
+    },
+    "ms_per_log_end_to_end_mean": 161.96820033326125,
+    "ms_per_log_end_to_end_median": 157.26029998040758,
+    "not_scored": 0,
+    "stages": {
+      "stage1_lr": 300
+    },
+    "rows_with_model_hash": 300,
+    "rows_with_code_hash": 300,
+    "experiment_v3_seed42_same_lines": {
+      "anomalies": 0,
+      "normals": 300,
+      "tp": 0,
+      "fp_false_alarms": 0,
+      "fn_missed": 0,
+      "tn": 300,
+      "recall": null,
+      "precision": null,
+      "f1": 0.0,
+      "false_alarm_rate": 0.0
+    },
+    "app_vs_experiment_decision_differences": 0
+  }
+}

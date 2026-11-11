@@ -68,13 +68,20 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
         level: logData.level,
         message: logData.message,
         source: logData.source,
-        anomalyScore: logData.anomalyScore || Math.random() * 0.3, // Assign a low default score
+        // A client-supplied score is kept as is; otherwise the AI service scores the log below.
+        // Never a made-up value: if nothing scores it, it stays null ("not scored").
+        anomalyScore: typeof logData.anomalyScore === 'number' ? logData.anomalyScore : null,
     };
 
     const db = getDb();
     const { processLogThroughPipelines } = require('./pipelineService');
 
     try {
+        // The anomaly model must score the SAME text it was trained on, so keep a copy of the ORIGINAL log for
+        // scoring. Privacy masking still applies to everything that is stored or shown (processedLog below);
+        // the unmasked copy is only sent to the local AI service and is never saved.
+        const scoringLog = { level: newLog.level, message: newLog.message, source: newLog.source };
+
         // Process log through organizational pipelines (PII masking, filtering, etc.)
         const processedLog = await processLogThroughPipelines(newLog, organizationId);
         
@@ -86,39 +93,54 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
         const id = crypto.randomUUID();
         const timestamp = new Date().toISOString();
 
-        // Real-time AI Enrichment via Python Service
-        let enrichedAnomalyScore = processedLog.anomalyScore || 0.1;
-        let enrichedThreatCategory = 'Informational';
+        // Real-time AI scoring via the Python service.
+        // ANOMALY_MODEL=cascade -> BGL cascade (/cascade); otherwise the keyword rule (/urgency). Default: keyword rule.
+        // If the AI service is unreachable or errors, the log is stored UNSCORED (null) - never a made-up value.
+        const useCascade = process.env.ANOMALY_MODEL === 'cascade';
+        const endpoint = useCascade ? '/cascade' : '/urgency';
+        let enrichedAnomalyScore: number | null = processedLog.anomalyScore ?? null;
+        let enrichedThreatCategory: string = enrichedAnomalyScore === null ? 'Not scored' : 'Client-scored';
+        let scoreStage: string | null = enrichedAnomalyScore === null ? null : 'client';
+        let scoreModel: string | null = null, scoreThreshold: number | null = null;
+        let scoreModelHash: string | null = null, scoreCodeHash: string | null = null;
 
-        try {
-            const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:5001';
-            console.log(`[Ingest] Calling Python AI at ${pythonServiceUrl}/urgency...`);
-            // Use a 2-second timeout to prevent slow AI service from blocking ingestion
-            const aiController = new AbortController();
-            const aiTimeout = setTimeout(() => aiController.abort(), 2000);
-            const aiResponse = await fetch(`${pythonServiceUrl}/urgency`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ log: processedLog }),
-                signal: aiController.signal as any
-            });
-            clearTimeout(aiTimeout);
+        if (enrichedAnomalyScore === null) {
+            try {
+                const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://127.0.0.1:5001';
+                const aiController = new AbortController();
+                const aiTimeout = setTimeout(() => aiController.abort(), useCascade ? 10000 : 2000);
+                const aiResponse = await fetch(`${pythonServiceUrl}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ log: scoringLog }),   // unmasked original (scoring only, not stored)
+                    signal: aiController.signal as any
+                });
+                clearTimeout(aiTimeout);
 
-            if (aiResponse.ok) {
-                const aiData = await aiResponse.json() as { urgency: string, score: number };
-                enrichedThreatCategory = aiData.urgency;
-                enrichedAnomalyScore = aiData.score;
-                console.log(`[Ingest] AI Enriched: ${enrichedThreatCategory} (Score: ${enrichedAnomalyScore})`);
-            } else {
-                console.error(`[Ingest] AI Service returned ${aiResponse.status}: ${aiResponse.statusText}`);
+                if (aiResponse.ok) {
+                    const ai = await aiResponse.json() as { urgency: string, score: number, stage?: string, model?: string,
+                        threshold?: number | null, model_hash?: string | null, code_hash?: string | null };
+                    if (typeof ai.score === 'number') {
+                        enrichedAnomalyScore = ai.score;
+                        enrichedThreatCategory = ai.urgency;
+                        scoreStage = ai.stage ?? null;
+                        scoreModel = ai.model ?? null;
+                        scoreThreshold = ai.threshold ?? null;
+                        scoreModelHash = ai.model_hash ?? null;
+                        scoreCodeHash = ai.code_hash ?? null;
+                    }
+                } else {
+                    console.error(`[Ingest] AI service ${endpoint} returned ${aiResponse.status}; log stored as not scored.`);
+                }
+            } catch (aiError: any) {
+                console.error(`[Ingest] AI service ${endpoint} unreachable (${aiError.message}); log stored as not scored.`);
             }
-        } catch (aiError: any) {
-            console.error('[Ingest] AI Enrichment connection failed:', aiError.message);
         }
 
         await db.run(
-            'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore", "threatCategory") VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, processedLog.organizationId, timestamp, processedLog.level, processedLog.message, processedLog.source, enrichedAnomalyScore, enrichedThreatCategory]
+            'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore", "threatCategory", "scoreStage", "scoreModel", "scoreThreshold", "scoreModelHash", "scoreCodeHash") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, processedLog.organizationId, timestamp, processedLog.level, processedLog.message, processedLog.source, enrichedAnomalyScore, enrichedThreatCategory,
+             scoreStage, scoreModel, scoreThreshold, scoreModelHash, scoreCodeHash]
         );
         
         // Trigger alerting check

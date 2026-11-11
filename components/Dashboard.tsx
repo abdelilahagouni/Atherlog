@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Anomaly, LogLevel, LogSummary, AiDiscovery } from '../types';
-import { getAnomalies, getLogSummary, getHistoricalLogs } from '../services/logService';
+import { getAnomalies, getLogSummary, getHistoricalLogs, getModelInfo, ModelInfo } from '../services/logService';
 import { discoverInsights, getApiKeyStatus } from '../services/geminiService';
 import { Card } from './ui/Card';
 import { AnomalyChart } from './AnomalyChart';
@@ -84,6 +84,11 @@ const Dashboard: React.FC = () => {
   const [aiDiscoveries, setAiDiscoveries] = React.useState<AiDiscovery[]>([]);
   const [isAiLoading, setIsAiLoading] = React.useState(false);
   const navigate = useNavigate();
+  const [modelInfo, setModelInfo] = React.useState<ModelInfo | null>(null);
+
+  React.useEffect(() => {
+    getModelInfo().then(setModelInfo).catch(() => setModelInfo(null));
+  }, []);
 
   // Play welcome sound on dashboard mount
   React.useEffect(() => {
@@ -226,7 +231,13 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h2>
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h2>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400" data-testid="active-model">
+          {modelInfo ? modelInfo.label : 'Model: unknown (AI service not reachable)'}
+          {modelInfo?.note && <span className="ml-2 text-amber-600 dark:text-amber-400">- {modelInfo.note}</span>}
+        </p>
+      </div>
 
       {isOverQuota && (
         <div className="p-4 bg-red-100/50 dark:bg-red-500/20 text-red-800 dark:text-red-200 rounded-lg flex items-center justify-between border border-red-500/20">

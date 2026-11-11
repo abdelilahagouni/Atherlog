@@ -152,6 +152,12 @@ export const connectDb = async () => {
     `);
 
     await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "threatCategory" TEXT;');
+    // Provenance of every anomaly score (which stage decided, which model, threshold, model/code hash).
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreStage" TEXT;');
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreModel" TEXT;');
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreThreshold" REAL;');
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreModelHash" TEXT;');
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreCodeHash" TEXT;');
 
     await db.exec(`
         CREATE TABLE IF NOT EXISTS api_keys (

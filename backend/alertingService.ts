@@ -9,7 +9,7 @@ type AlertType = 'fatal' | 'anomaly_high';
 const ALERT_COOLDOWN_MS = 5 * 60 * 1000;
 
 const getPythonServiceUrl = () => {
-    let url = process.env.PYTHON_SERVICE_URL || 'http://localhost:5001';
+    let url = process.env.PYTHON_SERVICE_URL || 'http://127.0.0.1:5001';
     if (!url.startsWith('http')) {
         url = `http://${url}`;
     }
@@ -102,6 +102,7 @@ const getAiGuidanceHtml = async (log: LogEntry) => {
 };
 
 export const checkAndAlert = async (log: LogEntry) => {
+    if (process.env.TEST_MODE === 'true') return; // TEST_MODE: no alerts at all (see notificationService)
     const db = getDb();
     const org = await getOrganizationWithDetails(log.organizationId);
 

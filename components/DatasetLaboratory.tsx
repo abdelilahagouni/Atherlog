@@ -124,7 +124,7 @@ const DatasetLaboratory: React.FC = () => {
     if (invalidTimestampCount > 0) errors.push(`Found ${invalidTimestampCount} invalid timestamps in the first ${sample.length} rows.`);
     if (idxLevel < 0) warnings.push('Level is not mapped. Logs will default to INFO.');
     if (idxLevel >= 0 && invalidLevelCount > 0) warnings.push(`Found ${invalidLevelCount} unknown log levels in the first ${sample.length} rows. Unknown values will default to INFO.`);
-    if (idxAnomaly >= 0 && invalidAnomalyCount > 0) warnings.push(`Found ${invalidAnomalyCount} invalid anomalyScore values in the first ${sample.length} rows. Those rows will use a default score.`);
+    if (idxAnomaly >= 0 && invalidAnomalyCount > 0) warnings.push(`Found ${invalidAnomalyCount} invalid anomalyScore values in the first ${sample.length} rows. Those rows will be imported as not scored.`);
 
     return { errors, warnings };
   }, []);
@@ -168,7 +168,8 @@ const DatasetLaboratory: React.FC = () => {
             level: (rowObj[mapping.level]?.toUpperCase() as LogLevel) || LogLevel.INFO,
             message: rowObj[mapping.message] || 'Empty log message',
             source: rowObj[mapping.source] || file.name,
-            anomalyScore: rowObj[mapping.anomalyScore] ? parseFloat(rowObj[mapping.anomalyScore]) : Math.random() * 0.2,
+            // Use the file's score if present; otherwise leave it unscored (null) - never a made-up value.
+            anomalyScore: rowObj[mapping.anomalyScore] && !isNaN(parseFloat(rowObj[mapping.anomalyScore])) ? parseFloat(rowObj[mapping.anomalyScore]) : null,
           };
         });
 
@@ -212,7 +213,7 @@ const DatasetLaboratory: React.FC = () => {
     const demoData = generateLargeDataset(50); // Generate 50 random entries
     // Convert to string[][] for preview
     const headers = ['Timestamp', 'Level', 'Source', 'Message', 'AnomalyScore'];
-    const rows = demoData.map(d => [d.timestamp, d.level, d.source, d.message, d.anomalyScore.toFixed(2)]);
+    const rows = demoData.map(d => [d.timestamp, d.level, d.source, d.message, '']); // demo rows carry no score (imported as not scored)
     
     setHeaders(headers);
     setPreviewData(rows.slice(0, 6));

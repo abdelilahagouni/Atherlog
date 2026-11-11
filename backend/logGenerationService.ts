@@ -40,42 +40,37 @@ const normalMessages = [
   'Payment processed for order #ABC-123',
 ];
 
+// Demo log generator (only runs when DISABLE_DEMO_LOGS is not 'true').
+// Demo logs are clearly demo data: the level and message are picked at random, but they are NEVER given a made-up
+// anomaly score - they are stored as "not scored" (anomalyScore = null, threatCategory = 'Not scored (demo)').
 const generateLogEntry = (): Omit<LogEntry, 'id' | 'organizationId' | 'timestamp'> => {
   let level: LogLevel;
-  let anomalyScore: number;
   let message: string;
-  
+
   const rand = Math.random();
   if (rand < 0.7) {
     level = LogLevel.INFO;
-    anomalyScore = Math.random() * 0.1; // 0.0 - 0.1
     message = getRandomElement(normalMessages);
   } else if (rand < 0.9) {
     level = LogLevel.WARN;
-    anomalyScore = 0.2 + Math.random() * 0.3; // 0.2 - 0.5
     message = getRandomElement(normalMessages);
   } else if (rand < 0.97) {
     level = LogLevel.ERROR;
-    anomalyScore = 0.5 + Math.random() * 0.3; // 0.5 - 0.8
     message = getRandomElement(normalMessages);
   } else {
-    // FATAL logs (3% chance)
     level = LogLevel.FATAL;
-    anomalyScore = 0.8 + Math.random() * 0.2; // 0.8 - 1.0
     message = getRandomElement(fatalMessages);
   }
-  
-  // Sprinkle in some debug logs
   if (Math.random() < 0.1 && level !== LogLevel.FATAL) {
     level = LogLevel.DEBUG;
-    anomalyScore = 0.1 + Math.random() * 0.1; // 0.1 - 0.2
   }
 
   return {
     level,
     source: getRandomElement(sources),
     message,
-    anomalyScore,
+    anomalyScore: null,
+    threatCategory: 'Not scored (demo)',
   };
 };
 
@@ -91,8 +86,8 @@ const insertLogForOrg = async (organizationId: string) => {
     
     try {
         await db.run(
-            'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore") VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [newLog.id, newLog.organizationId, newLog.timestamp, newLog.level, newLog.message, newLog.source, newLog.anomalyScore]
+            'INSERT INTO logs ("id", "organizationId", "timestamp", "level", "message", "source", "anomalyScore", "threatCategory", "scoreStage") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [newLog.id, newLog.organizationId, newLog.timestamp, newLog.level, newLog.message, newLog.source, null, 'Not scored (demo)', 'demo_unscored']
         );
 
         // Emit to WebSocket for Live Tail

@@ -5,6 +5,18 @@ import { retry, withTimeout } from './resilience';
 
 // --- Email Configuration (Generic SMTP) ---
 // Falls back to SendGrid defaults if specific SMTP vars aren't provided
+
+// TEST_MODE=true blocks EVERY outgoing notification (e-mail, SMS, webhook, Slack, Teams, Telegram).
+// Test scripts refuse to run unless the backend reports testMode: true on /api/health.
+export const isTestMode = (): boolean => process.env.TEST_MODE === 'true';
+const blockedInTestMode = (channel: string): boolean => {
+    if (isTestMode()) {
+        console.log(`[TEST_MODE] ${channel} notification blocked (TEST_MODE=true).`);
+        return true;
+    }
+    return false;
+};
+
 const emailFrom = process.env.EMAIL_FROM_ADDRESS;
 const smtpHost = process.env.SMTP_HOST || 'smtp.sendgrid.net';
 const smtpPort = parseInt(process.env.SMTP_PORT || '587');
@@ -54,6 +66,7 @@ import { logEmailEvent } from './bounceService';
 // ... imports ...
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
+    if (blockedInTestMode('email')) return;
     if (!mailTransporter || !emailFrom) {
         const message = 'Email service is not configured on the server.';
         console.error(message);
@@ -97,6 +110,7 @@ export const sendEmail = async (options: EmailOptions): Promise<void> => {
 
 
 export const sendSms = async (to: string, body: string): Promise<void> => {
+    if (blockedInTestMode('SMS')) return;
     if (!twilioClient || !twilioPhoneNumber) {
         const message = 'SMS service is not configured on the server.';
         console.error(message);
@@ -129,6 +143,7 @@ export const sendVerificationEmail = async (userEmail: string, token: string, us
  * Sends a generic webhook notification
  */
 export const sendWebhook = async (url: string, payload: any): Promise<void> => {
+    if (blockedInTestMode('webhook')) return;
     await retry(async () => {
         const controller = new AbortController();
         const timeoutMs = parseInt(process.env.WEBHOOK_TIMEOUT_MS || '8000', 10);
@@ -159,6 +174,7 @@ export const sendWebhook = async (url: string, payload: any): Promise<void> => {
  * Sends a formatted Slack alert using Block Kit for richer display
  */
 export const sendSlackAlert = async (webhookUrl: string, alertData: { title: string; message: string; severity: string; source: string }) => {
+    if (blockedInTestMode('Slack')) return;
     const isCritical = alertData.severity === 'CRITICAL' || alertData.severity === 'FATAL';
     const color = isCritical ? '#ff0000' : alertData.severity === 'ERROR' ? '#ff9900' : '#36a64f';
     const emoji = isCritical ? '🔥' : alertData.severity === 'ERROR' ? '🚨' : '⚠️';
@@ -199,6 +215,7 @@ export const sendSlackAlert = async (webhookUrl: string, alertData: { title: str
  * Sends a formatted Microsoft Teams alert using Adaptive Cards
  */
 export const sendTeamsAlert = async (webhookUrl: string, alertData: { title: string; message: string; severity: string; source: string }) => {
+    if (blockedInTestMode('Teams')) return;
     const isCritical = alertData.severity === 'CRITICAL' || alertData.severity === 'FATAL';
     const color = isCritical ? 'FF0000' : 'FF9900';
     
@@ -236,6 +253,7 @@ export const sendTelegramFatalAlert = async (log: {
     level: string;
     anomalyScore?: number;
 }): Promise<void> => {
+    if (blockedInTestMode('Telegram')) return;
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
 

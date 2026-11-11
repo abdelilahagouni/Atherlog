@@ -1,0 +1,62 @@
+{
+  "lines": 1000,
+  "source": "BGL chronological test split, random 1,000 lines (seed 2026), real anomaly ratio",
+  "keyword": {
+    "metrics": {
+      "anomalies": 50,
+      "normals": 950,
+      "tp": 50,
+      "fp_false_alarms": 199,
+      "fn_missed": 0,
+      "tn": 751,
+      "recall": 1.0,
+      "precision": 0.20080321285140562,
+      "f1": 0.33444816053511706,
+      "false_alarm_rate": 0.2094736842105263
+    },
+    "ms_per_log_end_to_end_mean": 2175.8732605994446,
+    "ms_per_log_end_to_end_median": 2173.914299986791,
+    "not_scored": 0,
+    "stages": {
+      "keyword_rule": 1000
+    },
+    "rows_with_model_hash": 0,
+    "rows_with_code_hash": 1000
+  },
+  "cascade": {
+    "metrics": {
+      "anomalies": 50,
+      "normals": 950,
+      "tp": 44,
+      "fp_false_alarms": 0,
+      "fn_missed": 6,
+      "tn": 950,
+      "recall": 0.88,
+      "precision": 1.0,
+      "f1": 0.9361702127659575,
+      "false_alarm_rate": 0.0
+    },
+    "ms_per_log_end_to_end_mean": 2182.227989499748,
+    "ms_per_log_end_to_end_median": 2179.89894998027,
+    "not_scored": 0,
+    "stages": {
+      "stage1_lr": 946,
+      "stage2_distilbert": 54
+    },
+    "rows_with_model_hash": 1000,
+    "rows_with_code_hash": 1000,
+    "experiment_v3_seed42_same_lines": {
+      "anomalies": 50,
+      "normals": 950,
+      "tp": 44,
+      "fp_false_alarms": 0,
+      "fn_missed": 6,
+      "tn": 950,
+      "recall": 0.88,
+      "precision": 1.0,
+      "f1": 0.9361702127659575,
+      "false_alarm_rate": 0.0
+    },
+    "app_vs_experiment_decision_differences": 0
+  }
+}

@@ -1,0 +1,51 @@
+row,bgl_label,bgl_level,app_level,message,http,app_score,app_category,app_says_anomaly
+45127,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:39758, Link has been severed",202,0.9,Critical,1
+43262,1,FATAL,FATAL,"KERNEL Error receiving packet on tree network, expecting type 57 instead of type 3 (softheader=00024f60 7fff0003 00000002 00000000) PSR0=00001f01 PSR1=00000000 PRXF=00000002 PIXF=00000007",202,0.9,Critical,1
+49203,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:48826, Link has been severed",202,0.9,Critical,1
+49140,0,INFO,INFO,KERNEL total of 1 ddr error(s) detected and corrected over 3253 seconds,202,0.2,Informational,0
+44328,1,FATAL,FATAL,KERNEL rts: kernel terminated for reason 1004,202,0.9,Critical,1
+49520,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:46238, Link has been severed",202,0.9,Critical,1
+41889,0,INFO,INFO,KERNEL iar 00106570 dear 0245a19c,202,0.2,Informational,0
+48884,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:49501, Link has been severed",202,0.9,Critical,1
+41776,0,INFO,INFO,KERNEL iar 001064fc dear 0245b64c,202,0.2,Informational,0
+40452,0,INFO,INFO,KERNEL iar 00106580 dear 045e141c,202,0.2,Informational,0
+45381,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:58478, Link has been severed",202,0.9,Critical,1
+43263,1,FATAL,FATAL,"KERNEL Error receiving packet on tree network, expecting type 57 instead of type 3 (softheader=00024f60 7fff0003 00000002 00000000) PSR0=10011f01 PSR1=00000000 PRXF=00000002 PIXF=00000007",202,0.9,Critical,1
+40727,0,INFO,INFO,KERNEL 1667166 floating point alignment exceptions,202,0.2,Informational,0
+44833,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:41604, Connection timed out",202,0.9,Critical,1
+49919,0,INFO,INFO,KERNEL instruction cache parity error corrected,202,0.2,Informational,0
+44454,0,INFO,INFO,"KERNEL ciod: Received signal 15, code=0, errno=0, address=0x000001b3",202,0.2,Informational,0
+47429,0,INFO,INFO,KERNEL 0 microseconds spent in the rbs signal handler during 0 calls. 0 microseconds was the maximum time for a single instance of a correctable ddr.,202,0.2,Informational,0
+43115,0,INFO,INFO,KERNEL iar 001061e8 dear 0247144c,202,0.2,Informational,0
+45710,0,INFO,INFO,"KERNEL 10730 total interrupts. 0 critical input interrupts. 0 microseconds total spent on critical input interrupts, 0 microseconds max time in a critical input interrupt.",202,0.9,Critical,1
+44798,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:41552, Connection reset by peer",202,0.9,Critical,1
+44213,0,INFO,INFO,"KERNEL CE sym 27, at 0x014dd100, mask 0x20",202,0.2,Informational,0
+44647,1,FATAL,FATAL,APP ciod: Error reading message prefix after LOAD_MESSAGE on CioStream socket to 172.16.96.116:43776: Link has been severed,202,0.9,Critical,1
+48570,1,FATAL,FATAL,KERNEL Lustre mount FAILED : bglio725 : block_id : location,202,0.9,Critical,1
+46596,0,INFO,INFO,"KERNEL 10692 total interrupts. 0 critical input interrupts. 0 microseconds total spent on critical input interrupts, 0 microseconds max time in a critical input interrupt.",202,0.9,Critical,1
+45423,0,INFO,INFO,"KERNEL CE sym 9, at 0x045ba220, mask 0x02",202,0.2,Informational,0
+48346,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:52606, Link has been severed",202,0.9,Critical,1
+44342,1,FATAL,FATAL,"KERNEL Error receiving packet on tree network, expecting type 57 instead of type 3 (softheader=009756d5 8bfa0003 00000002 00000000) PSR0=00001f01 PSR1=00000000 PRXF=00000002 PIXF=00000007",202,0.9,Critical,1
+47434,0,INFO,INFO,"KERNEL 10770 total interrupts. 0 critical input interrupts. 0 microseconds total spent on critical input interrupts, 0 microseconds max time in a critical input interrupt.",202,0.9,Critical,1
+44644,1,FATAL,FATAL,APP ciod: Error reading message prefix after LOAD_MESSAGE on CioStream socket to 172.16.96.116:43343: Link has been severed,202,0.9,Critical,1
+49960,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:40102, Link has been severed",202,0.9,Critical,1
+44424,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:45988, Link has been severed",202,0.9,Critical,1
+46038,0,INFO,INFO,KERNEL 0 microseconds spent in the rbs signal handler during 0 calls. 0 microseconds was the maximum time for a single instance of a correctable ddr.,202,0.2,Informational,0
+47404,0,INFO,INFO,KERNEL 0 microseconds spent in the rbs signal handler during 0 calls. 0 microseconds was the maximum time for a single instance of a correctable ddr.,202,0.2,Informational,0
+48691,0,INFO,INFO,"KERNEL Kernel detected 5673440 integer alignment exceptions (5673433) iar 0x00544ea8, dear 0x01ef64a0 (5673434) iar 0x00544eb8, dear 0x01ef64c0 (5673435) iar 0x00544ea8, dear 0x01ef64e0 (5673436) iar 0x00544eb8, dear 0x01ef6500 (5673437) iar 0x00544ee0, dear 0x01ef6520 (5673438) iar 0x00544ef0, dear 0x01ef6540 (5673439) iar 0x00544ee0, dear 0x01ef6560 (5673440) iar 0x00544ef0, dear 0x01ef6580",202,0.2,Informational,0
+40626,0,INFO,INFO,KERNEL iar 001061f0 dear 045e147c,202,0.2,Informational,0
+44375,0,INFO,INFO,"KERNEL CE sym 24, at 0x18e69460, mask 0x40",202,0.2,Informational,0
+45277,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:40840, Link has been severed",202,0.9,Critical,1
+49201,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:48785, Link has been severed",202,0.9,Critical,1
+48352,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:52944, Link has been severed",202,0.9,Critical,1
+45948,0,INFO,INFO,KERNEL 0 microseconds spent in the rbs signal handler during 0 calls. 0 microseconds was the maximum time for a single instance of a correctable ddr.,202,0.2,Informational,0
+48328,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:59974, Link has been severed",202,0.9,Critical,1
+44808,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:53281, Connection reset by peer",202,0.9,Critical,1
+46833,0,INFO,INFO,"KERNEL 1970 total interrupts. 0 critical input interrupts. 0 microseconds total spent on critical input interrupts, 0 microseconds max time in a critical input interrupt.",202,0.9,Critical,1
+49187,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:58128, Link has been severed",202,0.9,Critical,1
+44230,1,FATAL,FATAL,"KERNEL Error receiving packet on tree network, expecting type 57 instead of type 3 (softheader=00ce22e8 e6200003 00000002 00000000) PSR0=00001f01 PSR1=00000000 PRXF=00000002 PIXF=00000007",202,0.9,Critical,1
+48724,0,INFO,INFO,"KERNEL Kernel detected 3732140 integer alignment exceptions (3732133) iar 0x00544ea8, dear 0x01fcab20 (3732134) iar 0x00544eb8, dear 0x01fcab40 (3732135) iar 0x00544ea8, dear 0x01fcab60 (3732136) iar 0x00544eb8, dear 0x01fcab80 (3732137) iar 0x00544ee0, dear 0x01fcaba0 (3732138) iar 0x00544ef0, dear 0x01fcabc0 (3732139) iar 0x00544ee0, dear 0x01fcabe0 (3732140) iar 0x00544ef0, dear 0x01fcac00",202,0.2,Informational,0
+41894,0,INFO,INFO,KERNEL iar 0010621c dear 02f6672c,202,0.2,Informational,0
+49995,0,INFO,INFO,KERNEL 1 torus receiver x+ input pipe error(s) (dcr 0x02ec) detected and corrected over 636 seconds,202,0.2,Informational,0
+42926,0,INFO,INFO,"KERNEL 1 ddr errors(s) detected and corrected on rank 0, symbol 1, bit 4",202,0.2,Informational,0
+48565,1,FATAL,FATAL,"APP ciod: Error reading message prefix on CioStream socket to 172.16.96.116:49506, Link has been severed",202,0.9,Critical,1

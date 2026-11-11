@@ -1,0 +1,13 @@
+{
+  "/urgency": {
+    "mean_ms": 14.614973800256848,
+    "median_ms": 15.586249995976686,
+    "p95_ms": 24.703945030341856
+  },
+  "/cascade": {
+    "mean_ms": 16.916169500851538,
+    "median_ms": 15.715799992904067,
+    "p95_ms": 31.01991501753216
+  },
+  "note": "HTTP round trip to the AI service via 127.0.0.1, one log per call; GPU for DistilBERT (RTX 3050 Laptop)"
+}
