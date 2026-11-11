@@ -43,6 +43,39 @@ def get_tensorflow():
 
 app = Flask(__name__)
 
+
+# --- Access control --------------------------------------------------------------------------------------------
+# The AI service has no user logins; only the AetherLog backend should call it. A request is allowed when it comes
+# from THIS computer (loopback), or when it carries the shared secret X-Internal-Key = AI_SERVICE_KEY (needed when the
+# backend runs on another machine/container, e.g. docker-compose or a cloud host). Everything else gets 403.
+# GET /health stays open for health checks. AI_SERVICE_KEY can be set in the environment or in python-service/.env.
+def _read_local_env_key():
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'), encoding='utf-8') as f:
+            for line in f:
+                if line.strip().startswith('AI_SERVICE_KEY='):
+                    return line.split('=', 1)[1].strip().strip('"').strip("'")
+    except OSError:
+        pass
+    return ''
+
+
+AI_SERVICE_KEY = os.environ.get('AI_SERVICE_KEY') or _read_local_env_key()
+_LOOPBACK = {'127.0.0.1', '::1', '::ffff:127.0.0.1'}
+
+
+@app.before_request
+def _require_internal_access():
+    import hmac
+    if request.path == '/health' and request.method == 'GET':
+        return None
+    if request.remote_addr in _LOOPBACK:
+        return None
+    sent = request.headers.get('X-Internal-Key', '')
+    if AI_SERVICE_KEY and sent and hmac.compare_digest(sent, AI_SERVICE_KEY):
+        return None
+    return jsonify({'error': 'Forbidden: the AI service only accepts requests from the AetherLog backend.'}), 403
+
 # PRIVACY: this service receives raw (unmasked) log text for scoring. It must NEVER print or log that text:
 # log only counts, ids and error TYPES (exception messages can contain input text).
 
@@ -1286,4 +1319,8 @@ if __name__ == '__main__':
         print(f"[STARTUP] Warning: Could not load saved model: {e}")
 
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port)
+    # Listen on this computer only by default; set HOST=0.0.0.0 (as the Dockerfile does) to accept other machines,
+    # which then need X-Internal-Key (see access control above).
+    host = os.environ.get('HOST', '127.0.0.1')
+    print(f"[STARTUP] AI service on {host}:{port}; shared key {'set' if AI_SERVICE_KEY else 'NOT set (only this computer can call it)'}")
+    app.run(host=host, port=port)

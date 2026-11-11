@@ -14,7 +14,7 @@ import { getDb } from './database';
 import { LogEntry } from './types';
 import * as crypto from 'crypto';
 import { emitLog } from './websocket';
-import fetch from 'node-fetch';
+import fetch from './aiServiceFetch';   // node-fetch + AI service key (aiServiceFetch.ts)
 import { cacheVerifiedKey, getCachedKey, hashPresentedKey, invalidateCachedHash } from './apiKeyCache';
 
 const router = express.Router();

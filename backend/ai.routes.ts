@@ -4,10 +4,15 @@ import { GoogleGenAI, Type } from "@google/genai";
 import OpenAI from 'openai';
 import { protect } from './auth.routes';
 import { LogEntry, LogLevel } from './types';
-import fetch from 'node-fetch';
+import fetch from './aiServiceFetch';   // node-fetch + AI service key (aiServiceFetch.ts)
 import { getDb } from './database';
 
 const router = express.Router();
+
+// Every /api/ai route requires a logged-in user, except GET /status (public: the login page asks which AI
+// providers exist). Without this, anyone who could reach the backend could use the AI routes - including
+// spending the Gemini/OpenAI quota and the GPU of the internal AI service.
+router.use((req, res, next) => (req.method === 'GET' && req.path === '/status') ? next() : protect(req, res, next));
 
 // --- AI Client Initialization ---
 let ai: GoogleGenAI | null = null;

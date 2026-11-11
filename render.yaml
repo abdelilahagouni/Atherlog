@@ -8,6 +8,9 @@ services:
     envVars:
       - key: PORT
         value: 5000
+      # Shared secret with the backend (same value on both services); requests without it are rejected.
+      - key: AI_SERVICE_KEY
+        sync: false
     healthCheckPath: /health
 
   # Node.js Backend
@@ -20,6 +23,8 @@ services:
     envVars:
       - key: PORT
         value: 4000
+      - key: AI_SERVICE_KEY
+        sync: false
       - key: PYTHON_SERVICE_URL
         fromService:
           type: web

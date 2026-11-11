@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import fetch from './aiServiceFetch';   // node-fetch + AI service key (aiServiceFetch.ts)
 
 type RetryOptions = {
     attempts?: number;

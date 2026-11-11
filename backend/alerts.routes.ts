@@ -2,7 +2,7 @@ import express from 'express';
 import { protect } from './auth.routes';
 import { getDb } from './database';
 import { Role, User } from './types';
-import fetch from 'node-fetch';
+import fetch from './aiServiceFetch';   // node-fetch + AI service key (aiServiceFetch.ts)
 
 const router = express.Router();
 
