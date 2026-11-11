@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Anomaly, LogLevel, LogSummary, AiDiscovery } from '../types';
-import { getAnomalies, getLogSummary, getHistoricalLogs, getModelInfo, ModelInfo } from '../services/logService';
-import { discoverInsights, getApiKeyStatus } from '../services/geminiService';
+import { getAnomalies, getLogSummary, getModelInfo, ModelInfo } from '../services/logService';
+import { discoverInsights } from '../services/geminiService';
 import { Card } from './ui/Card';
 import { AnomalyChart } from './AnomalyChart';
 import { AnomalyTable } from './AnomalyTable';
@@ -15,8 +15,9 @@ import { soundNotificationService } from '../services/soundNotificationService';
 const AiDiscoveriesSection: React.FC<{
   discoveries: AiDiscovery[],
   onDismiss: (id: string) => void,
-  isLoading: boolean
-}> = ({ discoveries, onDismiss, isLoading }) => {
+  isLoading: boolean,
+  error: string | null
+}> = ({ discoveries, onDismiss, isLoading, error }) => {
   
   const header = (
     <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
@@ -39,6 +40,23 @@ const AiDiscoveriesSection: React.FC<{
     );
   }
 
+  if (error) {
+    return (
+      <div>
+        {header}
+        <Card>
+          <div role="alert" className="flex items-center gap-3">
+            <Icon name="exclamation-triangle" className="w-6 h-6 text-red-500" />
+            <div>
+              <p className="font-semibold text-gray-800 dark:text-gray-200">Insights could not be computed.</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{error}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   if (discoveries.length === 0) {
     return (
        <div>
@@ -48,7 +66,7 @@ const AiDiscoveriesSection: React.FC<{
             <Icon name="shield-check" className="w-6 h-6 text-green-500" />
             <div>
               <p className="font-semibold text-gray-800 dark:text-gray-200">All Clear!</p>
-              <p className="text-sm text-gray-600 dark:text-gray-300">AI analysis complete. No new critical insights found.</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">The anomaly model (BGL cascade) found no spikes, new kinds of anomalies or repeated patterns.</p>
             </div>
           </div>
         </Card>
@@ -83,6 +101,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [aiDiscoveries, setAiDiscoveries] = React.useState<AiDiscovery[]>([]);
   const [isAiLoading, setIsAiLoading] = React.useState(false);
+  const [aiError, setAiError] = React.useState<string | null>(null);
   const navigate = useNavigate();
   const [modelInfo, setModelInfo] = React.useState<ModelInfo | null>(null);
 
@@ -116,19 +135,17 @@ const Dashboard: React.FC = () => {
       }
     };
 
+    // Internal BGL cascade only (no Gemini/OpenAI); the server reads the logs itself.
     const fetchAiInsights = async () => {
-        const status = await getApiKeyStatus();
-        if(!status.geminiConfigured && !status.openaiConfigured) return;
-
         setIsAiLoading(true);
+        setAiError(null);
         try {
-            const logs = await getHistoricalLogs(200);
-            if (logs.length > 20) {
-                const discoveries = await discoverInsights(logs);
-                setAiDiscoveries(discoveries);
-            }
-        } catch (error) {
-            console.error("Failed to fetch AI discoveries:", error);
+            const result = await discoverInsights();
+            setAiDiscoveries(result.insights);
+        } catch (error: any) {
+            console.error("Failed to compute insights:", error);
+            setAiDiscoveries([]);
+            setAiError(error?.message || 'Failed to compute insights.');
         } finally {
             setIsAiLoading(false);
         }
@@ -254,7 +271,7 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      <AiDiscoveriesSection discoveries={aiDiscoveries} onDismiss={handleDismissDiscovery} isLoading={isAiLoading} />
+      <AiDiscoveriesSection discoveries={aiDiscoveries} onDismiss={handleDismissDiscovery} isLoading={isAiLoading} error={aiError} />
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>

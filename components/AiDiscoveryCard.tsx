@@ -28,10 +28,11 @@ const AiDiscoveryCard: React.FC<AiDiscoveryCardProps> = ({ discovery, onDismiss,
     if (source) params.set('sources', source);
     if (level) params.set('levels', level);
     
-    // Add a time range of the last hour for context
+    // Same window the insights are computed over: the last hour for a SPIKE, the last 24 hours otherwise.
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    params.set('startDate', oneHourAgo.toISOString());
+    const hours = discovery.type === 'SPIKE' ? 1 : 24;
+    const from = new Date(now.getTime() - hours * 60 * 60 * 1000);
+    params.set('startDate', from.toISOString());
     params.set('endDate', now.toISOString());
     
     return `/log-explorer?${params.toString()}`;

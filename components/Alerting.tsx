@@ -136,7 +136,7 @@ const Alerting: React.FC = () => {
             {/* Rules on this page are stored only in this browser (localStorage); the backend does not read them yet.
                 Remove this note once the page is connected to the server. */}
             <div role="note" className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
-                <Icon name="alert-triangle" className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <Icon name="exclamation-triangle" className="w-5 h-5 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
                     <p className="font-semibold">Rules are not yet applied by the server.</p>
                     <p className="mt-0.5">Rules on this page are saved only in this browser and do not trigger any alerts.

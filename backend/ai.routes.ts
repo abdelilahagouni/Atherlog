@@ -465,73 +465,17 @@ router.post('/generate-playbook', async (req: express.Request, res: express.Resp
     }
     res.json({ title: "Database Connection Failure", summary: "This playbook outlines steps to diagnose and resolve a database connection failure originating from the user-service.", severity: 4, triageSteps: [{ step: 1, action: "Check the status of the PostgreSQL container.", command: "docker ps | grep postgres-db" },{ step: 2, action: "Tail the logs of the user-service to look for specific connection error messages.", command: "docker logs -f ai-log-analyzer-backend" },{ step: 3, action: "Attempt to connect to the database directly from the backend container to rule out network issues.", command: "docker exec -it ai-log-analyzer-backend psql -h postgres-db -U admin -d ailoganalyzer" }], escalationPath: "If the database is down and cannot be restarted, escalate to the on-call SRE."});
 });
-router.post('/discover-insights', async (req: express.Request, res: express.Response) => {
-    const { logs } = req.body;
-    if (!logs || !Array.isArray(logs) || logs.length === 0) {
-        return res.status(400).json({ message: 'logs array is required and must not be empty.' });
-    }
-
-    // Summarise up to 150 recent logs to keep the prompt concise
-    const logSummary = (logs as LogEntry[])
-        .slice(0, 150)
-        .map(l => `[${l.level}] ${l.source}: ${l.message}`)
-        .join('\n');
-
-    const prompt = `Analyze the following log entries and identify up to 5 significant insights. Classify each as one of: "TREND" (recurring pattern), "NEW_ERROR" (novel error type), "SPIKE" (sudden event surge), "ANOMALY_CLUSTER" (cluster of anomalous events). Return a JSON array. Each element must have: "id" (unique string e.g. "d1"), "type" (one of the 4 types), "title" (short string), "summary" (2-3 sentences), "implication" (1-2 sentences on business/tech impact), "investigationFilters" (object with optional string fields "keyword", "source", and "level" — level must be one of INFO, WARN, ERROR, DEBUG, FATAL). Only include real patterns found in the data. If no significant insights exist return an empty array.\n\nLogs:\n${logSummary}`;
-
+// Proactive AI Insights: computed ONLY from the internal BGL cascade's stored decisions (insightsService.ts).
+// No external AI provider is called and no log text leaves this server. Requires login (organisation-scoped).
+router.post('/discover-insights', protect, async (req: express.Request, res: express.Response) => {
     try {
-        let insights: any[] = [];
-
-        // Use Gemini first, fall back to OpenAI
-        if (ai) {
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.0-flash',
-                contents: prompt,
-                config: {
-                    responseMimeType: 'application/json',
-                    responseSchema: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                id:          { type: Type.STRING },
-                                type:        { type: Type.STRING },
-                                title:       { type: Type.STRING },
-                                summary:     { type: Type.STRING },
-                                implication: { type: Type.STRING },
-                                investigationFilters: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        keyword: { type: Type.STRING, nullable: true },
-                                        source:  { type: Type.STRING, nullable: true },
-                                        level:   { type: Type.STRING, nullable: true },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            });
-            insights = JSON.parse(response.text || '[]');
-        } else if (openai) {
-            const completion = await openai.chat.completions.create({
-                model: 'gpt-4o-mini',
-                messages: [
-                    { role: 'system', content: 'You are a log analysis expert. Return only a valid JSON array of insight objects.' },
-                    { role: 'user', content: prompt },
-                ],
-                response_format: { type: 'json_object' },
-            });
-            const parsed = JSON.parse(completion.choices[0].message.content || '{"insights":[]}');
-            // OpenAI wraps arrays in an object key — handle both shapes
-            insights = Array.isArray(parsed) ? parsed : (parsed.insights || []);
-        } else {
-            return res.status(400).json({ message: 'No AI provider configured. Set API_KEY or OPENAI_API_KEY.' });
-        }
-
-        res.json(insights);
+        const user = (req as any).user;
+        if (!user?.organizationId) return res.status(401).json({ message: 'Not authorised.' });
+        const { computeInsights } = await import('./insightsService');
+        res.json(await computeInsights(user.organizationId));
     } catch (e: any) {
-        handleAiError(e, res);
+        console.error('[Insights] Failed to compute insights from the cascade decisions:', e);
+        res.status(500).json({ message: 'Could not compute insights from the stored cascade decisions.' });
     }
 });
 

@@ -134,11 +134,19 @@ export const generateRemediationPlaybook = async (targetLog: LogEntry, provider:
     return handleResponse(response);
 };
 
-export const discoverInsights = async (logs: LogEntry[]): Promise<AiDiscovery[]> => {
+/** What the insights were computed from (all counted by the backend from the stored cascade decisions). */
+export interface InsightsBasis {
+    model: string | null; windowHours: number; baselineDays: number;
+    scoredRecent: number; anomaliesRecent: number; scoredBaseline: number; anomaliesBaseline: number;
+    notScoredRecent: number; generatedAt: string;
+}
+
+/** Proactive AI Insights from the INTERNAL BGL cascade only (no Gemini/OpenAI). The server reads the logs itself. */
+export const discoverInsights = async (): Promise<{ insights: AiDiscovery[]; basis: InsightsBasis }> => {
     const response = await fetch(`${API_BASE_URL}/discover-insights`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ logs }),
+        body: JSON.stringify({}),
     });
     return handleResponse(response);
 };
