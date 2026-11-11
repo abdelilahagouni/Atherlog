@@ -7,6 +7,7 @@ import { getDb } from './database';
 import { ApiKey, Role, User } from './types';
 import { protect } from './auth.routes';
 import * as crypto from 'crypto';
+import { invalidateApiKey } from './apiKeyCache';
 
 const router = express.Router();
 
@@ -78,6 +79,8 @@ router.delete('/:id', requireAdmin, async (req: express.Request, res: express.Re
         if (!result.changes || result.changes === 0) {
             return res.status(404).json({ message: 'API key not found or you do not have permission to delete it.' });
         }
+        // Revoked: drop it from the verification cache immediately (rotation = create new key + delete old key).
+        invalidateApiKey(id);
         res.status(204).send(); // No content
     } catch (error) {
         res.status(500).json({ message: 'Failed to delete API key.' });

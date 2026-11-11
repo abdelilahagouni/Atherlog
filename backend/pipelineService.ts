@@ -51,15 +51,20 @@ export const maskPII = (text: string, patterns: string[] = ['email', 'creditCard
 /**
  * Process a log entry through all active pipelines for an organization
  */
-export const processLogThroughPipelines = async (log: Omit<LogEntry, 'id' | 'timestamp'>, organizationId: string): Promise<Omit<LogEntry, 'id' | 'timestamp'> | null> => {
+/** Active pipelines of an organisation (fetch once per request when processing a batch). */
+export const getActivePipelines = async (organizationId: string): Promise<LogPipeline[]> => {
     const db = getDb();
-    
+    return db.all<LogPipeline>(
+        'SELECT * FROM log_pipelines WHERE "organizationId" = ? AND "enabled" = TRUE ORDER BY "order" ASC',
+        [organizationId]
+    );
+};
+
+export const processLogThroughPipelines = async (log: Omit<LogEntry, 'id' | 'timestamp'>, organizationId: string,
+                                                 prefetchedPipelines?: LogPipeline[]): Promise<Omit<LogEntry, 'id' | 'timestamp'> | null> => {
     try {
-        // Fetch active pipelines for the organization
-        const pipelines = await db.all<LogPipeline>(
-            'SELECT * FROM log_pipelines WHERE "organizationId" = ? AND "enabled" = TRUE ORDER BY "order" ASC',
-            [organizationId]
-        );
+        // Fetch active pipelines for the organization (or use the list fetched once for a whole batch)
+        const pipelines = prefetchedPipelines ?? await getActivePipelines(organizationId);
 
         if (!pipelines || pipelines.length === 0) {
             // Apply default PII masking even if no pipeline is defined (Security Best Practice)

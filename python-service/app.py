@@ -332,26 +332,26 @@ def cluster_logs():
         return jsonify({'error': str(e)}), 500
 
 # --- Pro Feature 3: Urgency Classification ---
+def _keyword_rule(log):
+    message = str(log.get('message', '')).lower()
+    level = log.get('level', 'INFO')
+    urgency, score = "Informational", 0.2
+    if level in ['FATAL', 'ERROR'] or any(word in message for word in ['fail', 'critical', 'timeout', 'denied']):
+        urgency, score = "Critical", 0.9
+    elif level == 'WARN' or any(word in message for word in ['slow', 'retry', 'limit']):
+        urgency, score = "Actionable", 0.5
+    return {'urgency': urgency, 'score': score, 'stage': 'keyword_rule', 'model': 'keyword-rule',
+            'threshold': None, 'model_hash': None, 'code_hash': cascade_module.CODE_HASH}
+
+
 @app.route('/urgency', methods=['POST'])
 def classify_urgency():
+    """Keyword rule. Body: {"log": {...}} (one result) or {"logs": [...]} (list of results, same order)."""
     try:
-        data = request.json
-        log = data.get('log', {})
-        message = log.get('message', '').lower()
-        level = log.get('level', 'INFO')
-        
-        urgency = "Informational"
-        score = 0.2
-        
-        if level in ['FATAL', 'ERROR'] or any(word in message for word in ['fail', 'critical', 'timeout', 'denied']):
-            urgency = "Critical"
-            score = 0.9
-        elif level == 'WARN' or any(word in message for word in ['slow', 'retry', 'limit']):
-            urgency = "Actionable"
-            score = 0.5
-            
-        return jsonify({'urgency': urgency, 'score': score, 'stage': 'keyword_rule', 'model': 'keyword-rule',
-                        'threshold': None, 'model_hash': None, 'code_hash': cascade_module.CODE_HASH})
+        data = request.json or {}
+        if 'logs' in data:
+            return jsonify([_keyword_rule(l or {}) for l in data['logs']])
+        return jsonify(_keyword_rule(data.get('log', {}) or {}))
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

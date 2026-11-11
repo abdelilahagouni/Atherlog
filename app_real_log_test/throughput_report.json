@@ -1,0 +1,72 @@
+{
+  "a_revoke": {
+    "via_api_delete": {
+      "first_request": 202,
+      "first_ms_bcrypt": 290.6,
+      "second_request": 202,
+      "second_ms_cached": 49.0,
+      "delete_status": 204,
+      "next_request_after_revoke": 401,
+      "rejected": true
+    },
+    "via_direct_db_delete": {
+      "first_request": 202,
+      "second_request_cached": 202,
+      "next_request_after_delete": 401,
+      "rejected": true
+    },
+    "passed": true
+  },
+  "b_throughput": {
+    "single_log_requests_8_clients": {
+      "logs": 2000,
+      "seconds": 12.81,
+      "logs_per_second": 156.2,
+      "all_202": true
+    },
+    "batch_100_1_client": {
+      "logs": 2000,
+      "requests": 20,
+      "seconds": 1.38,
+      "logs_per_second": 1447.6,
+      "all_stored": true
+    },
+    "batch_500_1_client": {
+      "logs": 2000,
+      "requests": 4,
+      "seconds": 0.89,
+      "logs_per_second": 2256.7,
+      "all_stored": true
+    }
+  },
+  "c_parity_through_app": {
+    "lines": 10000,
+    "stored_in_db": 10000,
+    "seconds": 3.5,
+    "logs_per_second": 2834.2,
+    "decision_differences_vs_experiment": 0,
+    "score_max_abs_diff": 2.384185791015625e-07,
+    "scores_over_tolerance": 0,
+    "passed": true
+  },
+  "d_stored_text_sanitised": {
+    "single_status": 202,
+    "batch_status": 202,
+    "stored_messages": [
+      "KERNEL test &lt;script&gt;alert(1)&lt;/script&gt; & more",
+      "KERNEL test &lt;script&gt;alert(1)&lt;/script&gt; & more"
+    ],
+    "passed": true
+  },
+  "cleanup_logs": "DELETE 100",
+  "cleanup_keys": "DELETE 0",
+  "limits": {
+    "configured_logs_per_second": 150,
+    "first_batch_100": 202,
+    "second_batch_100_same_second": 429,
+    "second_message": "Too many logs: limit is 150 logs per second per API key.",
+    "batch_501": 413,
+    "batch_501_message": "Batch too large: at most 500 logs per request.",
+    "passed": true
+  }
+}

@@ -170,7 +170,9 @@ app.use('/api/auth/signup', authLimiter);
 
 // 3. Input Sanitization Middleware
 const sanitizeInput = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.body) {
+    // /api/ingest sanitises the logs itself (ingestion.routes.ts): it must score the ORIGINAL text with the
+    // anomaly model and store only the xss-cleaned, privacy-masked text.
+    if (req.body && !req.originalUrl.startsWith('/api/ingest')) {
         for (const key in req.body) {
             if (typeof req.body[key] === 'string') {
                 req.body[key] = xss(req.body[key]);
