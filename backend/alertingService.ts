@@ -101,41 +101,82 @@ const getAiGuidanceHtml = async (log: LogEntry) => {
     }
 };
 
+/** "0.873" for a real score, "not scored" for null/undefined. Never shows a missing score as 0.000. */
+export const formatAnomalyScore = (score: number | null | undefined): string =>
+    typeof score === 'number' && Number.isFinite(score) ? score.toFixed(3) : 'not scored';
+
+/** Levels with an explicit, admin-created level rule (ALERT_LEVEL_RULE=FATAL or e.g. FATAL,ERROR). Empty = none. */
+const explicitLevelRules = (): string[] =>
+    (process.env.ALERT_LEVEL_RULE || '').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
+
+type AlertDecision = { alertType: AlertType; severity: 'CRITICAL' | 'HIGH'; reason: string; notifyDirect: boolean };
+
+/**
+ * Decides whether a log raises an alert.
+ *  - ANOMALY_MODEL=cascade: ONLY the cascade decision (log.isAnomaly === true) raises an alert. The log level alone
+ *    never does, unless an admin explicitly created a level rule (ALERT_LEVEL_RULE). Unscored logs (e.g. demo logs,
+ *    AI service down) have no cascade decision and raise no alert.
+ *  - otherwise (keyword rule): unchanged - FATAL level, or score >= the organisation's threshold.
+ */
+export const decideAlert = (log: LogEntry, threshold: number): AlertDecision | null => {
+    const isFatal = log.level === LogLevel.FATAL;
+    if (process.env.ANOMALY_MODEL === 'cascade') {
+        if (log.isAnomaly === true) {
+            return { alertType: 'anomaly_high', severity: isFatal ? 'CRITICAL' : 'HIGH', reason: 'cascade', notifyDirect: true };
+        }
+        if (explicitLevelRules().includes(String(log.level).toUpperCase())) {
+            return { alertType: isFatal ? 'fatal' : 'anomaly_high', severity: isFatal ? 'CRITICAL' : 'HIGH',
+                     reason: `level rule (${log.level})`, notifyDirect: true };
+        }
+        return null;
+    }
+    const score = typeof log.anomalyScore === 'number' ? log.anomalyScore : null;
+    if (isFatal) return { alertType: 'fatal', severity: 'CRITICAL', reason: 'FATAL level', notifyDirect: true };
+    if (score !== null && score >= threshold) return { alertType: 'anomaly_high', severity: 'HIGH', reason: 'score', notifyDirect: false };
+    return null;
+};
+
 export const checkAndAlert = async (log: LogEntry) => {
-    if (process.env.TEST_MODE === 'true') return; // TEST_MODE: no alerts at all (see notificationService)
     const db = getDb();
     const org = await getOrganizationWithDetails(log.organizationId);
 
     if (!org) return;
 
     const threshold = org.anomalyThreshold ?? 0.7;
-    const score = log.anomalyScore ?? 0;
-
+    const score = typeof log.anomalyScore === 'number' ? log.anomalyScore : null;   // null = not scored (never 0)
     const isFatal = log.level === LogLevel.FATAL;
-    const isHighAnomaly = score >= threshold;
 
-    if (!isFatal && !isHighAnomaly) return;
+    const decision = decideAlert(log, threshold);
+    if (!decision) return;
+    const { alertType, severity, reason, notifyDirect } = decision;
 
-    const alertType: AlertType = isFatal ? 'fatal' : 'anomaly_high';
-    const severity: 'CRITICAL' | 'HIGH' = isFatal ? 'CRITICAL' : 'HIGH';
+    // TEST_MODE: the decision is recorded (testMode: true, suppressed) so tests can check it, but NOTHING is sent
+    // (no queue, no e-mail/Telegram/Slack/Teams/webhook/runbook; notificationService blocks them as well).
+    if (process.env.TEST_MODE === 'true') {
+        await createAlertEvent(org.id, alertType, severity, log.source ?? null, log.id ?? null,
+                               { log, threshold, score, reason, testMode: true, suppressed: true });
+        console.log(`[TEST_MODE] alert decision recorded, not sent: ${alertType} (${reason}) for ${log.source}`);
+        return;
+    }
 
     const canSend = await shouldSendAlert(org.id, alertType, log.source ?? null);
     const alertEventId = await createAlertEvent(org.id, alertType, severity, log.source ?? null, log.id ?? null, {
         log,
         threshold,
         score,
+        reason,
         suppressed: !canSend
     });
 
     if (!canSend) return;
 
     alertQueue.enqueue(`alert:${alertEventId}`, async () => {
-        console.log(`🚨 Alert queued! Type: ${alertType}. Org: ${org.name}. Source: ${log.source}`);
+        console.log(`🚨 Alert queued! Type: ${alertType} (${reason}). Org: ${org.name}. Source: ${log.source}`);
 
-        // 1. Send Telegram Alert (FATAL only) - Priority
-        if (isFatal) {
+        // 1. Send Telegram Alert - Priority (keyword mode: FATAL only; cascade mode: cascade anomaly / explicit level rule)
+        if (notifyDirect) {
             try {
-                await sendTelegramFatalAlert(log);
+                await sendTelegramFatalAlert(log, reason === 'cascade' ? 'ANOMALY ALERT (BGL cascade)' : isFatal ? 'FATAL ALERT' : `${log.level} ALERT`);
             } catch (e: any) {
                 console.error('[Telegram] Alert failed (non-critical):', e.message);
             }
@@ -143,20 +184,25 @@ export const checkAndAlert = async (log: LogEntry) => {
 
         const aiGuidanceHtml = await getAiGuidanceHtml(log);
 
-        // 2. Send Email to Admins (ONLY FOR FATAL ERRORS)
-        if (isFatal) {
+        // 2. Send Email to Admins (same condition as Telegram)
+        if (notifyDirect) {
             try {
                 const admins = await db.all<User>(
                     'SELECT * FROM users WHERE "organizationId" = ? AND "role" IN (?, ?, ?, ?)',
                     [org.id, Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.ANALYST]
                 );
 
-                const subject = `🚨 FATAL ERROR Detected in ${log.source}`;
+                const heading = reason === 'cascade' ? 'Anomaly Detected (BGL cascade)'
+                              : isFatal ? 'Fatal Error Detected' : `Alert: ${log.level} log`;
+                const intro = reason === 'cascade' ? 'The anomaly model (BGL cascade) flagged this log as an anomaly.'
+                            : reason.startsWith('level rule') ? `This log matched your level rule (${log.level}).`
+                            : 'A fatal error was detected in your system.';
+                const subject = `🚨 ${heading} in ${log.source}`;
                 const html = `
-                    <h2>🚨 Fatal Error Detected</h2>
-                    <p>A fatal error was detected in your system.</p>
+                    <h2>🚨 ${heading}</h2>
+                    <p>${intro}</p>
                     <ul>
-                        <li><strong>Anomaly Score:</strong> ${score.toFixed(3)}</li>
+                        <li><strong>Anomaly Score:</strong> ${formatAnomalyScore(score)}</li>
                         <li><strong>Source:</strong> ${log.source}</li>
                         <li><strong>Level:</strong> ${log.level}</li>
                         <li><strong>Timestamp:</strong> ${new Date(log.timestamp).toLocaleString()}</li>
@@ -169,7 +215,7 @@ export const checkAndAlert = async (log: LogEntry) => {
 
                 for (const admin of admins) {
                     const email = admin.notificationEmail || admin.email;
-                    await sendEmail({ to: email, subject, text: `FATAL Alert: ${log.message}`, html });
+                    await sendEmail({ to: email, subject, text: `${heading}: ${log.message} (anomaly score: ${formatAnomalyScore(score)})`, html });
                 }
             } catch (e: any) {
                 console.error('[Email] Alert failed (non-critical):', e.message);

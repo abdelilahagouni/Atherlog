@@ -251,8 +251,8 @@ export const sendTelegramFatalAlert = async (log: {
     organizationId: string;
     timestamp: string;
     level: string;
-    anomalyScore?: number;
-}): Promise<void> => {
+    anomalyScore?: number | null;
+}, heading = 'FATAL ALERT'): Promise<void> => {
     if (blockedInTestMode('Telegram')) return;
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -263,10 +263,12 @@ export const sendTelegramFatalAlert = async (log: {
     }
 
     const time = new Date(log.timestamp).toLocaleString('en-GB', { timeZone: 'UTC' });
-    const anomalyPct = log.anomalyScore !== undefined ? `${Math.round(log.anomalyScore * 100)}%` : 'N/A';
+    // null/undefined = not scored: never shown as 0%.
+    const anomalyPct = typeof log.anomalyScore === 'number' && Number.isFinite(log.anomalyScore)
+        ? `${(log.anomalyScore * 100).toFixed(1)}% (${log.anomalyScore.toFixed(3)})` : 'not scored';
 
     const text = [
-        `🚨 *FATAL ALERT — AetherLog*`,
+        `🚨 *${heading} — AetherLog*`,
         ``,
         `⏰ *Time:* ${time} UTC`,
         `📦 *Source:* \`${log.source}\``,

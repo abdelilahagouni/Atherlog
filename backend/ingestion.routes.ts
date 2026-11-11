@@ -83,12 +83,13 @@ const takeLogBudget = (keyHash: string, n: number): boolean => {
 
 // --------------------------------------------------------------------------- scoring (one call per request)
 interface Score { score: number | null; category: string; stage: string | null; model: string | null;
-                  threshold: number | null; modelHash: string | null; codeHash: string | null; }
+                  threshold: number | null; modelHash: string | null; codeHash: string | null;
+                  anomaly: boolean | null; }   // anomaly = cascade decision (null: keyword rule / not scored)
 
 const scoreLogs = async (logs: { level: string, message: string, source: string }[]): Promise<Score[]> => {
     const useCascade = process.env.ANOMALY_MODEL === 'cascade';
     const endpoint = useCascade ? '/cascade' : '/urgency';
-    const unscored = (): Score => ({ score: null, category: 'Not scored', stage: null, model: null, threshold: null, modelHash: null, codeHash: null });
+    const unscored = (): Score => ({ score: null, category: 'Not scored', stage: null, model: null, threshold: null, modelHash: null, codeHash: null, anomaly: null });
     if (logs.length === 0) return [];
     try {
         const url = process.env.PYTHON_SERVICE_URL || 'http://127.0.0.1:5001';
@@ -111,7 +112,8 @@ const scoreLogs = async (logs: { level: string, message: string, source: string 
         }
         return out.map((a) => typeof a?.score === 'number'
             ? { score: a.score, category: a.urgency, stage: a.stage ?? null, model: a.model ?? null, threshold: a.threshold ?? null,
-                modelHash: a.model_hash ?? null, codeHash: a.code_hash ?? null }
+                modelHash: a.model_hash ?? null, codeHash: a.code_hash ?? null,
+                anomaly: useCascade && typeof a.anomaly === 'boolean' ? a.anomaly : null }
             : unscored());
     } catch (e: any) {
         console.error(`[Ingest] AI service ${endpoint} unreachable (${e.message}); ${logs.length} log(s) stored as not scored.`);
@@ -169,7 +171,7 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
         processed.forEach((p, i) => {
             if (!p) { results.push({ index: i, status: 'filtered' }); return; }
             const s: Score = scoreOf.get(i) ?? { score: p.anomalyScore ?? null, category: 'Client-scored', stage: 'client',
-                                                  model: null, threshold: null, modelHash: null, codeHash: null };
+                                                  model: null, threshold: null, modelHash: null, codeHash: null, anomaly: null };
             const id = crypto.randomUUID();
             rows.push({ id, p, s });
             results.push({ index: i, status: 'stored', id, anomalyScore: s.score, threatCategory: s.category, scoreStage: s.stage });
@@ -186,7 +188,7 @@ router.post('/', authenticateApiKey, async (req: express.Request, res: express.R
         const { checkAndAlert } = require('./alertingService');
         for (const { id, p, s } of rows) {
             const entry = { id, organizationId: p.organizationId, timestamp: now, level: p.level, message: p.message,
-                            source: p.source, anomalyScore: s.score, threatCategory: s.category };
+                            source: p.source, anomalyScore: s.score, threatCategory: s.category, isAnomaly: s.anomaly };
             checkAndAlert(entry).catch((e: any) => console.error('Alerting check failed:', e));
             emitLog(entry as any);
         }

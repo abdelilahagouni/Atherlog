@@ -1,0 +1,39 @@
+{
+  "started_at_db": "2026-11-11 19:02:33.941634+00",
+  "groups": {
+    "A_fatal_cascade_normal": {
+      "sent": 10,
+      "stored": 10,
+      "cascade_anomaly_now": 0,
+      "alert_decisions": 0,
+      "expected_alert_decisions": 0,
+      "reasons": [],
+      "all_testMode_and_suppressed": true,
+      "pass": true
+    },
+    "B_fatal_cascade_anomaly": {
+      "sent": 10,
+      "stored": 10,
+      "cascade_anomaly_now": 10,
+      "alert_decisions": 10,
+      "expected_alert_decisions": 10,
+      "reasons": [
+        "cascade"
+      ],
+      "all_testMode_and_suppressed": true,
+      "pass": true
+    },
+    "C_info_cascade_normal": {
+      "sent": 10,
+      "stored": 10,
+      "cascade_anomaly_now": 0,
+      "alert_decisions": 0,
+      "expected_alert_decisions": 0,
+      "reasons": [],
+      "all_testMode_and_suppressed": true,
+      "pass": true
+    }
+  },
+  "demo_logs_since_start": 0,
+  "PASS": true
+}

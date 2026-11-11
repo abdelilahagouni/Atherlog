@@ -40,7 +40,7 @@ const normalMessages = [
   'Payment processed for order #ABC-123',
 ];
 
-// Demo log generator (only runs when DISABLE_DEMO_LOGS is not 'true').
+// Demo log generator (only runs when DISABLE_DEMO_LOGS=false is set explicitly).
 // Demo logs are clearly demo data: the level and message are picked at random, but they are NEVER given a made-up
 // anomaly score - they are stored as "not scored" (anomalyScore = null, threatCategory = 'Not scored (demo)').
 const generateLogEntry = (): Omit<LogEntry, 'id' | 'organizationId' | 'timestamp'> => {
@@ -101,6 +101,11 @@ const insertLogForOrg = async (organizationId: string) => {
 };
 
 export const startLogGeneration = () => {
+    // Second safety check: never generate demo logs unless DISABLE_DEMO_LOGS=false is set explicitly.
+    if (process.env.DISABLE_DEMO_LOGS !== 'false') {
+        console.log('Demo log generation refused: set DISABLE_DEMO_LOGS=false explicitly to enable it.');
+        return;
+    }
     console.log('Starting background log generation service...');
     
     // Generate a log for each organization every 3-5 seconds

@@ -67,7 +67,7 @@ router.post('/fatal-error', protect, async (req: express.Request, res: express.R
                 <li><strong>Timestamp:</strong> ${new Date(logEntry.timestamp).toLocaleString()}</li>
                 <li><strong>Source:</strong> ${logEntry.source}</li>
                 <li><strong>Level:</strong> ${logEntry.level}</li>
-                <li><strong>Anomaly Score:</strong> ${logEntry.anomalyScore?.toFixed(3) ?? 'N/A'}</li>
+                <li><strong>Anomaly Score:</strong> ${typeof logEntry.anomalyScore === 'number' ? logEntry.anomalyScore.toFixed(3) : 'not scored'}</li>
             </ul>
             <pre style="background-color: #f0f0f0; padding: 10px; border-radius: 5px;">${logEntry.message}</pre>
             <p>Please investigate immediately.</p>

@@ -54,11 +54,12 @@ This is a critical first step for both setup options. All API keys and secrets a
 
     ```env
     # --- PostgreSQL Database Connection (for Hybrid Setup) ---
-    # These values must match the 'environment' section for the 'db' service in docker-compose.yml
-    POSTGRES_HOST=localhost
-    POSTGRES_PORT=5434
+    # POSTGRES_PASSWORD is required (no default). Use a long random value and put the SAME value in the
+    # .env file next to docker-compose.yml (docker-compose.yml reads ${POSTGRES_PASSWORD} from there).
+    POSTGRES_HOST=127.0.0.1
+    POSTGRES_PORT=5435
     POSTGRES_USER=admin
-    POSTGRES_PASSWORD=password123
+    POSTGRES_PASSWORD=<long random password>
     POSTGRES_DB=ailoganalyzer
 
     # --- Frontend URL (IMPORTANT for email links) ---

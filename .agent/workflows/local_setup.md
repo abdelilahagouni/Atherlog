@@ -16,7 +16,7 @@ This workflow guides you through setting up the AetherLog application locally us
    POSTGRES_HOST=localhost
    POSTGRES_PORT=5435
    POSTGRES_USER=admin
-   POSTGRES_PASSWORD=password123
+   POSTGRES_PASSWORD=<long random password, same as in the .env next to docker-compose.yml>
    POSTGRES_DB=ailoganalyzer
    FRONTEND_URL="http://localhost:3000"
    JWT_SECRET="dev-secret"

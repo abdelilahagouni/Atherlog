@@ -6,4 +6,5 @@ cd /d "%~dp0..\backend"
 set TEST_MODE=true
 if /i "%1"=="cascade" (set ANOMALY_MODEL=cascade) else (set ANOMALY_MODEL=keyword)
 echo Backend in TEST_MODE, ANOMALY_MODEL=%ANOMALY_MODEL%
-npm run dev
+rem No file watcher (ts-node, not ts-node-dev): a watcher reloads on "git checkout" and can come back with other code.
+npx ts-node -T server.ts

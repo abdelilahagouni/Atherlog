@@ -57,6 +57,7 @@ export interface LogEntry {
   source: string;
   anomalyScore?: number | null;   // null = not scored
   threatCategory?: string;
+  isAnomaly?: boolean | null;     // cascade decision (ANOMALY_MODEL=cascade); not stored, used for alerting
 }
 
 export interface Anomaly extends LogEntry {

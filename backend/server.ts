@@ -264,12 +264,12 @@ const startServer = async () => {
         console.log('Database connected successfully.');
 
         if (process.env.TEST_MODE === 'true') console.log('TEST_MODE=true: all e-mail/SMS/webhook/Slack/Teams/Telegram notifications are blocked.');
-        // Start the background demo log generation service (synthetic demo logs).
-        // Set DISABLE_DEMO_LOGS=true in backend/.env to run with real ingested logs only.
-        if (process.env.DISABLE_DEMO_LOGS === 'true') {
-            console.log('Demo log generation DISABLED (DISABLE_DEMO_LOGS=true): only real ingested logs will appear.');
-        } else {
+        // Demo log generator (synthetic demo logs) is OFF by default. It runs ONLY when backend/.env says
+        // DISABLE_DEMO_LOGS=false explicitly; missing, empty or any other value keeps it off.
+        if (process.env.DISABLE_DEMO_LOGS === 'false') {
             startLogGeneration();
+        } else {
+            console.log(`Demo log generation OFF (DISABLE_DEMO_LOGS=${process.env.DISABLE_DEMO_LOGS ?? 'not set'}): only real ingested logs will appear.`);
         }
 
         // Start log retention cleanup service

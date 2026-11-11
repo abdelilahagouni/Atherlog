@@ -14,7 +14,7 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the .env file next to docker-compose.yml (same value as backend/.env)}"
       POSTGRES_DB: ailoganalyzer
       PYTHON_SERVICE_URL: http://python-service:5000
       # The .env file in the 'backend' folder provides the following keys:
@@ -41,11 +41,11 @@ services:
     image: timescale/timescaledb:latest-pg15
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the .env file next to docker-compose.yml (same value as backend/.env)}"
       POSTGRES_DB: ailoganalyzer
     ports:
-      # You can optionally expose the port to connect with a DB tool like DBeaver
-      - "5435:5432" 
+      # Bound to 127.0.0.1 only: reachable from this PC (backend, DBeaver), NOT from other devices on the network.
+      - "127.0.0.1:5435:5432"
     volumes:
       # This will persist the database data on your local machine
       - postgres_data:/var/lib/postgresql/data/

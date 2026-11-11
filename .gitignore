@@ -105,3 +105,4 @@ tmp_train/
 data/
 backend/database.sqlite
 ~$*.docx
+!app_real_log_test/test_*.py
