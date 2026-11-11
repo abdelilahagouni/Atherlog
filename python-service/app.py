@@ -43,6 +43,9 @@ def get_tensorflow():
 
 app = Flask(__name__)
 
+# PRIVACY: this service receives raw (unmasked) log text for scoring. It must NEVER print or log that text:
+# log only counts, ids and error TYPES (exception messages can contain input text).
+
 # BGL cascade (TF-IDF + LR gate -> DistilBERT). Strict load: if models/cascade_bgl exists but cannot be
 # loaded or verified (missing file, hash or library-version mismatch), the service stops here with an error.
 import cascade as cascade_module
@@ -272,7 +275,7 @@ def semantic_search():
                 results = sorted(results, key=lambda x: x['score'], reverse=True)
                 return jsonify({'results': results[:10], 'method': 'sentence-transformers'})
             except Exception as st_err:
-                print(f"[SemanticSearch] Sentence Transformer inference failed, falling back to TF-IDF: {st_err}")
+                print(f"[SemanticSearch] Sentence Transformer inference failed ({type(st_err).__name__}), falling back to TF-IDF")
         
         # Fallback: TF-IDF (keyword-based)
         from sklearn.feature_extraction.text import TfidfVectorizer
@@ -353,7 +356,8 @@ def classify_urgency():
             return jsonify([_keyword_rule(l or {}) for l in data['logs']])
         return jsonify(_keyword_rule(data.get('log', {}) or {}))
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"[URGENCY] scoring failed ({type(e).__name__})")
+        return jsonify({'error': f'keyword scoring failed ({type(e).__name__})'}), 500
 
 
 # --- BGL cascade scoring (paper variant V3, seed 42) ---
@@ -363,7 +367,14 @@ def cascade_score():
     text, used by the parity test; "all_stages": true also runs DistilBERT on non-forwarded texts)."""
     if CASCADE is None:
         return jsonify({'error': 'cascade model not available'}), 503
-    data = request.json or {}
+    try:
+        return _cascade_score(request.json or {})
+    except Exception as e:
+        print(f"[CASCADE] scoring failed ({type(e).__name__})")      # error type only - never the log text
+        return jsonify({'error': f'cascade scoring failed ({type(e).__name__})'}), 500
+
+
+def _cascade_score(data):
     if 'texts' in data:
         texts = [str(t) for t in data['texts']]
     else:
@@ -497,7 +508,7 @@ def attribute_anomaly():
         except ImportError as ie:
             print(f"[Attribution] SHAP not available, using rule-based fallback: {ie}")
         except Exception as shap_err:
-            print(f"[Attribution] SHAP analysis failed, using rule-based fallback: {shap_err}")
+            print(f"[Attribution] SHAP analysis failed ({type(shap_err).__name__}), using rule-based fallback")
         
         # Fallback: Rule-based attribution
         causes = []
@@ -635,12 +646,12 @@ def get_timeline():
                     "isAnomaly": bool(count > mean_val + 1)
                 })
             except Exception as loop_e:
-                print(f"Error in timeline loop: {loop_e}")
+                print(f"[Timeline] error in loop ({type(loop_e).__name__})")
                 continue
             
         return jsonify(timeline)
     except Exception as e:
-        print(f"Timeline error: {e}")
+        print(f"[Timeline] error ({type(e).__name__})")
         return jsonify({'error': str(e)}), 500
 
 # --- Existing Advanced AI: Autoencoder ---
@@ -813,7 +824,7 @@ def train():
                 })
                 
             except Exception as hf_e:
-                print(f"Hugging Face Error: {hf_e}")
+                print(f"[TRAIN] Hugging Face error ({type(hf_e).__name__})")
                 return jsonify({'error': f"Hugging Face training failed: {str(hf_e)}"}), 500
 
         # For TensorFlow/scikit-learn training, preprocess the logs
@@ -1116,9 +1127,7 @@ def train_dataset():
         })
         
     except Exception as e:
-        print(f"[TRAIN-DATASET] Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[TRAIN-DATASET] error ({type(e).__name__})")
         return jsonify({'error': str(e)}), 500
 
 # --- Model Classification ---
@@ -1177,9 +1186,7 @@ def classify_log():
             return jsonify({'error': 'Invalid model type'}), 400
             
     except Exception as e:
-        print(f"[CLASSIFY] Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[CLASSIFY] error ({type(e).__name__})")
         return jsonify({'error': str(e)}), 500
 
 # ─── Publication Experiments Endpoint ────────────────────────────────────────
