@@ -13,6 +13,10 @@ if (!process.env.API_KEY && !process.env.OPENAI_API_KEY) {
     dotenv.config({ path: path.join(scriptDir, '../.env') });
 }
 
+// Refuse to start without the required secrets (no hard-coded fallbacks). Runs before any route/service loads.
+import { validateRequiredSecretsOrExit } from './config';
+validateRequiredSecretsOrExit();
+
 import http from 'http';
 import { connectDb } from './database';
 import { startLogGeneration } from './logGenerationService';
@@ -85,7 +89,8 @@ app.use((req, res, next) => {
 });
 
 // --- Security Middleware ---
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import * as crypto from 'crypto';
 import xss from 'xss';
 import helmet from 'helmet';
 
@@ -130,8 +135,30 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     validate: { xForwardedForHeader: false, trustProxy: false },
+    // Log ingestion has its own per-API-key limit (below) and is NOT counted here.
+    skip: (req) => req.originalUrl.startsWith('/api/ingest'),
 });
 app.use('/api', limiter);
+
+// 1b. Log-ingestion rate limiting: per API key, per second (INGEST_RATE_LIMIT_PER_SECOND, default 100).
+// Requests without an API key are counted per IP (they are rejected by the ingest route anyway).
+const ingestPerSecond = Math.max(1, parseInt(process.env.INGEST_RATE_LIMIT_PER_SECOND || '100', 10) || 100);
+const ingestLimiter = rateLimit({
+    windowMs: 1000,
+    limit: ingestPerSecond,
+    keyGenerator: (req) => {
+        const key = req.header('X-API-KEY');
+        return key
+            ? 'apikey:' + crypto.createHash('sha256').update(key).digest('hex')   // never keep the raw key
+            : 'ip:' + ipKeyGenerator(req.ip || '');
+    },
+    message: { message: `Too many log ingestion requests: limit is ${ingestPerSecond} per second per API key.` },
+    standardHeaders: true,
+    legacyHeaders: false,
+    validate: { xForwardedForHeader: false, trustProxy: false },
+});
+app.use('/api/ingest', ingestLimiter);
+console.log(`Ingest rate limit: ${ingestPerSecond} requests/second per API key (general /api limit: 1000 per 15 min per IP, ingest excluded).`);
 
 // 2. Strict Auth Rate Limiting (prevent brute force login)
 const authLimiter = rateLimit({
@@ -147,7 +174,9 @@ app.use('/api/auth/signup', authLimiter);
 
 // 3. Input Sanitization Middleware
 const sanitizeInput = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.body) {
+    // /api/ingest sanitises the logs itself (ingestion.routes.ts): it must score the ORIGINAL text with the
+    // anomaly model and store only the xss-cleaned, privacy-masked text.
+    if (req.body && !req.originalUrl.startsWith('/api/ingest')) {
         for (const key in req.body) {
             if (typeof req.body[key] === 'string') {
                 req.body[key] = xss(req.body[key]);
@@ -177,6 +206,8 @@ app.get('/api/health', (_req, res) => {
         status: dbReady ? 'ok' : 'starting',
         db: dbReady ? 'connected' : 'connecting',
         uptime: process.uptime(),
+        testMode: process.env.TEST_MODE === 'true',
+        anomalyModel: process.env.ANOMALY_MODEL === 'cascade' ? 'cascade' : 'keyword-rule',
     });
 });
 
@@ -232,8 +263,14 @@ const startServer = async () => {
         dbReady = true;
         console.log('Database connected successfully.');
 
-        // Start the background log generation service
-        startLogGeneration();
+        if (process.env.TEST_MODE === 'true') console.log('TEST_MODE=true: all e-mail/SMS/webhook/Slack/Teams/Telegram notifications are blocked.');
+        // Start the background demo log generation service (synthetic demo logs).
+        // Set DISABLE_DEMO_LOGS=true in backend/.env to run with real ingested logs only.
+        if (process.env.DISABLE_DEMO_LOGS === 'true') {
+            console.log('Demo log generation DISABLED (DISABLE_DEMO_LOGS=true): only real ingested logs will appear.');
+        } else {
+            startLogGeneration();
+        }
 
         // Start log retention cleanup service
         startLogRetention();

@@ -2,6 +2,7 @@
 
 
 import { Pool } from 'pg';
+import { getPostgresPassword } from './config';
 import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { PlanDetails, Role, SubscriptionPlan, User, Organization } from './types';
@@ -52,7 +53,7 @@ export const connectDb = async () => {
             host: process.env.POSTGRES_HOST || 'localhost',
             port: parseInt(process.env.POSTGRES_PORT || '5434'),
             user: process.env.POSTGRES_USER || 'admin',
-            password: process.env.POSTGRES_PASSWORD || 'password123',
+            password: getPostgresPassword(),          // required, no fallback (config.ts)
             database: process.env.POSTGRES_DB || 'ailoganalyzer',
         };
 
@@ -152,6 +153,12 @@ export const connectDb = async () => {
     `);
 
     await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "threatCategory" TEXT;');
+    // Provenance of every anomaly score (which stage decided, which model, threshold, model/code hash).
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreStage" TEXT;');
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreModel" TEXT;');
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreThreshold" REAL;');
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreModelHash" TEXT;');
+    await db.exec('ALTER TABLE logs ADD COLUMN IF NOT EXISTS "scoreCodeHash" TEXT;');
 
     await db.exec(`
         CREATE TABLE IF NOT EXISTS api_keys (

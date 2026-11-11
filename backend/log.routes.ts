@@ -66,7 +66,8 @@ router.post('/bulk', async (req: express.Request, res: express.Response) => {
             const level = log.level || 'INFO';
             const message = log.message || '';
             const source = log.source || 'dataset-import';
-            const score = log.anomalyScore || 0;
+            // Bulk import does not score logs: keep a supplied score, otherwise null ("not scored").
+            const score = typeof log.anomalyScore === 'number' ? log.anomalyScore : null;
 
             insertedLogs.push({
                 id,

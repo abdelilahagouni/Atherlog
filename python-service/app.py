@@ -43,6 +43,14 @@ def get_tensorflow():
 
 app = Flask(__name__)
 
+# PRIVACY: this service receives raw (unmasked) log text for scoring. It must NEVER print or log that text:
+# log only counts, ids and error TYPES (exception messages can contain input text).
+
+# BGL cascade (TF-IDF + LR gate -> DistilBERT). Strict load: if models/cascade_bgl exists but cannot be
+# loaded or verified (missing file, hash or library-version mismatch), the service stops here with an error.
+import cascade as cascade_module
+CASCADE = cascade_module.load_if_present()
+
 # Global model state
 model = None
 feature_max = None
@@ -144,20 +152,12 @@ def load_loghub_dataset(name='hdfs', max_samples=2000):
                 'level': level,
                 'source': source,
                 'message': ' '.join(parts[3:])[:500],  # Truncate long messages
-                'anomalyScore': 0.0  # Will be set below
+                'anomalyScore': None  # not scored
             })
         
-        # Assign anomaly scores based on level (heuristic labeling)
-        # In production, you'd use the actual labels file
+        # No made-up scores: loaded dataset logs are NOT scored here (anomalyScore = None -> "not scored").
         for log in logs:
-            if log['level'] == 'FATAL':
-                log['anomalyScore'] = 0.9 + np.random.random() * 0.1
-            elif log['level'] == 'ERROR':
-                log['anomalyScore'] = 0.7 + np.random.random() * 0.2
-            elif log['level'] == 'WARN':
-                log['anomalyScore'] = 0.3 + np.random.random() * 0.3
-            else:
-                log['anomalyScore'] = np.random.random() * 0.2
+            log['anomalyScore'] = None
         
         _loghub_cache[name] = logs
         print(f"[Loghub] Loaded {len(logs)} logs from {name}")
@@ -275,7 +275,7 @@ def semantic_search():
                 results = sorted(results, key=lambda x: x['score'], reverse=True)
                 return jsonify({'results': results[:10], 'method': 'sentence-transformers'})
             except Exception as st_err:
-                print(f"[SemanticSearch] Sentence Transformer inference failed, falling back to TF-IDF: {st_err}")
+                print(f"[SemanticSearch] Sentence Transformer inference failed ({type(st_err).__name__}), falling back to TF-IDF")
         
         # Fallback: TF-IDF (keyword-based)
         from sklearn.feature_extraction.text import TfidfVectorizer
@@ -335,27 +335,62 @@ def cluster_logs():
         return jsonify({'error': str(e)}), 500
 
 # --- Pro Feature 3: Urgency Classification ---
+def _keyword_rule(log):
+    message = str(log.get('message', '')).lower()
+    level = log.get('level', 'INFO')
+    urgency, score = "Informational", 0.2
+    if level in ['FATAL', 'ERROR'] or any(word in message for word in ['fail', 'critical', 'timeout', 'denied']):
+        urgency, score = "Critical", 0.9
+    elif level == 'WARN' or any(word in message for word in ['slow', 'retry', 'limit']):
+        urgency, score = "Actionable", 0.5
+    return {'urgency': urgency, 'score': score, 'stage': 'keyword_rule', 'model': 'keyword-rule',
+            'threshold': None, 'model_hash': None, 'code_hash': cascade_module.CODE_HASH}
+
+
 @app.route('/urgency', methods=['POST'])
 def classify_urgency():
+    """Keyword rule. Body: {"log": {...}} (one result) or {"logs": [...]} (list of results, same order)."""
     try:
-        data = request.json
-        log = data.get('log', {})
-        message = log.get('message', '').lower()
-        level = log.get('level', 'INFO')
-        
-        urgency = "Informational"
-        score = 0.2
-        
-        if level in ['FATAL', 'ERROR'] or any(word in message for word in ['fail', 'critical', 'timeout', 'denied']):
-            urgency = "Critical"
-            score = 0.9
-        elif level == 'WARN' or any(word in message for word in ['slow', 'retry', 'limit']):
-            urgency = "Actionable"
-            score = 0.5
-            
-        return jsonify({'urgency': urgency, 'score': score})
+        data = request.json or {}
+        if 'logs' in data:
+            return jsonify([_keyword_rule(l or {}) for l in data['logs']])
+        return jsonify(_keyword_rule(data.get('log', {}) or {}))
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"[URGENCY] scoring failed ({type(e).__name__})")
+        return jsonify({'error': f'keyword scoring failed ({type(e).__name__})'}), 500
+
+
+# --- BGL cascade scoring (paper variant V3, seed 42) ---
+@app.route('/cascade', methods=['POST'])
+def cascade_score():
+    """Body: {"log": {level, message, source}} or {"logs": [...]} (app logs), or {"texts": [...]} (raw BGL model
+    text, used by the parity test; "all_stages": true also runs DistilBERT on non-forwarded texts)."""
+    if CASCADE is None:
+        return jsonify({'error': 'cascade model not available'}), 503
+    try:
+        return _cascade_score(request.json or {})
+    except Exception as e:
+        print(f"[CASCADE] scoring failed ({type(e).__name__})")      # error type only - never the log text
+        return jsonify({'error': f'cascade scoring failed ({type(e).__name__})'}), 500
+
+
+def _cascade_score(data):
+    if 'texts' in data:
+        texts = [str(t) for t in data['texts']]
+    else:
+        logs = data.get('logs') or [data.get('log', {})]
+        texts = [CASCADE.app_text(l) for l in logs]
+    res = CASCADE.score(texts, all_stages=bool(data.get('all_stages')))
+    for r in res:
+        r['urgency'] = 'Critical' if r['anomaly'] else 'Informational'
+    return jsonify(res if ('logs' in data or 'texts' in data) else res[0])
+
+
+@app.route('/cascade/info', methods=['GET'])
+def cascade_info():
+    if CASCADE is None:
+        return jsonify({'available': False, 'note': 'cascade model folder not found'}), 200
+    return jsonify(CASCADE.info())
 
 # --- Pro Feature 4: Volume Forecasting (LSTM-lite) ---
 @app.route('/forecast', methods=['POST'])
@@ -473,7 +508,7 @@ def attribute_anomaly():
         except ImportError as ie:
             print(f"[Attribution] SHAP not available, using rule-based fallback: {ie}")
         except Exception as shap_err:
-            print(f"[Attribution] SHAP analysis failed, using rule-based fallback: {shap_err}")
+            print(f"[Attribution] SHAP analysis failed ({type(shap_err).__name__}), using rule-based fallback")
         
         # Fallback: Rule-based attribution
         causes = []
@@ -611,12 +646,12 @@ def get_timeline():
                     "isAnomaly": bool(count > mean_val + 1)
                 })
             except Exception as loop_e:
-                print(f"Error in timeline loop: {loop_e}")
+                print(f"[Timeline] error in loop ({type(loop_e).__name__})")
                 continue
             
         return jsonify(timeline)
     except Exception as e:
-        print(f"Timeline error: {e}")
+        print(f"[Timeline] error ({type(e).__name__})")
         return jsonify({'error': str(e)}), 500
 
 # --- Existing Advanced AI: Autoencoder ---
@@ -789,7 +824,7 @@ def train():
                 })
                 
             except Exception as hf_e:
-                print(f"Hugging Face Error: {hf_e}")
+                print(f"[TRAIN] Hugging Face error ({type(hf_e).__name__})")
                 return jsonify({'error': f"Hugging Face training failed: {str(hf_e)}"}), 500
 
         # For TensorFlow/scikit-learn training, preprocess the logs
@@ -1092,9 +1127,7 @@ def train_dataset():
         })
         
     except Exception as e:
-        print(f"[TRAIN-DATASET] Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[TRAIN-DATASET] error ({type(e).__name__})")
         return jsonify({'error': str(e)}), 500
 
 # --- Model Classification ---
@@ -1153,9 +1186,7 @@ def classify_log():
             return jsonify({'error': 'Invalid model type'}), 400
             
     except Exception as e:
-        print(f"[CLASSIFY] Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[CLASSIFY] error ({type(e).__name__})")
         return jsonify({'error': str(e)}), 500
 
 # ─── Publication Experiments Endpoint ────────────────────────────────────────

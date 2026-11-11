@@ -1,0 +1,33 @@
+{
+  "low": {
+    "ratelimit_limit_header": 3,
+    "burst_30": {
+      "accepted_202": 3,
+      "rejected_429": 27,
+      "max_accepted_in_any_1s_window": 3
+    },
+    "after_pause_status": 202,
+    "passed": true,
+    "phase": "low",
+    "cleanup": "DELETE 5"
+  },
+  "high": {
+    "ratelimit_limit_header": 100,
+    "ingest_over_general_budget": {
+      "ingest_requests": 1100,
+      "accepted_202": 1100,
+      "rejected_429": 0,
+      "seconds": 149.5,
+      "requests_per_second": 7.4,
+      "general_route_after": 200
+    },
+    "general_limit_other_routes": {
+      "requests_until_429": 995,
+      "got_429": true,
+      "note": "1,000 minus the few general requests made before (guard, health)"
+    },
+    "passed": true,
+    "phase": "high",
+    "cleanup": "DELETE 1101"
+  }
+}

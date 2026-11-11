@@ -90,7 +90,7 @@ const handleAiError = (e: any, res: express.Response) => {
 
 const getPythonServiceUrl = () => {
     // Default to localhost:5000 for local development if not specified
-    let url = process.env.PYTHON_SERVICE_URL || 'http://localhost:5001';
+    let url = process.env.PYTHON_SERVICE_URL || 'http://127.0.0.1:5001';
     if (!url.startsWith('http')) {
         url = `http://${url}`;
     }
@@ -1281,126 +1281,8 @@ router.get('/available-datasets', protect, async (req: express.Request, res: exp
 });
 
 
-// ─── Publication Experiment Lab ───────────────────────────────────────────────
-// In-memory cache so GET /experiments/results can return last run
-let _lastExperimentRun: { timestamp: string; experiments: any[] } | null = null;
-
-/**
- * Simulate metrics that are scientifically plausible for an IF+DistilBERT pipeline paper.
- * Metric values are seeded from the sample_size so they are deterministic per run size.
- */
-function simulateExperiments(ids: number[], sampleSize: number): any[] {
-    const seed = sampleSize / 1000; // 0.2 for default 200
-
-    const jitter = (base: number, spread: number) =>
-        Math.min(0.999, Math.max(0.001, base + (Math.random() - 0.5) * spread));
-
-    const results: any[] = [];
-
-    for (const id of ids) {
-        if (id === 1) {
-            // Exp 1 – Isolation Forest baseline, evaluated separately on BGL and HDFS
-            results.push({
-                experiment: 1,
-                name: 'IF Baseline',
-                results: {
-                    BGL: {
-                        precision: jitter(0.821, 0.03),
-                        recall:    jitter(0.783, 0.03),
-                        f1:        jitter(0.802, 0.02),
-                        auc:       jitter(0.871, 0.02),
-                        latency_ms_per_log: jitter(0.42, 0.08),
-                    },
-                    HDFS: {
-                        precision: jitter(0.796, 0.04),
-                        recall:    jitter(0.751, 0.04),
-                        f1:        jitter(0.773, 0.03),
-                        auc:       jitter(0.848, 0.03),
-                        latency_ms_per_log: jitter(0.45, 0.08),
-                    },
-                }
-            });
-        } else if (id === 2) {
-            // Exp 2 – DistilBERT applied to all logs (no pre-filter)
-            results.push({
-                experiment: 2,
-                name: 'NLP-Only (DistilBERT)',
-                results: {
-                    precision: jitter(0.887, 0.02),
-                    recall:    jitter(0.871, 0.02),
-                    f1:        jitter(0.879, 0.015),
-                    auc:       jitter(0.924, 0.015),
-                    inference_ms_per_log: jitter(18.4, 2.5),  // High: processes every log
-                }
-            });
-        } else if (id === 3) {
-            // Exp 3 – Proposed two-stage IF → DistilBERT
-            const reductionPct = Math.round(jitter(0.68, 0.05) * 100); // ~64–73%
-            results.push({
-                experiment: 3,
-                name: 'Proposed Pipeline (IF→DistilBERT)',
-                results: {
-                    precision: jitter(0.891, 0.015),
-                    recall:    jitter(0.876, 0.015),
-                    f1:        jitter(0.883, 0.012),
-                    auc:       jitter(0.928, 0.012),
-                    inference_ms_per_log: jitter(5.9, 0.8),   // Much lower: fewer logs reach NLP
-                    reduction_pct: reductionPct,
-                }
-            });
-        } else if (id === 4) {
-            // Exp 4 – Model comparison: BERT vs DistilBERT vs TinyBERT
-            results.push({
-                experiment: 4,
-                name: 'Model Comparison',
-                results: {
-                    DistilBERT: {
-                        precision: jitter(0.891, 0.015),
-                        recall:    jitter(0.876, 0.015),
-                        f1:        jitter(0.883, 0.012),
-                        auc:       jitter(0.928, 0.012),
-                        inference_ms_per_log: jitter(5.9, 0.8),
-                    },
-                    BERT: {
-                        precision: jitter(0.902, 0.012),
-                        recall:    jitter(0.889, 0.012),
-                        f1:        jitter(0.895, 0.010),
-                        auc:       jitter(0.939, 0.010),
-                        inference_ms_per_log: jitter(14.2, 1.5),
-                    },
-                    TinyBERT: {
-                        precision: jitter(0.861, 0.02),
-                        recall:    jitter(0.843, 0.02),
-                        f1:        jitter(0.852, 0.015),
-                        auc:       jitter(0.904, 0.015),
-                        inference_ms_per_log: jitter(3.1, 0.5),
-                    },
-                }
-            });
-        } else if (id === 5) {
-            // Exp 5 – Cross-system generalization: train on BGL, test on HDFS
-            results.push({
-                experiment: 5,
-                name: 'Generalization (BGL→HDFS)',
-                results: {
-                    bgl_in_domain: {
-                        precision: jitter(0.891, 0.015),
-                        recall:    jitter(0.876, 0.015),
-                        f1:        jitter(0.883, 0.012),
-                        auc:       jitter(0.928, 0.012),
-                    },
-                    hdfs_out_of_domain: {
-                        precision: jitter(0.834, 0.025),
-                        recall:    jitter(0.812, 0.025),
-                        f1:        jitter(0.823, 0.020),
-                        auc:       jitter(0.881, 0.020),
-                    },
-                }
-            });
-        }
-    }
-    return results;
-}
+// (Removed: the simulated experiment-metrics generator. Experiment results now come only from real result
+//  files; see the /experiments/results proxy below.)
 
 // --- Reusable Proxy Helper for Python Routes ---
 const proxyToPython = async (req: express.Request, res: express.Response, endpoint: string, method: string = 'POST') => {
@@ -1453,5 +1335,22 @@ router.post('/load-dataset', protect, (req, res) => proxyToPython(req, res, '/da
 router.get('/available-datasets', protect, (req, res) => proxyToPython(req, res, '/datasets/available', 'GET'));
 router.post('/run-experiments', protect, (req, res) => proxyToPython(req, res, '/run-experiments'));
 router.get('/experiments/results', protect, (req, res) => proxyToPython(req, res, '/experiments/results', 'GET'));
+
+// Which anomaly model scores incoming logs (shown in the UI).
+router.get('/model-info', protect, async (req: express.Request, res: express.Response) => {
+    const active = process.env.ANOMALY_MODEL === 'cascade' ? 'cascade' : 'keyword-rule';
+    let cascade: any = { available: false };
+    try {
+        const r = await fetch(`${getPythonServiceUrl()}/cascade/info`);
+        if (r.ok) cascade = await r.json();
+    } catch (e: any) {
+        cascade = { available: false, error: 'AI service unreachable' };
+    }
+    const label = active === 'cascade'
+        ? (cascade.available ? `Model: ${cascade.display_name}` : 'Model: cascade selected, but the AI service has no cascade loaded - logs are stored as not scored')
+        : 'Model: keyword rule (FATAL/ERROR level or words such as fail/critical/timeout/denied)';
+    const note = active === 'cascade' && cascade.available ? cascade.note : null;
+    res.json({ active, label, note, cascade });
+});
 
 export default router;

@@ -26,6 +26,14 @@ export const getAnomalies = async (threshold: number): Promise<Anomaly[]> => {
     return handleResponse(response);
 };
 
+export interface ModelInfo { active: string; label: string; note: string | null; cascade: any; }
+
+// Which anomaly model scores incoming logs (keyword rule or BGL cascade).
+export const getModelInfo = async (): Promise<ModelInfo> => {
+    const response = await fetch(`${API_BASE_URL}/ai/model-info`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+};
+
 export const getLogSummary = async (): Promise<LogSummary[]> => {
     const response = await fetch(`${API_BASE_URL}/logs/summary`, {
         headers: getAuthHeaders(),

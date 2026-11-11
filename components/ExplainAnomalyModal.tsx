@@ -53,9 +53,7 @@ const ExplainAnomalyModal: React.FC<ExplainAnomalyModalProps> = ({ logEntry, pro
                 <p><span className="font-bold text-blue-600 dark:text-blue-400">Timestamp:</span> {new Date(logEntry.timestamp).toISOString()}</p>
                 <p><span className="font-bold text-blue-600 dark:text-blue-400">Level:</span> {logEntry.level}</p>
                 <p><span className="font-bold text-blue-600 dark:text-blue-400">Source:</span> {logEntry.source}</p>
-                {logEntry.anomalyScore !== undefined && (
-                  <p><span className="font-bold text-red-600 dark:text-red-400">Anomaly Score:</span> {logEntry.anomalyScore.toFixed(3)}</p>
-                )}
+                <p><span className="font-bold text-red-600 dark:text-red-400">Anomaly Score:</span> {logEntry.anomalyScore != null ? logEntry.anomalyScore.toFixed(3) : 'not scored'}</p>
                 <p><span className="font-bold text-blue-600 dark:text-blue-400">Message:</span> {logEntry.message}</p>
             </div>
           </div>
